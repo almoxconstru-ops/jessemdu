@@ -1,0 +1,2390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mala & Estoque | Logística Avançada Red & Black (Oficial)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js para Gráficos Dinâmicos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDKs (Versão Compatível) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <style>
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .bg-red-black-gradient {
+            background: linear-gradient(-45deg, #450a0a, #7f1d1d, #09090b, #18181b);
+            background-size: 400% 400%;
+            animation: gradientMove 12s ease infinite;
+        }
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(220, 38, 38, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.5); }
+        .mobile-frame { max-width: 480px !important; margin: 0 auto; border-left: 2px solid #3f3f46; border-right: 2px solid #3f3f46; }
+        
+        /* ESTILO MODO VISUALIZADOR (SOMENTE LEITURA) */
+        .mode-visualizador .action-btn-write { display: none !important; }
+    </style>
+</head>
+<body class="bg-black text-slate-100 font-sans antialiased min-h-screen" id="app-body-container">
+
+    <!-- BANNER DE STATUS OFFLINE / ONLINE -->
+    <div id="offline-banner" class="hidden fixed top-0 left-0 right-0 z-50 p-2 text-center text-xs font-bold transition-all"></div>
+
+    <!-- BANNER MODO VISUALIZADOR -->
+    <div id="visualizador-banner" class="hidden sticky top-0 left-0 right-0 z-40 bg-amber-600 text-black p-2 text-center text-xs font-extrabold tracking-wide uppercase shadow-lg">
+        👁️ MODO OPERADOR / VISUALIZADOR (APENAS LEITURA - SEM PERMISSÃO DE ALTERAÇÃO)
+    </div>
+
+    <!-- ================= TELA DE LOGIN ================= -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center bg-red-black-gradient p-4">
+        <div class="bg-zinc-900/90 backdrop-blur-2xl p-8 rounded-3xl shadow-2xl border border-red-900/40 w-full max-w-md text-white">
+            <div class="text-center mb-6">
+                <div class="inline-flex p-4 bg-red-600 rounded-2xl mb-3 shadow-lg shadow-red-600/40 animate-pulse">
+                    <i data-lucide="boxes" class="w-8 h-8 text-white"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold tracking-tight">BoxField</h1>
+                <p class="text-xs text-red-300 mt-1">Jessé Moura</p>
+            </div>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-red-400 mb-1">Usuário / Login</label>
+                    <input type="text" id="login-user" required class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition" placeholder="admin, operador ou seu login">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-red-400 mb-1">Senha</label>
+                    <input type="password" id="login-pass" required class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 font-bold rounded-xl shadow-lg shadow-red-600/30 transition text-sm">
+                    Acessar Sistema Oficial
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= PAINEL ADMINISTRADOR / OPERADOR ================= -->
+    <div id="admin-screen" class="hidden min-h-screen flex flex-col md:flex-row bg-zinc-950">
+        <aside class="w-full md:w-64 bg-zinc-900 text-zinc-300 flex-shrink-0 border-r border-zinc-800 flex flex-col">
+            <div class="p-6 flex items-center justify-between border-b border-zinc-800">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-red-600 rounded-lg text-white"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+                    <div>
+                        <h2 class="font-bold text-white text-sm">BOXFIELD CENTRAL</h2>
+                        <span id="painel-role-title" class="text-[10px] text-red-400 font-bold uppercase">Painel ADM Oficial</span>
+                    </div>
+                </div>
+            </div>
+            <nav class="p-4 space-y-1.5 flex-1 text-sm font-medium overflow-y-auto">
+                <button onclick="switchAdminTab('dash')" id="atab-dash" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-red-600 text-white transition">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span>
+                </button>
+                <button onclick="switchAdminTab('tecnicos')" id="atab-tecnicos" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="users" class="w-4 h-4"></i><span>Gestão de Técnicos</span>
+                </button>
+                <button onclick="switchAdminTab('estoque-fisico')" id="atab-estoque-fisico" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="warehouse" class="w-4 h-4"></i><span>Estoque Físico (Bipagem)</span>
+                </button>
+                <button onclick="switchAdminTab('passar-tecnicos')" id="atab-passar-tecnicos" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="truck" class="w-4 h-4"></i><span>Passar p/ Técnicos</span>
+                </button>
+                <button onclick="switchAdminTab('malas')" id="atab-malas" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="backpack" class="w-4 h-4"></i><span>Controle de Malas</span>
+                </button>
+                <button onclick="switchAdminTab('materiais')" id="atab-materiais" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="package" class="w-4 h-4"></i><span>Catálogo (SAP + Desc)</span>
+                </button>
+                <button onclick="switchAdminTab('lancamentos')" id="atab-lancamentos" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Lançamentos & SIAKI</span>
+                </button>
+                <button onclick="switchAdminTab('chat')" id="atab-chat" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition relative">
+                    <i data-lucide="message-square" class="w-4 h-4"></i><span>Chat Direct</span>
+                    <span id="badge-admin-chat" class="hidden absolute right-3 bg-red-600 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
+                </button>
+                <button onclick="switchAdminTab('mapa')" id="atab-mapa" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="map" class="w-4 h-4"></i><span>Mapa em Tempo Real</span>
+                </button>
+                <button onclick="switchAdminTab('historico-geral')" id="atab-historico-geral" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="history" class="w-4 h-4"></i><span>Histórico & Backup</span>
+                </button>
+            </nav>
+            <div class="p-4 border-t border-zinc-800 space-y-2">
+                <button onclick="abrirModalSegurancaADM()" class="action-btn-write w-full py-2 bg-red-950/60 hover:bg-red-900 text-red-200 border border-red-800/50 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2">
+                    <i data-lucide="key" class="w-4 h-4"></i><span>Segurança & Operadores</span>
+                </button>
+                <button onclick="toggleLayoutMode()" class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2">
+                    <i data-lucide="smartphone" class="w-4 h-4"></i><span id="layout-toggle-text">Alternar Layout PC/Mobile</span>
+                </button>
+                <button onclick="logout()" class="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2">
+                    <i data-lucide="log-out" class="w-4 h-4"></i><span>Encerrar Sessão</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Admin -->
+        <main class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+            <!-- Topbar -->
+            <div class="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl border border-zinc-800 shadow-sm">
+                <span class="font-bold text-white text-sm">Painel de Controle Central Oficial</span>
+                <div class="flex items-center space-x-3">
+                    <button onclick="baixarExcelGeral()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Baixar Excel Geral</span>
+                    </button>
+                    <button onclick="baixarBackupGeral()" class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
+                        <i data-lucide="download" class="w-4 h-4"></i><span>Backup Geral</span>
+                    </button>
+                    <div class="relative">
+                        <button onclick="toggleNotifDropdown()" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl relative transition">
+                            <i data-lucide="bell" class="w-5 h-5 text-red-400"></i>
+                            <span id="notif-counter" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                        </button>
+                        <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-700 z-50 p-4 space-y-3 text-white">
+                            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                                <h4 class="font-bold text-xs uppercase text-red-400">Notificações / Histórico</h4>
+                                <button onclick="limparNotificacoes()" class="action-btn-write text-[10px] text-zinc-400 hover:underline">Limpar</button>
+                            </div>
+                            <div id="notif-list" class="max-h-64 overflow-y-auto space-y-2 text-xs"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ALERTA SOS -->
+            <div id="sos-alert-banner" class="hidden bg-red-700 text-white p-4 rounded-2xl shadow-2xl flex items-center justify-between animate-pulse">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="alert-octagon" class="w-8 h-8"></i>
+                    <div>
+                        <h4 class="font-bold text-sm">ALERTA DE EMERGÊNCIA (SOS) ACIONADO!</h4>
+                        <p id="sos-msg-detail" class="text-xs">Técnico solicitou socorro imediato.</p>
+                    </div>
+                </div>
+                <button onclick="resolverSos()" class="action-btn-write px-4 py-2 bg-white text-red-700 rounded-xl text-xs font-bold hover:bg-zinc-100">Resolver SOS</button>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div id="acontent-dash" class="admin-tab space-y-6">
+                <!-- CARDS RESUMO -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm text-center">
+                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Técnicos</p>
+                        <h3 id="stat-techs" class="text-3xl font-extrabold text-white mt-2">0</h3>
+                    </div>
+                    <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm text-center">
+                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Lançamentos</p>
+                        <h3 id="stat-launches" class="text-3xl font-extrabold text-white mt-2">0</h3>
+                    </div>
+                    <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm text-center">
+                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Itens Consumidos</p>
+                        <h3 id="stat-consumed" class="text-3xl font-extrabold text-red-500 mt-2">0 un</h3>
+                    </div>
+                    <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm text-center">
+                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Estoque Físico Total</p>
+                        <h3 id="stat-fisico" class="text-3xl font-extrabold text-emerald-400 mt-2">0 un</h3>
+                    </div>
+                </div>
+
+                <!-- GRÁFICOS DINÂMICOS -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+                    <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                            <h4 class="font-bold text-white text-sm flex items-center space-x-2">
+                                <i data-lucide="bar-chart-3" class="w-4 h-4 text-red-500"></i>
+                                <span>Consumo de Materiais por Técnico</span>
+                            </h4>
+                            <span class="text-[10px] text-zinc-400">Atualização em tempo real</span>
+                        </div>
+                        <div class="h-64 relative">
+                            <canvas id="chart-consumo-tecnico"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                            <h4 class="font-bold text-white text-sm flex items-center space-x-2">
+                                <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-400"></i>
+                                <span>Distribuição do Estoque Físico Central</span>
+                            </h4>
+                            <span class="text-[10px] text-zinc-400">Proporção por Item</span>
+                        </div>
+                        <div class="h-64 relative">
+                            <canvas id="chart-estoque-distribuicao"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GESTÃO DE TÉCNICOS -->
+            <div id="acontent-tecnicos" class="admin-tab hidden space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Gestão de Técnicos</h2>
+                        <p class="text-xs text-zinc-400">Cadastre logins e senhas autorizados</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 action-btn-write">
+                        <input type="text" id="quick-add-login" placeholder="Adicionar por Login..." class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <button onclick="adicionarTecnicoPorLoginRapido()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Adicionar Rápido</button>
+                        <button onclick="abrirModalTecnico()" class="px-4 py-2.5 bg-zinc-800 text-white rounded-xl text-xs font-bold">Novo Completo</button>
+                    </div>
+                </div>
+                <div class="bg-zinc-900 rounded-2xl border border-zinc-800 shadow-sm overflow-hidden">
+                    <table class="w-full text-xs text-left text-zinc-300">
+                        <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
+                            <tr>
+                                <th class="p-4">Foto</th>
+                                <th class="p-4">Nome / Status</th>
+                                <th class="p-4">Login</th>
+                                <th class="p-4">Senha</th>
+                                <th class="p-4">Veículo</th>
+                                <th class="p-4 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-tech-table" class="divide-y divide-zinc-800"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ESTOQUE FÍSICO (ENTRADA COM BIPAGEM SERIAL & MIS) -->
+            <div id="acontent-estoque-fisico" class="admin-tab hidden space-y-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4 action-btn-write">
+                    <h2 class="text-xl font-bold text-white">Entrada de Materiais no Estoque Físico (Bipagem de Seriais & MIS)</h2>
+                    <p class="text-xs text-zinc-400">Cadastre itens informando o Código SAP, Descrição e bipagem de numerações de série (Seriais MIS) ou quantidades.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input type="text" id="fisico-sap" placeholder="Código SAP (ex: 22026267)" class="px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <input type="text" id="fisico-desc" placeholder="Descrição do Material" class="px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <input type="number" id="fisico-qtd" placeholder="Quantidade" min="1" value="1" class="px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-red-400 mb-1">Bipagem de Seriais (MIS Serializados) - Opcional</label>
+                        <input type="text" id="fisico-seriais" placeholder="Ex: SER-99881, SER-99882 (separados por vírgula)" class="w-full px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-400 mb-1">Entrada em Massa (Formato: COD_SAP | Descrição | Quantidade | Seriais)</label>
+                        <textarea id="fisico-massa" rows="3" placeholder="22026267 | CABO DROP LOW F | 100 | &#10;22065512 | CONECTOR FO | 50 | SER-101, SER-102" class="w-full px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono"></textarea>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="adicionarEstoqueFisicoUnitario()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow">Adicionar com Bipagem</button>
+                        <button onclick="adicionarEstoqueFisicoMassa()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow">Processar Entrada em Massa</button>
+                    </div>
+                </div>
+
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm">
+                    <h3 class="font-bold text-white text-sm mb-3">Itens no Estoque Físico Central</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left text-zinc-300">
+                            <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
+                               <tr><th class="p-3">Data</th><th class="p-3">SAP</th><th class="p-3">Descrição</th><th class="p-3 text-center">Qtd</th><th class="p-3">Seriais (MIS)</th><th class="p-3 text-center">Ações</th></tr>
+                            </thead>
+                            <tbody id="admin-fisico-table" class="divide-y divide-zinc-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASSAR P/ TÉCNICOS -->
+            <div id="acontent-passar-tecnicos" class="admin-tab hidden space-y-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4 max-w-3xl mx-auto">
+                    <h2 class="text-xl font-bold text-white">Passar Múltiplos Materiais para Técnico</h2>
+                    <p class="text-xs text-zinc-400">Selecione o técnico, adicione um ou mais materiais (miscelâneas ou seriais MIS) e transfira gerando o termo de responsabilidade.</p>
+
+                    <div>
+                        <label class="block text-xs font-bold text-red-400 mb-1">Selecionar Técnico Destino</label>
+                        <select id="pass-tech-select" class="w-full px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none"></select>
+                    </div>
+
+                    <div class="p-4 bg-black border border-zinc-800 rounded-2xl space-y-3 action-btn-write">
+                        <h4 class="font-bold text-xs text-zinc-300">Adicionar Material à Transferência</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <select id="pass-mat-select" class="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none"></select>
+                            <input type="number" id="pass-qtd" min="1" value="1" placeholder="Qtd" class="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                            <input type="text" id="pass-seriais" placeholder="Seriais (opcional)" class="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
+                        </div>
+                        <button onclick="adicionarItemCarrinhoPassagem()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold">Adicionar à Lista de Transferência</button>
+                    </div>
+
+                    <div>
+                        <h5 class="font-bold text-xs text-zinc-300 mb-2">Itens Selecionados para Envio</h5>
+                        <table class="w-full text-xs text-left text-zinc-300">
+                            <thead class="bg-black border-b border-zinc-800"><tr><th class="p-2">Material SAP</th><th class="p-2 text-center">Qtd</th><th class="p-2">Seriais</th><th class="p-2 text-center">Remover</th></tr></thead>
+                            <tbody id="pass-cart-table" class="divide-y divide-zinc-800"><tr><td colspan="4" class="p-3 text-center text-zinc-500">Nenhum item adicionado.</td></tr></tbody>
+                        </table>
+                    </div>
+
+                    <button onclick="executarPassagemMultiplaTecnico()" class="action-btn-write w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg">Transferir Tudo e Gerar Termo Oficial</button>
+                </div>
+            </div>
+
+            <!-- CONTROLE DE MALAS -->
+            <div id="acontent-malas" class="admin-tab hidden space-y-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h2 class="text-xl font-bold text-white">Auditoria & Gestão de Mala por Técnico</h2>
+                        <div class="flex space-x-2 items-center">
+                            <input type="text" id="admin-search-tech-mala" oninput="renderizarMalaAdmin()" placeholder="Pesquisar técnico..." class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                            <select id="admin-select-mala-tech" onchange="renderizarMalaAdmin()" class="px-4 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none"></select>
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-2 border-b border-zinc-800 pb-2">
+                        <button onclick="switchMalaSubTab('miscelaneas')" id="msub-miscelaneas" class="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold">Miscelâneas / Quantidade</button>
+                        <button onclick="switchMalaSubTab('seriais')" id="msub-seriais" class="px-4 py-2 bg-zinc-800 text-zinc-400 rounded-xl text-xs font-bold">Seriais MIS</button>
+                        <button onclick="switchMalaSubTab('reposicao')" id="msub-reposicao" class="px-4 py-2 bg-zinc-800 text-zinc-400 rounded-xl text-xs font-bold">Reposição Solicitada</button>
+                    </div>
+
+                    <div id="mala-subcontent-miscelaneas" class="mala-subcontent overflow-x-auto pt-2">
+                        <table class="w-full text-xs text-left text-zinc-300">
+                            <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
+                                <tr><th class="p-3">SAP</th><th class="p-3">Descrição</th><th class="p-3 text-center">Atual</th><th class="p-3 text-center">Lançado</th><th class="p-3 text-center">Ações (Editar Qtd)</th></tr>
+                            </thead>
+                            <tbody id="admin-mala-table" class="divide-y divide-zinc-800"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="mala-subcontent-seriais" class="mala-subcontent hidden space-y-3 pt-2">
+                        <p class="text-xs text-zinc-400">Itens com numeração de série na mala do técnico selecionado:</p>
+                        <div id="admin-seriais-list" class="space-y-2"></div>
+                    </div>
+
+                    <div id="mala-subcontent-reposicao" class="mala-subcontent hidden space-y-3 pt-2">
+                        <p class="text-xs text-zinc-400">Pedidos de reposição enviados:</p>
+                        <div id="admin-reposicao-list" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CATÁLOGO DE MATERIAIS -->
+            <div id="acontent-materiais" class="admin-tab hidden space-y-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4 action-btn-write">
+                    <h2 class="text-xl font-bold text-white">Cadastrar Material (SAP + Descrição)</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input type="text" id="mat-sap" placeholder="Código SAP" class="px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <input type="text" id="mat-desc" placeholder="Descrição do Material" class="px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <button onclick="adicionarMaterialAdmin()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Cadastrar Material</button>
+                    </div>
+                </div>
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm">
+                    <div id="admin-materiais-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+                </div>
+            </div>
+
+            <!-- LANÇAMENTOS & SIAKI -->
+            <div id="acontent-lancamentos" class="admin-tab hidden space-y-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Lançamentos & Padrão SIAKI</h2>
+                            <p class="text-xs text-zinc-400">Colunas: COD SAP | Material | PROJETOS | CIDADE | LOCAL DE DESCARGA | Node | QTD. CONSUMO | QTD. DESCARTE</p>
+                        </div>
+                        <div class="flex items-center space-x-2 text-xs text-zinc-300">
+                            <label class="font-bold">Filtrar Data:</label>
+                            <input type="date" id="admin-filter-date" onchange="atualizarPainelAdmin()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl outline-none text-white">
+                            <button onclick="document.getElementById('admin-filter-date').value=''; atualizarPainelAdmin();" class="px-3 py-2 bg-zinc-800 text-white rounded-xl font-bold">Limpar</button>
+                        </div>
+                    </div>
+                    <div class="flex space-x-3 pt-2">
+                        <button onclick="exportarExcelSIAKI()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow-md">
+                            <i data-lucide="download" class="w-4 h-4"></i><span>Baixar SIAKI (CSV)</span>
+                        </button>
+                        <button onclick="copiarDadosSIAKI()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow-md">
+                            <i data-lucide="copy" class="w-4 h-4"></i><span>Copiar Padrão SIAKI</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm overflow-x-auto">
+                    <table class="w-full text-xs text-left text-zinc-300">
+                        <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
+                            <tr><th class="p-3">Data</th><th class="p-3">Técnico</th><th class="p-3">Projeto</th><th class="p-3">Node</th><th class="p-3">Materiais</th><th class="p-3 text-center">Ações</th></tr>
+                        </thead>
+                        <tbody id="admin-launch-history" class="divide-y divide-zinc-800"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CHAT INSTAGRAM STYLE -->
+            <div id="acontent-chat" class="admin-tab hidden space-y-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm h-[650px] flex flex-col">
+                    <h2 class="text-xl font-bold text-white mb-2">Chat Central</h2>
+                    <div class="flex-1 flex overflow-hidden border border-zinc-800 rounded-2xl bg-black">
+                        <div id="admin-chat-contacts" class="w-1/3 border-r border-zinc-800 p-2 overflow-y-auto space-y-1"></div>
+                        <div class="flex-1 flex flex-col bg-zinc-950">
+                            <div id="admin-chat-header" class="p-4 border-b border-zinc-800 font-bold text-sm bg-zinc-900 text-white flex items-center justify-between">Selecione um contato</div>
+                            <div id="admin-chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs"></div>
+                            <div class="p-3 border-t border-zinc-800 flex space-x-2 bg-zinc-900 action-btn-write">
+                                <input type="text" id="admin-chat-input" placeholder="Enviar mensagem..." class="flex-1 px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                                <button onclick="enviarMensagemAdmin()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Enviar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAPA EM TEMPO REAL COM MONITORAMENTO DE GPS REAL -->
+            <div id="acontent-mapa" class="admin-tab hidden space-y-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Mapa em Tempo Real (Sincronizado)</h2>
+                            <p class="text-xs text-zinc-400">Acompanhe a localização real dos técnicos quando o GPS estiver ATIVO.</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <select id="map-select-tech" onchange="centralizarMapaTecnico()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                                <option value="geral">🌐 Visão Geral (Todos)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="w-full h-96 rounded-2xl overflow-hidden border border-zinc-800 relative">
+                        <iframe id="iframe-mapa-central" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?q=-9.6658,-35.7350&z=13&output=embed"></iframe>
+                    </div>
+                    <div id="admin-map-techs-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-2"></div>
+                </div>
+            </div>
+
+            <!-- HISTÓRICO GERAL & BACKUP -->
+            <div id="acontent-historico-geral" class="admin-tab hidden space-y-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h2 class="text-xl font-bold text-white">Histórico Geral de Movimentações</h2>
+                        <div class="flex space-x-2">
+                            <input type="date" id="filtro-hist-data" onchange="renderizarHistoricoGeral()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                            <button onclick="document.getElementById('filtro-hist-data').value='';" class="px-3 py-2 bg-zinc-800 text-white rounded-xl text-xs font-bold">Limpar</button>
+                            <button onclick="limparHistoricoGeral()" class="action-btn-write px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Excluir/Limpar Histórico</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left text-zinc-300">
+                            <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
+                                <tr><th class="p-3">Data / Hora</th><th class="p-3">Tipo</th><th class="p-3">Responsável</th><th class="p-3">Detalhes</th></tr>
+                            </thead>
+                            <tbody id="admin-historico-table" class="divide-y divide-zinc-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= PAINEL DO TÉCNICO ================= -->
+    <div id="tech-screen" class="hidden min-h-screen flex flex-col bg-black text-white">
+        <!-- Header Técnico -->
+        <header class="bg-zinc-900 text-white p-4 shadow-xl border-b border-red-900/40 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center font-bold text-lg overflow-hidden border-2 border-red-500 shadow-lg" id="tech-avatar-box">
+                    <span id="tech-avatar-text">T</span>
+                </div>
+                <div>
+                    <h2 id="tech-welcome-name" class="font-bold text-sm">Técnico</h2>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[10px] text-emerald-400 font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block mr-1"></span> Online</span>
+                        <label class="text-[10px] text-red-400 cursor-pointer underline"><input type="file" id="photo-upload" class="hidden" onchange="mudarFotoPerfil(event)">Alterar Foto</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleGpsTecnico()" id="btn-gps-status" class="px-3 py-1.5 bg-zinc-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow transition">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i><span id="gps-text">GPS Desligado</span>
+                </button>
+                <button onclick="abrirModalChamada()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow">
+                    <i data-lucide="phone-call" class="w-3.5 h-3.5"></i><span>Ligar</span>
+                </button>
+                <button onclick="acionarSOS()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-600/40 flex items-center space-x-1 animate-bounce">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i><span>SOS</span>
+                </button>
+                <div class="relative">
+                    <button onclick="toggleTechNotifDropdown()" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl relative transition">
+                        <i data-lucide="bell" class="w-4 h-4 text-red-400"></i>
+                        <span id="tech-notif-counter" class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                    </button>
+                    <div id="tech-notif-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-700 z-50 p-4 space-y-2 text-white">
+                        <div class="flex justify-between items-center border-b border-zinc-800 pb-1">
+                            <h4 class="font-bold text-xs text-red-400">Notificações</h4>
+                            <button onclick="limparTechNotificacoes()" class="text-[10px] text-zinc-400">Limpar</button>
+                        </div>
+                        <div id="tech-notif-list" class="max-h-48 overflow-y-auto space-y-2 text-xs"></div>
+                    </div>
+                </div>
+                <button onclick="logout()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold flex items-center space-x-1">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i><span>Sair</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
+            <div class="bg-gradient-to-r from-red-950 via-zinc-900 to-black text-white p-6 rounded-3xl shadow-2xl border border-red-900/40 text-center">
+                <h3 class="text-xl font-extrabold">BoxField</h3>
+                <p class="text-xs text-red-300 mt-1">Gerencie seus lançamentos, visualize sua mala serializada e converse com a base ou colegas.</p>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 justify-center">
+                <div onclick="abrirCardTech('lancamento')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl">
+                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="clipboard-list" class="w-5 h-5"></i></div>
+                    <h4 class="font-bold text-xs">Lançar</h4>
+                </div>
+                <div onclick="abrirCardTech('mala')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl">
+                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="backpack" class="w-5 h-5"></i></div>
+                    <h4 class="font-bold text-xs">Minha Mala</h4>
+                </div>
+                <div onclick="abrirCardTech('chat')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl relative">
+                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="message-square" class="w-5 h-5"></i></div>
+                    <h4 class="font-bold text-xs">Chat Direct</h4>
+                    <span id="badge-tech-chat-card" class="hidden absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                </div>
+                <div onclick="abrirCardTech('reposicao')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl">
+                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="package-plus" class="w-5 h-5"></i></div>
+                    <h4 class="font-bold text-xs">Reposição</h4>
+                </div>
+                <div onclick="abrirCardTech('colega')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl">
+                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="user-plus" class="w-5 h-5"></i></div>
+                    <h4 class="font-bold text-xs">Add Colega</h4>
+                </div>
+            </div>
+
+            <div id="tech-section-content" class="bg-zinc-900/90 p-6 rounded-3xl border border-red-900/40 shadow-2xl"></div>
+        </main>
+    </div>
+
+    <!-- MODAL SEGURANÇA & OPERADORES (MUDAR SENHA ADMIN E OPERADOR VISUALIZADOR) -->
+    <div id="modal-seguranca" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 p-6 rounded-3xl w-full max-w-lg space-y-6 shadow-2xl border border-red-900 text-white max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <h3 class="text-lg font-bold text-red-500 flex items-center space-x-2"><i data-lucide="shield" class="w-5 h-5"></i><span>Segurança ADM & Operadores</span></h3>
+                <button onclick="fecharModalSegurancaADM()" class="text-zinc-400 hover:text-white font-bold text-sm">✕</button>
+            </div>
+
+            <!-- Alterar Senha ADM -->
+            <div class="p-4 bg-black/60 rounded-2xl border border-zinc-800 space-y-3">
+                <h4 class="font-bold text-xs text-red-400 uppercase tracking-wider">Alterar Senha do Administrador</h4>
+                <div class="space-y-2">
+                    <input type="password" id="adm-new-pass" placeholder="Nova Senha do Admin" class="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                    <button onclick="salvarNovaSenhaAdmin()" class="w-full py-2 bg-red-600 hover:bg-red-500 font-bold rounded-xl text-xs text-white shadow">Atualizar Senha ADM</button>
+                </div>
+            </div>
+
+            <!-- Cadastrar Operador / Visualizador -->
+            <div class="p-4 bg-black/60 rounded-2xl border border-zinc-800 space-y-3">
+                <h4 class="font-bold text-xs text-red-400 uppercase tracking-wider">Cadastrar Operador / Visualizador (Apenas Leitura)</h4>
+                <p class="text-[11px] text-zinc-400">Este usuário acessa o painel completo mas não consegue alterar, apagar ou cadastrar nada.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="text" id="op-name" placeholder="Nome do Operador" class="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                    <input type="text" id="op-login" placeholder="Login (ex: operador1)" class="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                    <input type="password" id="op-pass" placeholder="Senha" class="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none sm:col-span-2">
+                </div>
+                <button onclick="cadastrarOperadorVisualizador()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-xs text-white shadow">Cadastrar Operador Visualizador</button>
+            </div>
+
+            <!-- Lista de Operadores Cadastrados -->
+            <div class="p-4 bg-black/60 rounded-2xl border border-zinc-800 space-y-2">
+                <h4 class="font-bold text-xs text-zinc-300">Operadores / Visualizadores Ativos</h4>
+                <div id="operadores-list-container" class="space-y-1.5 text-xs"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ADM: CADASTRAR TÉCNICO -->
+    <div id="modal-tecnico" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 p-6 rounded-3xl w-full max-w-md space-y-4 shadow-2xl border border-red-950 text-white">
+            <h3 id="modal-tech-title" class="text-lg font-bold">Cadastrar Técnico</h3>
+            <input type="hidden" id="edit-tech-index" value="-1">
+            <div>
+                <label class="block text-xs font-bold text-red-400 mb-1">Nome Completo</label>
+                <input type="text" id="tech-form-name" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-red-400 mb-1">Login</label>
+                <input type="text" id="tech-form-login" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-red-400 mb-1">Senha</label>
+                <input type="text" id="tech-form-pass" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-red-400 mb-1">Veículo</label>
+                <input type="text" id="tech-form-car" placeholder="Ex: V-102" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="fecharModalTecnico()" class="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-xl text-xs font-bold">Cancelar</button>
+                <button onclick="salvarTecnicoForm()" class="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL COMPROVANTE / TERMO DE RESPONSABILIDADE -->
+    <div id="modal-comprovante" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 p-8 rounded-3xl w-full max-w-lg space-y-6 shadow-2xl border border-red-900 text-white">
+            <div class="text-center border-b border-zinc-800 pb-4">
+                <h3 class="text-lg font-extrabold text-red-500">TERMO DE RESPONSABILIDADE E ENTREGA</h3>
+                <p class="text-xs text-zinc-400 mt-1">BOXFIELD CENTRAL - Padrão SIAKI Oficial</p>
+            </div>
+            <div id="comprovante-content" class="space-y-3 text-xs text-zinc-300 bg-black p-4 rounded-2xl border border-zinc-800"></div>
+            <div class="pt-4 border-t border-zinc-800 text-center space-y-6">
+                <div class="flex justify-between px-8 text-xs text-zinc-400 pt-4">
+                    <div class="border-t border-zinc-500 pt-1 w-40 text-center">Assinatura do Técnico</div>
+                    <div class="border-t border-zinc-500 pt-1 w-40 text-center">Responsável Almoxarifado</div>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="window.print()" class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 font-bold rounded-xl text-xs">Imprimir Comprovante</button>
+                    <button onclick="fecharModalComprovante()" class="flex-1 py-3 bg-red-600 hover:bg-red-500 font-bold rounded-xl text-xs">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SOLICITAÇÃO DE CHAMADA -->
+    <div id="modal-chamada" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 p-6 rounded-3xl w-full max-w-md space-y-4 shadow-2xl border border-red-950 text-white text-center">
+            <div class="p-3 bg-blue-600/20 text-blue-400 rounded-2xl inline-flex"><i data-lucide="phone-call" class="w-8 h-8"></i></div>
+            <h3 class="text-lg font-bold">Solicitar Ligação / Chamada</h3>
+            <p class="text-xs text-zinc-400">Solicite uma chamada direta com a Base ou com outro técnico.</p>
+            <select id="call-dest-select" class="w-full px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                <option value="Base Central">Base Central</option>
+            </select>
+            <button onclick="enviarSolicitacaoLigacao()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl text-xs shadow">Solicitar Chamada Agora</button>
+            <button onclick="document.getElementById('modal-chamada').classList.add('hidden')" class="w-full py-2 bg-zinc-800 text-zinc-300 font-bold rounded-xl text-xs">Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- CONSTANTES & SEGURANÇA ---
+        let ADMIN_PASS = "Constru007"; // Senha oficial configurada do Administrador
+
+        // --- FIREBASE CONFIGURATION & INITIALIZATION ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyDTXUX4Ra_mLlzOwtdD09TkplYbMtKAqww",
+          authDomain: "mdu-a24ed.firebaseapp.com",
+          databaseURL: "https://mdu-a24ed-default-rtdb.firebaseio.com",
+          projectId: "mdu-a24ed",
+          storageBucket: "mdu-a24ed.firebasestorage.app",
+          messagingSenderId: "620514769965",
+          appId: "1:620514769965:web:82167b9a748c7865004ca4",
+          measurementId: "G-B8TVZE7VQJ"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const dbRef = firebase.database().ref('mala_estoque_db_v7');
+
+        // --- BANCO DE DADOS EM NUVEM (ESTRUTURA BASE) ---
+        let db = {
+            adminPass: "Constru007",
+            operadores: [],
+            tecnicos: [
+                { name: "João Silva", login: "joao", senha: "123", car: "V-102 (Fiorino)", avatar: "", lat: -9.6658, lng: -35.7350, rua: "Av. Fernandes Lima, 1000 - Maceió", trackingOn: false, online: false, lastSeen: "Hoje às 08:30", amigos: ["carlos"], pedidosAmizade: [], notificacoes: [], mala: [
+                    {sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtd: 500, lancado: 0, abastecido: 500, seriais: []},
+                    {sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtd: 100, lancado: 0, abastecido: 100, seriais: ["SER-101", "SER-102"]}
+                ] },
+                { name: "Carlos Mendes", login: "carlos", senha: "123", car: "V-088 (Fiorino)", avatar: "", lat: -9.6700, lng: -35.7400, rua: "Rua do Sol, 45 - Maceió", trackingOn: false, online: false, lastSeen: "Ontem às 17:45", amigos: ["joao"], pedidosAmizade: [], notificacoes: [], mala: [
+                    {sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtd: 500, lancado: 0, abastecido: 500, seriais: []},
+                    {sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtd: 100, lancado: 0, abastecido: 100, seriais: ["SER-103"]}
+                ] }
+            ],
+            materiais: [
+                { sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA" },
+                { sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW" },
+                { sap: "21004321", desc: "FIXADOR FIO BR RG6 CIRCUL 7MM" },
+                { sap: "21008976", desc: "ABRAÇADEIRA T30R PRETA" }
+            ],
+            estoqueFisico: [
+                { id: 1, sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtd: 1500, seriais: [], data: "2026-09-01" },
+                { id: 2, sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtd: 400, seriais: ["SER-201", "SER-202"], data: "2026-09-01" }
+            ],
+            favoritos: ["CABO DROP LOW F FIG8 1FO CINZA", "CONECTOR FO CAMPO CPO SC APC FRKW"],
+            lancamentos: [],
+            reposicoes: [],
+            mensagens: [],
+            movimentacoes: [{ data: "12/09/2026 09:00", tipo: "Sistema", responsavel: "Admin", detalhes: "Sistema Red & Black v7 (Firebase Online) inicializado." }],
+            notificacoes: [{ text: "Sistema Red & Black v7 inicializado na nuvem.", time: "12/09/2026", tipo: "info" }],
+            sosAtivo: null
+        };
+
+        let chartConsumoInstance = null;
+        let chartEstoqueInstance = null;
+        let isVisualizador = false;
+        let gpsWatchId = null;
+
+        function salvarDb() {
+            dbRef.set(db);
+        }
+
+        dbRef.on('value', (snapshot) => {
+            const serverData = snapshot.val();
+            if (serverData) {
+                db = serverData;
+                if(!db.tecnicos) db.tecnicos = [];
+                if(!db.operadores) db.operadores = [];
+                if(!db.materiais) db.materiais = [];
+                if(!db.estoqueFisico) db.estoqueFisico = [];
+                if(!db.favoritos) db.favoritos = [];
+                if(!db.lancamentos) db.lancamentos = [];
+                if(!db.reposicoes) db.reposicoes = [];
+                if(!db.mensagens) db.mensagens = [];
+                if(!db.movimentacoes) db.movimentacoes = [];
+                if(!db.notificacoes) db.notificacoes = [];
+                if(db.adminPass) ADMIN_PASS = db.adminPass;
+
+                if (!document.getElementById('admin-screen').classList.contains('hidden')) {
+                    atualizarPainelAdmin();
+                }
+                if (usuarioLogado && !document.getElementById('tech-screen').classList.contains('hidden')) {
+                    let techAtualizada = db.tecnicos.find(t => t.login === usuarioLogado.login);
+                    if (techAtualizada) {
+                        usuarioLogado = techAtualizada;
+                        atualizarTechNotificacoesBadge();
+                    }
+                    renderizarCardTechAtivo();
+                }
+            } else {
+                salvarDb();
+            }
+        });
+
+        let usuarioLogado = null;
+        let carrinhoPassagem = [];
+        let carrinhoAtual = [];
+        let chatDestinatarioAtual = "Base";
+        let subMalaAtual = "miscelaneas";
+        let cardTechAtivo = "lancamento";
+        let isMobileLayout = false;
+
+        window.addEventListener('beforeunload', () => {
+            if(usuarioLogado && !isVisualizador) {
+                let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
+                if(t) { t.online = false; t.lastSeen = new Date().toLocaleTimeString(); }
+                salvarDb();
+            }
+        });
+
+        function inicializarPWA() {
+            const manifest = {
+                name: "Mala & Estoque Red & Black",
+                short_name: "MalaEstoque",
+                description: "Sistema Avançado de Logística e Estoque SIAKI",
+                start_url: "./",
+                display: "standalone",
+                background_color: "#000000",
+                theme_color: "#7f1d1d",
+                icons: [{
+                    src: "https://i.ibb.co/xqyBP0Yn/icon.jpg",
+                    sizes: "512x512",
+                    type: "image/png"
+                }]
+            };
+            const blobManifest = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+            const manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            manifestLink.href = URL.createObjectURL(blobManifest);
+            document.head.appendChild(manifestLink);
+
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'mala-estoque-v3';
+                    const urlsToCache = ['./', 'https://cdn.tailwindcss.com', 'https://unpkg.com/lucide@latest', 'https://cdn.jsdelivr.net/npm/chart.js'];
+                    self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache)).then(() => self.skipWaiting())); });
+                    self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
+                    self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./')))); });
+                `;
+                const blobSW = new Blob([swCode], {type: 'text/javascript'});
+                navigator.serviceWorker.register(URL.createObjectURL(blobSW)).catch(err => console.log('SW Info:', err));
+            }
+
+            window.addEventListener('online', atualizarStatusConexao);
+            window.addEventListener('offline', atualizarStatusConexao);
+            atualizarStatusConexao();
+        }
+
+        function atualizarStatusConexao() {
+            const isOnline = navigator.onLine;
+            const banner = document.getElementById('offline-banner');
+            if (!banner) return;
+
+            if (!isOnline) {
+                banner.className = 'fixed top-0 left-0 right-0 z-50 p-2 bg-amber-600 text-white text-center text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
+                banner.innerHTML = '<span>⚡ Modo Offline Ativo: Você pode continuar operando. Os dados serão sincronizados ao reconectar.</span>';
+                banner.classList.remove('hidden');
+            } else {
+                if(!banner.classList.contains('hidden')) {
+                    banner.className = 'fixed top-0 left-0 right-0 z-50 p-2 bg-emerald-600 text-white text-center text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
+                    banner.innerHTML = '<span>✅ Conexão Restabelecida! Sincronizado com o Firebase.</span>';
+                    setTimeout(() => banner.classList.add('hidden'), 3500);
+                }
+            }
+        }
+
+        function toggleLayoutMode() {
+            isMobileLayout = !isMobileLayout;
+            let container = document.getElementById('app-body-container');
+            let btnText = document.getElementById('layout-toggle-text');
+            if(isMobileLayout) {
+                container.classList.add('mobile-frame');
+                btnText.innerText = "Layout PC (Expandido)";
+            } else {
+                container.classList.remove('mobile-frame');
+                btnText.innerText = "Alternar Layout PC/Mobile";
+            }
+        }
+
+        // --- LOGIN INTELIGENTE (ADMIN, OPERADOR VISUALIZADOR E TÉCNICO) ---
+        function handleLogin(event) {
+            event.preventDefault();
+            const userInput = document.getElementById('login-user').value.trim();
+            const passInput = document.getElementById('login-pass').value.trim();
+            const currentAdminPass = db.adminPass || ADMIN_PASS;
+
+            // 1. ACESSO ADMINISTRADOR COMPLETO
+            if (userInput.toLowerCase() === 'admin' && passInput === currentAdminPass) {
+                isVisualizador = false;
+                document.getElementById('app-body-container').classList.remove('mode-visualizador');
+                document.getElementById('visualizador-banner').classList.add('hidden');
+                document.getElementById('painel-role-title').innerText = "Painel ADM Oficial";
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-screen').classList.remove('hidden');
+                registrarMovimentacao("Login ADM", "Admin", "Administrador acessou a Central com sucesso.");
+                salvarDb();
+                atualizarPainelAdmin();
+                return;
+            }
+
+            // 2. ACESSO OPERADOR / VISUALIZADOR (APENAS LEITURA)
+            let operador = (db.operadores || []).find(o => o.login.toLowerCase() === userInput.toLowerCase() && o.senha === passInput);
+            if (operador) {
+                isVisualizador = true;
+                document.getElementById('app-body-container').classList.add('mode-visualizador');
+                document.getElementById('visualizador-banner').classList.remove('hidden');
+                document.getElementById('painel-role-title').innerText = `Operador: ${operador.nome} (Leitura)`;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-screen').classList.remove('hidden');
+                atualizarPainelAdmin();
+                return;
+            }
+
+            // 3. ACESSO TÉCNICO
+            let tech = db.tecnicos.find(t => t.login.toLowerCase() === userInput.toLowerCase() && t.senha === passInput);
+            if (tech) {
+                isVisualizador = false;
+                usuarioLogado = tech;
+                tech.online = true;
+                tech.lastSeen = "Agora";
+                registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema oficial.`);
+                salvarDb();
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('tech-screen').classList.remove('hidden');
+                inicializarPainelTecnico();
+                return;
+            }
+
+            alert("Acesso negado! Usuário ou senha incorretos.");
+        }
+
+        function logout() {
+            if(usuarioLogado && !isVisualizador) {
+                let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
+                if(t) { t.online = false; t.lastSeen = new Date().toLocaleTimeString(); }
+                registrarMovimentacao("Logout", usuarioLogado.name, `Técnico encerrou sessão.`);
+                salvarDb();
+            }
+            if(gpsWatchId !== null) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+                gpsWatchId = null;
+            }
+            isVisualizador = false;
+            document.getElementById('app-body-container').classList.remove('mode-visualizador');
+            document.getElementById('visualizador-banner').classList.add('hidden');
+            usuarioLogado = null;
+            carrinhoAtual = [];
+            carrinhoPassagem = [];
+            document.getElementById('admin-screen').classList.add('hidden');
+            document.getElementById('tech-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-pass').value = '';
+        }
+
+        function registrarMovimentacao(tipo, responsavel, detalhes) {
+            if(isVisualizador) return; // Operador de leitura não registra nada
+            if(!db.movimentacoes) db.movimentacoes = [];
+            db.movimentacoes.unshift({
+                data: new Date().toLocaleString(),
+                tipo,
+                responsavel,
+                detalhes
+            });
+        }
+
+        // --- SEGURANÇA ADM & CADASTRO DE OPERADORES VISUALIZADORES ---
+        function abrirModalSegurancaADM() {
+            if(isVisualizador) { alert("Visualizadores não têm acesso às configurações de segurança."); return; }
+            renderizarListaOperadores();
+            document.getElementById('modal-seguranca').classList.remove('hidden');
+        }
+
+        function fecharModalSegurancaADM() {
+            document.getElementById('modal-seguranca').classList.add('hidden');
+        }
+
+        function salvarNovaSenhaAdmin() {
+            if(isVisualizador) return;
+            let novaSenha = document.getElementById('adm-new-pass').value.trim();
+            if(!novaSenha) { alert("Digite a nova senha do Administrador!"); return; }
+            db.adminPass = novaSenha;
+            ADMIN_PASS = novaSenha;
+            registrarMovimentacao("Segurança ADM", "Admin", "Alterou a senha do Administrador.");
+            salvarDb();
+            document.getElementById('adm-new-pass').value = '';
+            alert("✅ Senha do Administrador atualizada com sucesso!");
+        }
+
+        function cadastrarOperadorVisualizador() {
+            if(isVisualizador) return;
+            let nome = document.getElementById('op-name').value.trim();
+            let login = document.getElementById('op-login').value.trim().toLowerCase();
+            let senha = document.getElementById('op-pass').value.trim();
+
+            if(!nome || !login || !senha) { alert("Preencha todos os campos do operador!"); return; }
+            if(!db.operadores) db.operadores = [];
+            if(db.operadores.some(o => o.login === login)) { alert("Já existe um operador com este login!"); return; }
+
+            db.operadores.push({ nome, login, senha, role: 'visualizador' });
+            registrarMovimentacao("Cadastro Operador", "Admin", `Cadastrou operador visualizador: ${nome} (@${login})`);
+            salvarDb();
+            document.getElementById('op-name').value = '';
+            document.getElementById('op-login').value = '';
+            document.getElementById('op-pass').value = '';
+            alert("✅ Operador Visualizador cadastrado!");
+            renderizarListaOperadores();
+        }
+
+        function renderizarListaOperadores() {
+            let container = document.getElementById('operadores-list-container');
+            if(!container) return;
+            if(!db.operadores || db.operadores.length === 0) {
+                container.innerHTML = '<p class="text-zinc-500 italic">Nenhum operador visualizador cadastrado.</p>';
+                return;
+            }
+            container.innerHTML = db.operadores.map((op, idx) => `
+                <div class="p-2.5 bg-zinc-900 rounded-xl border border-zinc-800 flex justify-between items-center">
+                    <div>
+                        <b class="text-white">${op.nome}</b> <span class="text-red-400 font-mono">(@${op.login})</span>
+                        <span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold ml-1">Visualizador</span>
+                    </div>
+                    <button onclick="removerOperador(${idx})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button>
+                </div>
+            `).join('');
+        }
+
+        function removerOperador(idx) {
+            if(isVisualizador) return;
+            if(confirm("Deseja remover este operador?")) {
+                db.operadores.splice(idx, 1);
+                salvarDb();
+                renderizarListaOperadores();
+            }
+        }
+
+        // --- ADMIN PANEL ---
+        function switchAdminTab(tabId) {
+            document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('aside nav button').forEach(el => {
+                el.classList.remove('bg-red-600', 'text-white');
+                el.classList.add('text-zinc-400');
+            });
+            document.getElementById('acontent-' + tabId).classList.remove('hidden');
+            document.getElementById('atab-' + tabId).classList.add('bg-red-600', 'text-white');
+            document.getElementById('atab-' + tabId).classList.remove('text-zinc-400');
+            atualizarPainelAdmin();
+        }
+
+        function renderizarGraficosDashboard() {
+            const ctxConsumo = document.getElementById('chart-consumo-tecnico');
+            const ctxEstoque = document.getElementById('chart-estoque-distribuicao');
+            if (!ctxConsumo || !ctxEstoque) return;
+
+            const consumosPorTecnico = {};
+            (db.lancamentos || []).forEach(l => {
+                const tec = l.tecnico || 'Desconhecido';
+                let total = 0;
+                (l.items || []).forEach(i => total += Number(i.qtd || 0));
+                consumosPorTecnico[tec] = (consumosPorTecnico[tec] || 0) + total;
+            });
+
+            const techLabels = Object.keys(consumosPorTecnico);
+            const techData = Object.values(consumosPorTecnico);
+
+            if (chartConsumoInstance) chartConsumoInstance.destroy();
+            chartConsumoInstance = new Chart(ctxConsumo, {
+                type: 'bar',
+                data: {
+                    labels: techLabels.length ? techLabels : ['Sem dados'],
+                    datasets: [{
+                        label: 'Itens Consumidos (un)',
+                        data: techData.length ? techData : [0],
+                        backgroundColor: 'rgba(220, 38, 38, 0.75)',
+                        borderColor: '#ef4444',
+                        borderWidth: 1.5,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#f8fafc', font: { size: 11, weight: 'bold' } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                    }
+                }
+            });
+
+            const estoquesPorMaterial = {};
+            (db.estoqueFisico || []).forEach(e => {
+                const mat = e.desc || e.sap || 'Outros';
+                estoquesPorMaterial[mat] = (estoquesPorMaterial[mat] || 0) + Number(e.qtd || 0);
+            });
+
+            const matLabels = Object.keys(estoquesPorMaterial);
+            const matData = Object.values(estoquesPorMaterial);
+
+            if (chartEstoqueInstance) chartEstoqueInstance.destroy();
+            chartEstoqueInstance = new Chart(ctxEstoque, {
+                type: 'doughnut',
+                data: {
+                    labels: matLabels.length ? matLabels : ['Sem itens'],
+                    datasets: [{
+                        data: matData.length ? matData : [1],
+                        backgroundColor: [
+                            '#ef4444', '#10b981', '#3b82f6', '#f59e0b',
+                            '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#18181b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#f8fafc', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function atualizarPainelAdmin() {
+            document.getElementById('stat-techs').innerText = db.tecnicos.length;
+            document.getElementById('stat-launches').innerText = db.lancamentos.length;
+            
+            let totalConsumido = 0;
+            db.lancamentos.forEach(l => l.items.forEach(i => totalConsumido += Number(i.qtd)));
+            document.getElementById('stat-consumed').innerText = totalConsumido + " un";
+
+            let totalFisico = 0;
+            db.estoqueFisico.forEach(e => totalFisico += Number(e.qtd));
+            document.getElementById('stat-fisico').innerText = totalFisico + " un";
+
+            renderizarGraficosDashboard();
+
+            // Alerta SOS Banner
+            let sosBanner = document.getElementById('sos-alert-banner');
+            if(db.sosAtivo) {
+                sosBanner.classList.remove('hidden');
+                document.getElementById('sos-msg-detail').innerText = `Técnico ${db.sosAtivo.nome} (${db.sosAtivo.car}) acionou o SOS em ${db.sosAtivo.hora}!`;
+            } else {
+                sosBanner.classList.add('hidden');
+            }
+
+            // Notificações ADM
+            let notifCounter = document.getElementById('notif-counter');
+            if(db.notificacoes.length > 0) {
+                notifCounter.classList.remove('hidden');
+                notifCounter.innerText = db.notificacoes.length;
+            } else {
+                notifCounter.classList.add('hidden');
+            }
+
+            let notifHtml = '';
+            db.notificacoes.slice().reverse().forEach(n => {
+                notifHtml += `<div class="p-2 bg-black rounded-xl border-l-4 border-red-600"><p class="font-semibold text-white">${n.text}</p><span class="text-[9px] text-zinc-400">${n.time}</span></div>`;
+            });
+            document.getElementById('notif-list').innerHTML = notifHtml || '<p class="text-zinc-400 text-center py-4">Nenhuma notificação.</p>';
+
+            // Badge Chat Admin
+            let naoLidasAdmin = db.mensagens.filter(m => m.destinatario === "Base" && !m.lido).length;
+            let badgeAdminChat = document.getElementById('badge-admin-chat');
+            if(naoLidasAdmin > 0) {
+                badgeAdminChat.classList.remove('hidden');
+                badgeAdminChat.innerText = naoLidasAdmin;
+            } else {
+                badgeAdminChat.classList.add('hidden');
+            }
+
+            // Tabela Técnicos
+            let tHtml = '';
+            db.tecnicos.forEach((t, index) => {
+                let avatarImg = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
+                let statusBadge = t.online ? '<span class="text-emerald-400 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block mr-1"></span>Online</span>' : `<span class="text-zinc-500 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-zinc-600 inline-block mr-1"></span>Offline (Visto: ${t.lastSeen || 'N/A'})</span>`;
+                let gpsBadge = t.trackingOn ? '<span class="text-emerald-400 text-[10px] font-bold block">🟢 GPS Ativo</span>' : '<span class="text-red-400 text-[10px] font-bold block">🔴 GPS Desativado</span>';
+
+                tHtml += `
+                    <tr class="border-b border-zinc-800">
+                        <td class="p-4">${avatarImg}</td>
+                        <td class="p-4 font-bold text-white">${t.name} <br>${statusBadge} ${gpsBadge}</td>
+                        <td class="p-4 text-zinc-300 font-mono">@${t.login}</td>
+                        <td class="p-4 text-zinc-300 font-mono">${t.senha}</td>
+                        <td class="p-4 text-zinc-300">${t.car}</td>
+                        <td class="p-4 text-center space-x-2">
+                            <button onclick="editarTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-amber-500/20 text-amber-400 rounded-lg font-bold">Editar</button>
+                            <button onclick="excluirTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-red-500/20 text-red-400 rounded-lg font-bold">Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('admin-tech-table').innerHTML = tHtml || '<tr><td colspan="6" class="p-4 text-center">Nenhum técnico.</td></tr>';
+
+            // Estoque Físico Tabela
+            let fisicoHtml = '';
+            db.estoqueFisico.forEach((ef, idx) => {
+                let seriaisStr = ef.seriais && ef.seriais.length > 0 ? ef.seriais.join(', ') : '<span class="text-zinc-500">Apenas Miscelânea</span>';
+                fisicoHtml += `
+                    <tr class="border-b border-zinc-800">
+                        <td class="p-3 text-zinc-400">${ef.data}</td>
+                        <td class="p-3 font-mono text-emerald-400">${ef.sap}</td>
+                        <td class="p-3">${ef.desc}</td>
+                        <td class="p-3 text-center font-bold text-white">${ef.qtd}</td>
+                        <td class="p-3 font-mono text-xs text-red-300">${seriaisStr}</td>
+                        <td class="p-3 text-center"><button onclick="removerEstoqueFisico(${idx})" class="action-btn-write text-red-500 font-bold hover:underline">Remover</button></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('admin-fisico-table').innerHTML = fisicoHtml || '<tr><td colspan="6" class="p-4 text-center">Estoque físico vazio.</td></tr>';
+
+            // Select Passar p/ Técnicos & Malas
+            let passTechSel = document.getElementById('pass-tech-select');
+            let passMatSel = document.getElementById('pass-mat-select');
+            let malaSelect = document.getElementById('admin-select-mala-tech');
+            let mapSelectTech = document.getElementById('map-select-tech');
+
+            if(passTechSel) passTechSel.innerHTML = db.tecnicos.map(t => `<option value="${t.login}">${t.name} (${t.car})</option>`).join('');
+            if(passMatSel) passMatSel.innerHTML = db.estoqueFisico.map(e => `<option value="${e.sap}">${e.sap} - ${e.desc} (${e.qtd})</option>`).join('');
+            if(mapSelectTech) {
+                let currentVal = mapSelectTech.value;
+                mapSelectTech.innerHTML = `<option value="geral">🌐 Visão Geral (Todos)</option>` + db.tecnicos.map(t => `<option value="${t.login}">${t.name} (${t.car}) ${t.trackingOn ? '🟢' : '🔴'}</option>`).join('');
+                mapSelectTech.value = currentVal;
+            }
+
+            if(malaSelect) {
+                let termoBusca = (document.getElementById('admin-search-tech-mala')?.value || '').toLowerCase();
+                let techFiltrados = db.tecnicos.filter(t => t.name.toLowerCase().includes(termoBusca) || t.login.toLowerCase().includes(termoBusca));
+                malaSelect.innerHTML = techFiltrados.map(t => `<option value="${t.login}">${t.name} (${t.car})</option>`).join('');
+                renderizarMalaAdmin();
+            }
+
+            // Catálogo de Materiais
+            let matHtml = '';
+            db.materiais.forEach((m, i) => {
+                matHtml += `<div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs"><div><b class="text-red-400">${m.sap}</b> - ${m.desc}</div><button onclick="removerMaterialAdmin(${i})" class="action-btn-write text-red-500 font-bold hover:underline">Remover</button></div>`;
+            });
+            document.getElementById('admin-materiais-list').innerHTML = matHtml;
+
+            // Lançamentos Padrão SIAKI
+            let dataFiltro = document.getElementById('admin-filter-date').value;
+            let lancamentosFiltrados = dataFiltro ? db.lancamentos.filter(l => l.data === dataFiltro) : db.lancamentos;
+            let lHtml = '';
+            lancamentosFiltrados.forEach((l, index) => {
+                let itensStr = l.items.map(it => `${it.material} (${it.qtd})`).join(' | ');
+                lHtml += `
+                    <tr class="border-b border-zinc-800">
+                        <td class="p-3 text-zinc-400">${l.data}</td>
+                        <td class="p-3 font-semibold text-white">${l.tecnico}</td>
+                        <td class="p-3 text-red-400">${l.projeto}</td>
+                        <td class="p-3 font-mono">${l.node}</td>
+                        <td class="p-3">${itensStr}</td>
+                        <td class="p-3 text-center"><button onclick="excluirLancamento(${index})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('admin-launch-history').innerHTML = lHtml || '<tr><td colspan="6" class="p-4 text-center">Nenhum lançamento.</td></tr>';
+
+            renderizarMapaAdmin();
+            renderizarHistoricoGeral();
+            atualizarChatAdminLista();
+            lucide.createIcons();
+        }
+
+        // --- MAPA E MONITORAMENTO DE GPS REAL ---
+        function renderizarMapaAdmin() {
+            let mapTechsHtml = '';
+            db.tecnicos.forEach(t => {
+                let badgeOn = t.online ? 'bg-emerald-500' : 'bg-zinc-600';
+                let avatar = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
+                let gpsStatusStr = t.trackingOn ? '<span class="text-emerald-400 font-bold">🟢 GPS Ativo</span>' : '<span class="text-zinc-500 font-bold">🔴 GPS Desativado</span>';
+                mapTechsHtml += `
+                    <div title="Endereço: ${t.rua || 'Localização em campo'}" onclick="selecionarEPlugarMapa('${t.login}')" class="bg-black border border-zinc-800 rounded-2xl p-4 flex items-center space-x-3 shadow-sm hover:border-red-600 transition cursor-pointer">
+                        ${avatar}
+                        <div class="flex-1">
+                            <h4 class="font-bold text-white text-sm">${t.name}</h4>
+                            <p class="text-[10px] text-red-400">${t.car}</p>
+                            <p class="text-[10px] text-zinc-400 truncate">📍 ${t.rua || 'Endereço não informado'}</p>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-[10px] font-bold text-zinc-300 flex items-center"><span class="w-2 h-2 rounded-full ${badgeOn} inline-block mr-1"></span>${t.online ? 'Online' : 'Offline'}</span>
+                                <span class="text-[10px]">${gpsStatusStr}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            let listEl = document.getElementById('admin-map-techs-list');
+            if(listEl) listEl.innerHTML = mapTechsHtml;
+        }
+
+        function centralizarMapaTecnico() {
+            let val = document.getElementById('map-select-tech').value;
+            let iframe = document.getElementById('iframe-mapa-central');
+            if(!iframe) return;
+            if(val === 'geral') {
+                iframe.src = "https://maps.google.com/maps?q=-9.6658,-35.7350&z=13&output=embed";
+            } else {
+                let tech = db.tecnicos.find(t => t.login === val);
+                if(tech && tech.trackingOn && tech.lat && tech.lng) {
+                    iframe.src = `https://maps.google.com/maps?q=${tech.lat},${tech.lng}&z=16&output=embed`;
+                } else {
+                    alert(`O GPS do técnico ${tech ? tech.name : ''} está DESATIVADO no momento.`);
+                    iframe.src = "https://maps.google.com/maps?q=-9.6658,-35.7350&z=12&output=embed";
+                }
+            }
+        }
+
+        function selecionarEPlugarMapa(login) {
+            let sel = document.getElementById('map-select-tech');
+            if(sel) { sel.value = login; centralizarMapaTecnico(); }
+        }
+
+        // --- ESTOQUE FÍSICO & PASSAGEM MULTIPLA ---
+        function adicionarEstoqueFisicoUnitario() {
+            if(isVisualizador) return;
+            let sap = document.getElementById('fisico-sap').value.trim();
+            let desc = document.getElementById('fisico-desc').value.trim();
+            let qtd = Number(document.getElementById('fisico-qtd').value);
+            let seriaisTxt = document.getElementById('fisico-seriais').value.trim();
+            if(!sap || !desc || qtd <= 0) { alert("Preencha todos os campos do estoque físico!"); return; }
+
+            let seriaisArr = seriaisTxt ? seriaisTxt.split(',').map(s => s.trim()) : [];
+            let existente = db.estoqueFisico.find(e => e.sap === sap);
+            if(existente) {
+                existente.qtd += qtd;
+                if(seriaisArr.length > 0) existente.seriais.push(...seriaisArr);
+            } else {
+                db.estoqueFisico.push({ id: Date.now(), sap, desc, qtd, seriais: seriaisArr, data: new Date().toISOString().split('T')[0] });
+            }
+            
+            if (!db.materiais.some(m => m.sap === sap)) {
+                db.materiais.push({ sap, desc });
+            }
+
+            registrarMovimentacao("Estoque Físico", "Admin", `Entrada de ${qtd}x ${desc} (${sap}) c/ Seriais`);
+            document.getElementById('fisico-sap').value = '';
+            document.getElementById('fisico-desc').value = '';
+            document.getElementById('fisico-qtd').value = '1';
+            document.getElementById('fisico-seriais').value = '';
+            salvarDb();
+            alert("✅ Entrada com bipagem registrada com sucesso!");
+            atualizarPainelAdmin();
+        }
+
+        function adicionarEstoqueFisicoMassa() {
+            if(isVisualizador) return;
+            let linhas = document.getElementById('fisico-massa').value.trim().split('\n');
+            let count = 0;
+            linhas.forEach(linha => {
+                let partes = linha.split('|').map(p => p.trim());
+                if(partes.length >= 3) {
+                    let [sap, desc, qtdStr, seriaisStr] = partes;
+                    let qtd = Number(qtdStr) || 1;
+                    let seriaisArr = seriaisStr ? seriaisStr.split(',').map(s => s.trim()) : [];
+                    let existente = db.estoqueFisico.find(e => e.sap === sap);
+                    if(existente) {
+                        existente.qtd += qtd;
+                        if(seriaisArr.length > 0) existente.seriais.push(...seriaisArr);
+                    } else {
+                        db.estoqueFisico.push({ id: Date.now() + Math.random(), sap, desc, qtd, seriais: seriaisArr, data: new Date().toISOString().split('T')[0] });
+                    }
+                    if (!db.materiais.some(m => m.sap === sap)) {
+                        db.materiais.push({ sap, desc });
+                    }
+                    count++;
+                }
+            });
+            if(count === 0) { alert("Formato inválido! Use: COD_SAP | Descrição | Quantidade | Seriais"); return; }
+            registrarMovimentacao("Estoque Físico Massa", "Admin", `Processada entrada em massa de ${count} itens.`);
+            document.getElementById('fisico-massa').value = '';
+            salvarDb();
+            alert(`✅ ${count} entradas em massa processadas com sucesso!`);
+            atualizarPainelAdmin();
+        }
+
+        function removerEstoqueFisico(idx) {
+            if(isVisualizador) return;
+            db.estoqueFisico.splice(idx, 1);
+            salvarDb();
+            atualizarPainelAdmin();
+        }
+
+        function adicionarItemCarrinhoPassagem() {
+            if(isVisualizador) return;
+            let sap = document.getElementById('pass-mat-select').value;
+            let qtd = Number(document.getElementById('pass-qtd').value);
+            let seriaisTxt = document.getElementById('pass-seriais').value.trim();
+            let fisico = db.estoqueFisico.find(e => e.sap === sap);
+
+            if(!fisico || qtd <= 0) { alert("Selecione um material e quantidade válidos."); return; }
+            if(fisico.qtd < qtd) { alert("Quantidade insuficiente no estoque físico central!"); return; }
+
+            carrinhoPassagem.push({
+                sap: fisico.sap,
+                desc: fisico.desc,
+                qtd: qtd,
+                seriais: seriaisTxt ? seriaisTxt.split(',').map(s => s.trim()) : []
+            });
+            document.getElementById('pass-seriais').value = '';
+            document.getElementById('pass-qtd').value = '1';
+            renderizarCarrinhoPassagem();
+        }
+
+        function renderizarCarrinhoPassagem() {
+            let tbody = document.getElementById('pass-cart-table');
+            if(!tbody) return;
+            if(carrinhoPassagem.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-zinc-500">Nenhum item adicionado.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = carrinhoPassagem.map((it, idx) => `
+                <tr class="border-b border-zinc-800">
+                    <td class="p-2 font-mono text-red-400">${it.sap} - ${it.desc}</td>
+                    <td class="p-2 text-center font-bold">${it.qtd}</td>
+                    <td class="p-2 font-mono text-xs text-zinc-300">${it.seriais.join(', ') || 'Apenas Qtd'}</td>
+                    <td class="p-2 text-center"><button onclick="if(!isVisualizador) { carrinhoPassagem.splice(${idx},1); renderizarCarrinhoPassagem(); }" class="action-btn-write text-red-500 font-bold">X</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function executarPassagemMultiplaTecnico() {
+            if(isVisualizador) return;
+            let techLogin = document.getElementById('pass-tech-select').value;
+            let tech = db.tecnicos.find(t => t.login === techLogin);
+            if(!tech) { alert("Selecione um técnico válido!"); return; }
+            if(carrinhoPassagem.length === 0) { alert("Adicione pelo menos 1 material para transferir!"); return; }
+
+            let resumoItensTxt = [];
+            for(let it of carrinhoPassagem) {
+                let fisico = db.estoqueFisico.find(e => e.sap === it.sap);
+                if(!fisico || fisico.qtd < it.qtd) { alert(`Quantidade insuficiente para o material ${it.desc}`); return; }
+                fisico.qtd -= it.qtd;
+
+                if(!tech.mala) tech.mala = [];
+                let itemMala = tech.mala.find(m => m.sap === it.sap);
+                if(itemMala) {
+                    itemMala.qtd += it.qtd;
+                    itemMala.abastecido += it.qtd;
+                    if(it.seriais.length > 0) {
+                        if(!itemMala.seriais) itemMala.seriais = [];
+                        itemMala.seriais.push(...it.seriais);
+                    }
+                } else {
+                    tech.mala.push({
+                        sap: it.sap,
+                        desc: it.desc,
+                        qtd: it.qtd,
+                        lancado: 0,
+                        abastecido: it.qtd,
+                        seriais: [...it.seriais]
+                    });
+                }
+                resumoItensTxt.push(`${it.qtd}x ${it.desc}`);
+            }
+
+            registrarMovimentacao("Passagem Múltipla", "Admin", `Transferidos ${carrinhoPassagem.length} itens para ${tech.name}`);
+            
+            if(!tech.notificacoes) tech.notificacoes = [];
+            tech.notificacoes.push({ text: `Você recebeu novos materiais da Base Central (${resumoItensTxt.join(', ')})`, time: new Date().toLocaleDateString() });
+
+            db.notificacoes.push({ text: `Transferência múltipla realizada para ${tech.name}.`, time: new Date().toLocaleDateString(), tipo: "success" });
+            
+            let itensCopia = [...carrinhoPassagem];
+            carrinhoPassagem = [];
+            salvarDb();
+            atualizarPainelAdmin();
+            renderizarCarrinhoPassagem();
+
+            abrirComprovanteTermoMultiplo(tech.name, itensCopia);
+        }
+
+        function abrirComprovanteTermoMultiplo(techName, itens) {
+            let listaHtml = itens.map(i => `<li><b>${i.qtd}x</b> ${i.sap} - ${i.desc} ${i.seriais.length > 0 ? `[Seriais: ${i.seriais.join(', ')}]` : ''}</li>`).join('');
+            let content = `
+                <p><b>Data:</b> ${new Date().toLocaleString()}</p>
+                <p><b>Técnico Responsável:</b> ${techName}</p>
+                <p><b>Itens Transferidos:</b></p>
+                <ul class="list-disc pl-4 space-y-1">${listaHtml}</ul>
+                <div class="mt-4 p-3 bg-zinc-950 border border-red-900 rounded-xl text-[11px] leading-relaxed">
+                    <b>TERMO DE RESPONSABILIDADE:</b> Declaro que recebi os materiais acima descritos em perfeito estado de conservação, assumindo total responsabilidade pela guarda, uso adequado em campo e devolução quando solicitada.
+                </div>
+            `;
+            document.getElementById('comprovante-content').innerHTML = content;
+            document.getElementById('modal-comprovante').classList.remove('hidden');
+        }
+
+        function fecharModalComprovante() {
+            document.getElementById('modal-comprovante').classList.add('hidden');
+        }
+
+        // --- CONTROLE DE MALAS ADMIN ---
+        function switchMalaSubTab(sub) {
+            subMalaAtual = sub;
+            document.querySelectorAll('.mala-subcontent').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('#acontent-malas button[id^="msub-"]').forEach(el => {
+                el.classList.remove('bg-red-600', 'text-white');
+                el.classList.add('bg-zinc-800', 'text-zinc-400');
+            });
+            document.getElementById('mala-subcontent-' + sub).classList.remove('hidden');
+            document.getElementById('msub-' + sub).classList.add('bg-red-600', 'text-white');
+            document.getElementById('msub-' + sub).classList.remove('bg-zinc-800', 'text-zinc-400');
+            renderizarMalaAdmin();
+        }
+
+        function renderizarMalaAdmin() {
+            let login = document.getElementById('admin-select-mala-tech').value;
+            let tech = db.tecnicos.find(t => t.login === login);
+            if(!tech) return;
+            if(!tech.mala) tech.mala = [];
+
+            let tbody = document.getElementById('admin-mala-table');
+            if(tbody) {
+                tbody.innerHTML = tech.mala.map((m, idx) => `
+                    <tr class="border-b border-zinc-800">
+                        <td class="p-3 font-mono text-red-400">${m.sap}</td>
+                        <td class="p-3">${m.desc}</td>
+                        <td class="p-3 text-center font-bold text-white">${m.qtd}</td>
+                        <td class="p-3 text-center text-amber-400">${m.lancado}</td>
+                        <td class="p-3 text-center space-x-2">
+                            <input type="number" id="edit-mala-${idx}" value="${m.qtd}" class="w-16 px-2 py-1 bg-black border border-zinc-700 rounded text-center text-red-400 font-bold outline-none inline-block">
+                            <button onclick="salvarEdicaoMalaAdmin('${tech.login}', ${idx})" class="action-btn-write px-2 py-1 bg-emerald-600 text-white rounded text-[10px] font-bold">Salvar</button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5" class="p-4 text-center">Nenhum item na mala.</td></tr>';
+            }
+
+            let seriaisListEl = document.getElementById('admin-seriais-list');
+            if(seriaisListEl) {
+                let htmlSeriais = "";
+                tech.mala.forEach(m => {
+                    if(m.seriais && m.seriais.length > 0) {
+                        htmlSeriais += `<div class="p-3 bg-black border border-zinc-800 rounded-xl text-xs"><b class="text-red-400">${m.desc} (${m.sap})</b>: ${m.seriais.join(', ')}</div>`;
+                    }
+                });
+                seriaisListEl.innerHTML = htmlSeriais || '<p class="text-zinc-500 italic">Nenhum item com serial cadastrado nesta mala.</p>';
+            }
+
+            let reposListEl = document.getElementById('admin-reposicao-list');
+            if(reposListEl) {
+                let repTech = db.reposicoes.filter(r => r.tecnico === tech.name || r.techLogin === tech.login);
+                reposListEl.innerHTML = repTech.map((r) => `
+                    <div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs">
+                        <div><b>${r.material}</b> - Qtd solicitada: <span class="text-amber-400 font-bold">${r.qtd}</span> (${r.status || 'Pendente'})</div>
+                        <div class="space-x-2">
+                            <button onclick="aprovarReposicaoAdmin(${r.id}, '${tech.login}', '${r.material}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold">Aprovar</button>
+                            <button onclick="removerReposicaoAdmin(${r.id})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button>
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-zinc-500 italic">Nenhum pedido de reposição pendente.</p>';
+            }
+        }
+
+        function salvarEdicaoMalaAdmin(techLogin, itemIdx) {
+            if(isVisualizador) return;
+            let tech = db.tecnicos.find(t => t.login === techLogin);
+            let novaQtd = Number(document.getElementById(`edit-mala-${itemIdx}`).value);
+            if(tech && tech.mala[itemIdx]) {
+                tech.mala[itemIdx].qtd = novaQtd;
+                registrarMovimentacao("Edição Mala", "Admin", `Editada quantidade do item ${tech.mala[itemIdx].desc} para ${novaQtd} na mala de ${tech.name}`);
+                salvarDb();
+                alert("✅ Quantidade atualizada com sucesso!");
+                renderizarMalaAdmin();
+            }
+        }
+
+        function aprovarReposicaoAdmin(repId, techLogin, materialDesc, qtd) {
+            if(isVisualizador) return;
+            let tech = db.tecnicos.find(t => t.login === techLogin);
+            if(tech) {
+                let malaItem = tech.mala.find(m => m.desc === materialDesc);
+                if(malaItem) malaItem.qtd += qtd;
+                else tech.mala.push({ sap: "REP-99", desc: materialDesc, qtd: qtd, lancado: 0, abastecido: qtd, seriais: [] });
+            }
+            let rep = db.reposicoes.find(r => r.id === repId);
+            if(rep) rep.status = "Aprovado";
+            registrarMovimentacao("Reposição Aprovada", "Admin", `Aprovada reposição de ${qtd}x ${materialDesc} para ${tech ? tech.name : techLogin}`);
+            salvarDb();
+            alert("✅ Reposição aprovada e adicionada à mala!");
+            renderizarMalaAdmin();
+        }
+
+        function removerReposicaoAdmin(repId) {
+            if(isVisualizador) return;
+            db.reposicoes = db.reposicoes.filter(r => r.id !== repId);
+            salvarDb();
+            renderizarMalaAdmin();
+        }
+
+        // --- HISTÓRICO GERAL & BACKUP ---
+        function renderizarHistoricoGeral() {
+            let dataFiltro = document.getElementById('filtro-hist-data').value;
+            let histFiltrado = dataFiltro ? db.movimentacoes.filter(m => m.data.includes(dataFiltro)) : db.movimentacoes;
+            let tbody = document.getElementById('admin-historico-table');
+            if(!tbody) return;
+
+            tbody.innerHTML = histFiltrado.map(h => `
+                <tr class="border-b border-zinc-800">
+                    <td class="p-3 text-zinc-400 font-mono">${h.data}</td>
+                    <td class="p-3 font-bold text-red-400">${h.tipo}</td>
+                    <td class="p-3 text-white">${h.responsavel}</td>
+                    <td class="p-3 text-zinc-300">${h.detalhes}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" class="p-4 text-center">Nenhum registro no histórico.</td></tr>';
+        }
+
+        function limparHistoricoGeral() {
+            if(isVisualizador) return;
+            if(confirm("Deseja realmente limpar todo o histórico de movimentações?")) {
+                db.movimentacoes = [];
+                salvarDb();
+                renderizarHistoricoGeral();
+                alert("✅ Histórico limpo com sucesso!");
+            }
+        }
+
+        function baixarExcelGeral() {
+            let csv = "data:text/csv;charset=utf-8,Data/Hora;Tipo;Responsavel;Detalhes\n";
+            db.movimentacoes.forEach(m => {
+                csv += `${m.data};"${m.tipo}";"${m.responsavel}";"${m.detalhes}"\n`;
+            });
+            let encodedUri = encodeURI(csv);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "historico_movimentacoes_geral.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function baixarBackupGeral() {
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            let dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", "mala_estoque_backup_oficial.json");
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        // EXPORTAR SIAKI
+        function exportarExcelSIAKI() {
+            let csvContent = "data:text/csv;charset=utf-8,COD SAP;Material;PROJETOS;CIDADE;LOCAL DE DESCARGA;Node/Site/Cód Imóvel;QTD. CONSUMO;QTD. DESCARTE\n";
+            db.lancamentos.forEach(l => {
+                l.items.forEach(it => {
+                    csvContent += `${it.sap};"${it.material}";${l.projeto};MACEIO;865323;${l.node};${it.qtd};${it.descarte || 0}\n`;
+                });
+            });
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "carregamento_massivo_SIAKI.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function copiarDadosSIAKI() {
+            let texto = "COD SAP\tMaterial\tPROJETOS\tCIDADE\tLOCAL DE DESCARGA\tNode/Site/Cód Imóvel\tQTD. CONSUMO\tQTD. DESCARTE\n";
+            db.lancamentos.forEach(l => {
+                l.items.forEach(it => {
+                    texto += `${it.sap}\t${it.material}\t${l.projeto}\tMACEIO\t865323\t${l.node}\t${it.qtd}\t${it.descarte || 0}\n`;
+                });
+            });
+            navigator.clipboard.writeText(texto);
+            alert("📋 Dados copiados no padrão SIAKI!");
+        }
+
+        // CRUD TÉCNICO
+        function abrirModalTecnico(index = -1) {
+            if(isVisualizador) return;
+            document.getElementById('edit-tech-index').value = index;
+            if(index >= 0) {
+                let t = db.tecnicos[index];
+                document.getElementById('modal-tech-title').innerText = "Editar Técnico";
+                document.getElementById('tech-form-name').value = t.name;
+                document.getElementById('tech-form-login').value = t.login;
+                document.getElementById('tech-form-pass').value = t.senha;
+                document.getElementById('tech-form-car').value = t.car;
+            } else {
+                document.getElementById('modal-tech-title').innerText = "Cadastrar Técnico";
+                document.getElementById('tech-form-name').value = '';
+                document.getElementById('tech-form-login').value = '';
+                document.getElementById('tech-form-pass').value = '';
+                document.getElementById('tech-form-car').value = '';
+            }
+            document.getElementById('modal-tecnico').classList.remove('hidden');
+        }
+        function fecharModalTecnico() { document.getElementById('modal-tecnico').classList.add('hidden'); }
+        function salvarTecnicoForm() {
+            if(isVisualizador) return;
+            let index = parseInt(document.getElementById('edit-tech-index').value);
+            let name = document.getElementById('tech-form-name').value;
+            let login = document.getElementById('tech-form-login').value.trim().toLowerCase();
+            let senha = document.getElementById('tech-form-pass').value;
+            let car = document.getElementById('tech-form-car').value;
+            if(!name || !login || !senha) { alert("Preencha todos os campos!"); return; }
+            if(index >= 0) {
+                db.tecnicos[index].name = name; db.tecnicos[index].login = login; db.tecnicos[index].senha = senha; db.tecnicos[index].car = car;
+            } else {
+                db.tecnicos.push({
+                    name, login, senha, car, avatar: "", lat: -9.6658, lng: -35.7350, rua: "Maceió - AL", trackingOn: false, online: false, lastSeen: "Nunca", amigos: [], pedidosAmizade: [], notificacoes: [],
+                    mala: db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}))
+                });
+            }
+            salvarDb();
+            fecharModalTecnico(); 
+            atualizarPainelAdmin();
+        }
+        function editarTecnico(i) { abrirModalTecnico(i); }
+        function excluirTecnico(i) { if(isVisualizador) return; if(confirm("Excluir técnico?")) { db.tecnicos.splice(i, 1); salvarDb(); atualizarPainelAdmin(); } }
+
+        function adicionarTecnicoPorLoginRapido() {
+            if(isVisualizador) return;
+            let login = document.getElementById('quick-add-login').value.trim().toLowerCase();
+            if(!login) { alert("Digite o login!"); return; }
+            if(db.tecnicos.find(t => t.login === login)) { alert("Técnico já existe!"); return; }
+            db.tecnicos.push({
+                name: login.toUpperCase(),
+                login: login,
+                senha: "123",
+                car: "Viatura Padrão",
+                avatar: "",
+                lat: -9.6658,
+                lng: -35.7350,
+                rua: "Maceió - AL",
+                trackingOn: false,
+                online: false,
+                lastSeen: "Nunca",
+                amigos: [],
+                pedidosAmizade: [],
+                notificacoes: [],
+                mala: db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}))
+            });
+            document.getElementById('quick-add-login').value = '';
+            salvarDb();
+            alert("✅ Técnico adicionado com sucesso!");
+            atualizarPainelAdmin();
+        }
+
+        function adicionarMaterialAdmin() {
+            if(isVisualizador) return;
+            let sap = document.getElementById('mat-sap').value.trim();
+            let desc = document.getElementById('mat-desc').value.trim();
+            if(!sap || !desc) { alert("Preencha SAP e Descrição!"); return; }
+            db.materiais.push({ sap, desc });
+            db.tecnicos.forEach(t => {
+                if(!t.mala) t.mala = [];
+                if (!t.mala.some(m => m.sap === sap)) {
+                    t.mala.push({sap, desc, qtd: 0, lancado: 0, abastecido: 0, seriais: []});
+                }
+            });
+            document.getElementById('mat-sap').value = ''; document.getElementById('mat-desc').value = '';
+            salvarDb();
+            atualizarPainelAdmin();
+        }
+        function removerMaterialAdmin(i) { if(isVisualizador) return; db.materiais.splice(i, 1); salvarDb(); atualizarPainelAdmin(); }
+        function excluirLancamento(i) { if(isVisualizador) return; db.lancamentos.splice(i, 1); salvarDb(); atualizarPainelAdmin(); }
+
+        // SOS & Notificações
+        function acionarSOS() {
+            if(confirm("ATENÇÃO: Deseja acionar o alerta SOS de emergência para a Base?")) {
+                db.sosAtivo = {
+                    nome: usuarioLogado.name,
+                    car: usuarioLogado.car,
+                    hora: new Date().toLocaleTimeString()
+                };
+                registrarMovimentacao("SOS", usuarioLogado.name, `ACIONOU SOS DE EMERGÊNCIA!`);
+                db.notificacoes.push({ text: `EMERGÊNCIA: Técnico ${usuarioLogado.name} acionou o SOS!`, time: new Date().toLocaleDateString(), tipo: "danger" });
+                salvarDb();
+                alert("🚨 Alerta SOS enviado com sucesso para a Central!");
+            }
+        }
+        function resolverSos() {
+            if(isVisualizador) return;
+            db.sosAtivo = null;
+            registrarMovimentacao("SOS Resolvido", "Admin", `Alerta SOS foi resolvido.`);
+            salvarDb();
+            atualizarPainelAdmin();
+        }
+
+        function toggleNotifDropdown() {
+            let d = document.getElementById('notif-dropdown');
+            d.classList.toggle('hidden');
+        }
+        function limparNotificacoes() {
+            if(isVisualizador) return;
+            db.notificacoes = [];
+            salvarDb();
+            atualizarPainelAdmin();
+        }
+
+        // --- PAINEL DO TÉCNICO & GEOLOCALIZAÇÃO EM TEMPO REAL ---
+        function inicializarPainelTecnico() {
+            document.getElementById('tech-welcome-name').innerText = usuarioLogado.name + " (" + usuarioLogado.car + ")";
+            if(usuarioLogado.avatar) document.getElementById('tech-avatar-box').innerHTML = `<img src="${usuarioLogado.avatar}" class="w-full h-full object-cover">`;
+            else document.getElementById('tech-avatar-text').innerText = usuarioLogado.name.charAt(0);
+            
+            if(!usuarioLogado.mala) {
+                usuarioLogado.mala = db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 0, lancado: 0, abastecido: 0, seriais: []}));
+            }
+            atualizarTechNotificacoesBadge();
+            abrirCardTech('lancamento');
+        }
+
+        function toggleGpsTecnico() {
+            if(!usuarioLogado) return;
+            usuarioLogado.trackingOn = !usuarioLogado.trackingOn;
+            let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
+            if(t) t.trackingOn = usuarioLogado.trackingOn;
+
+            let btn = document.getElementById('btn-gps-status');
+            let txt = document.getElementById('gps-text');
+
+            if(usuarioLogado.trackingOn) {
+                if(btn) btn.className = "px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow transition";
+                if(txt) txt.innerText = "GPS Ativo";
+
+                if ("geolocation" in navigator) {
+                    gpsWatchId = navigator.geolocation.watchPosition(
+                        (pos) => {
+                            let lat = pos.coords.latitude;
+                            let lng = pos.coords.longitude;
+                            usuarioLogado.lat = lat;
+                            usuarioLogado.lng = lng;
+                            usuarioLogado.rua = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                            if(t) { t.lat = lat; t.lng = lng; t.rua = usuarioLogado.rua; t.trackingOn = true; }
+                            salvarDb();
+                        },
+                        (err) => {
+                            console.warn("Aviso GPS: " + err.message);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                } else {
+                    alert("Seu dispositivo não possui suporte a geolocalização.");
+                }
+            } else {
+                if(gpsWatchId !== null) {
+                    navigator.geolocation.clearWatch(gpsWatchId);
+                    gpsWatchId = null;
+                }
+                if(btn) btn.className = "px-3 py-1.5 bg-zinc-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow transition";
+                if(txt) txt.innerText = "GPS Desligado";
+                if(t) t.trackingOn = false;
+            }
+            salvarDb();
+        }
+
+        function atualizarTechNotificacoesBadge() {
+            let counter = document.getElementById('tech-notif-counter');
+            let list = document.getElementById('tech-notif-list');
+            if(!usuarioLogado.notificacoes) usuarioLogado.notificacoes = [];
+            
+            if(usuarioLogado.notificacoes.length > 0) {
+                counter.classList.remove('hidden');
+                counter.innerText = usuarioLogado.notificacoes.length;
+            } else {
+                counter.classList.add('hidden');
+            }
+
+            list.innerHTML = usuarioLogado.notificacoes.slice().reverse().map(n => `
+                <div class="p-2 bg-black rounded-xl border-l-4 border-red-600">
+                    <p class="font-semibold text-white">${n.text}</p>
+                    <span class="text-[9px] text-zinc-400">${n.time}</span>
+                </div>
+            `).join('') || '<p class="text-zinc-400 text-center py-2">Nenhuma notificação.</p>';
+        }
+
+        function toggleTechNotifDropdown() {
+            document.getElementById('tech-notif-dropdown').classList.toggle('hidden');
+        }
+        function limparTechNotificacoes() {
+            usuarioLogado.notificacoes = [];
+            salvarDb();
+            atualizarTechNotificacoesBadge();
+        }
+
+        function mudarFotoPerfil(e) {
+            let file = e.target.files[0];
+            if(file) {
+                let r = new FileReader();
+                r.onload = function(evt) {
+                    usuarioLogado.avatar = evt.target.result;
+                    let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
+                    if(t) t.avatar = usuarioLogado.avatar;
+                    registrarMovimentacao("Foto de Perfil", usuarioLogado.name, `Atualizou sua foto de perfil.`);
+                    salvarDb(); inicializarPainelTecnico();
+                };
+                r.readAsDataURL(file);
+            }
+        }
+
+        function abrirModalChamada() {
+            let select = document.getElementById('call-dest-select');
+            select.innerHTML = `<option value="Base Central">Base Central</option>` + (usuarioLogado.amigos || []).map(a => `<option value="${a}">${a.toUpperCase()}</option>`).join('');
+            document.getElementById('modal-chamada').classList.remove('hidden');
+        }
+
+        function enviarSolicitacaoLigacao() {
+            let dest = document.getElementById('call-dest-select').value;
+            registrarMovimentacao("Solicitação Ligação", usuarioLogado.name, `Solicitou ligação para ${dest}`);
+            db.notificacoes.push({ text: `Técnico ${usuarioLogado.name} solicitou ligação para ${dest}!`, time: new Date().toLocaleDateString(), tipo: "info" });
+            salvarDb();
+            document.getElementById('modal-chamada').classList.add('hidden');
+            alert(`📞 Solicitação de ligação enviada para ${dest} com sucesso!`);
+        }
+
+        function renderizarCardTechAtivo() {
+            if(cardTechAtivo && usuarioLogado) {
+                abrirCardTech(cardTechAtivo);
+            }
+        }
+
+        function abrirCardTech(tipo) {
+            cardTechAtivo = tipo;
+            let content = document.getElementById('tech-section-content');
+            if(!content || !usuarioLogado) return;
+
+            if(tipo === 'lancamento') {
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-red-400 text-sm flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Lançamento de Materiais em Campo</span></h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Projeto</label>
+                                <select id="t-projeto" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+                                    <option value="MDU GPON F">MDU GPON F</option>
+                                    <option value="MDU GPON ON GOING">MDU GPON ON GOING</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Node / Imóvel</label>
+                                <input type="text" id="t-node" placeholder="Ex: 378556075" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Local de Descarga</label>
+                                <input type="text" id="t-local-desc" value="865323" readonly class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-red-400 font-bold outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Buscar Material no Catálogo / Estoque Central</label>
+                                <input type="text" id="t-search-mat" oninput="renderizarSelecaoTecnico()" placeholder="Digite o SAP ou Descrição..." class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white mb-2">
+                                <div id="t-material-list" class="max-h-52 overflow-y-auto space-y-1 border border-zinc-800 p-2 rounded-xl bg-black"></div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Favoritos Rápido</label>
+                                <div id="t-favorites-list" class="flex flex-wrap gap-1.5 p-2 border border-zinc-800 rounded-xl bg-black max-h-52 overflow-y-auto"></div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-zinc-800">
+                            <h5 class="font-bold text-xs text-zinc-300 mb-2">Carrinho de Lançamento</h5>
+                            <table class="w-full text-xs text-left text-zinc-300">
+                                <thead class="bg-black border-b border-zinc-800"><tr><th class="p-2">Material</th><th class="p-2 text-center">Qtd</th><th class="p-2 text-center">Remover</th></tr></thead>
+                                <tbody id="t-cart-table" class="divide-y divide-zinc-800"><tr><td colspan="3" class="p-3 text-center text-zinc-500">Nenhum item adicionado.</td></tr></tbody>
+                            </table>
+                        </div>
+                        <button onclick="salvarLoteTecnico()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg">Confirmar e Enviar Lançamento</button>
+                    </div>
+                `;
+                renderizarSelecaoTecnico();
+                renderizarCarrinhoTecnico();
+            } else if(tipo === 'mala') {
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-red-400 text-sm">Minha Mala (Miscelâneas e Seriais MIS)</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left text-zinc-300">
+                                <thead class="bg-black border-b border-zinc-800 text-zinc-400">
+                                    <tr><th class="p-3">SAP</th><th class="p-3">Descrição</th><th class="p-3 text-center">Qtd Atual</th><th class="p-3 text-center">Lançado</th><th class="p-3">Seriais (MIS)</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-800">
+                                    ${(usuarioLogado.mala || []).map(m => `
+                                        <tr>
+                                            <td class="p-3 font-mono text-red-400">${m.sap}</td>
+                                            <td class="p-3">${m.desc}</td>
+                                            <td class="p-3 text-center font-bold text-white">${m.qtd}</td>
+                                            <td class="p-3 text-center text-amber-400">${m.lancado || 0}</td>
+                                            <td class="p-3 font-mono text-xs text-emerald-300">${m.seriais && m.seriais.length > 0 ? m.seriais.join(', ') : 'Nenhum serial'}</td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="5" class="p-4 text-center text-zinc-500">Nenhum item na mala.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if(tipo === 'chat') {
+                content.innerHTML = `
+                    <div class="space-y-4 h-[500px] flex flex-col">
+                        <h4 class="font-bold text-red-400 text-sm">Chat Direct</h4>
+                        <div class="flex space-x-2 overflow-x-auto pb-2" id="tech-chat-contacts-bar">
+                            <button onclick="selecionarChatTech('Base')" id="btn-chat-Base" class="px-3 py-1.5 bg-red-600 text-white rounded-xl text-xs font-bold flex-shrink-0 relative">Base Central</button>
+                            <div id="tech-colleagues-chat-btns" class="flex space-x-2"></div>
+                        </div>
+                        <div id="tech-chat-box" class="flex-1 bg-black border border-zinc-800 rounded-xl p-3 overflow-y-auto space-y-2 text-xs"></div>
+                        <div class="flex space-x-2">
+                            <input type="text" id="tech-chat-input" placeholder="Mensagem..." class="flex-1 px-4 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                            <button onclick="enviarMsgTech()" class="px-5 py-2 bg-red-600 text-white rounded-xl text-xs font-bold">Enviar</button>
+                        </div>
+                    </div>
+                `;
+                renderizarColegasChatTech();
+                atualizarMsgTechBox();
+            } else if(tipo === 'reposicao') {
+                content.innerHTML = `
+                    <div class="space-y-4 max-w-md mx-auto">
+                        <h4 class="font-bold text-red-400 text-sm">Solicitar Reposição de Material</h4>
+                        <select id="t-rep-mat" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+                            ${db.materiais.map(m => `<option value="${m.desc}">${m.sap} - ${m.desc}</option>`).join('')}
+                        </select>
+                        <input type="number" id="t-rep-qtd" min="1" value="10" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white" placeholder="Quantidade">
+                        <button onclick="solicitarReposicaoTech()" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl text-xs">Enviar Pedido de Reposição</button>
+                    </div>
+                `;
+            } else if(tipo === 'colega') {
+                let pendentesHtml = (usuarioLogado.pedidosAmizade || []).map((ped, pIdx) => `
+                    <div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs">
+                        <span><b>${ped.nome || ped}</b> quer ser seu colega</span>
+                        <div class="space-x-2">
+                            <button onclick="aceitarPedidoAmizade('${ped.login || ped}')" class="px-3 py-1 bg-emerald-600 text-white rounded font-bold">Aceitar</button>
+                            <button onclick="recusarPedidoAmizade(${pIdx})" class="px-3 py-1 bg-red-600 text-white rounded font-bold">Recusar</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                content.innerHTML = `
+                    <div class="space-y-4 max-w-md mx-auto">
+                        <h4 class="font-bold text-red-400 text-sm">Adicionar Colega de Trabalho</h4>
+                        <input type="text" id="colega-busca-login" placeholder="Insira o login (ex: carlos)" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <button onclick="enviarPedidoAmizadeTech()" class="w-full py-2.5 bg-red-600 text-white font-bold rounded-xl text-xs">Enviar Solicitação de Amizade</button>
+                        
+                        <div class="pt-4 border-t border-zinc-800 space-y-2">
+                            <h5 class="font-bold text-xs text-zinc-300">Solicitações Pendentes</h5>
+                            <div id="tech-pedidos-list" class="space-y-2">${pendentesHtml || '<p class="text-zinc-500 italic text-xs">Nenhuma solicitação pendente.</p>'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function renderizarSelecaoTecnico() {
+            let filtroEl = document.getElementById('t-search-mat');
+            let filtro = filtroEl ? filtroEl.value.toLowerCase() : '';
+            let listEl = document.getElementById('t-material-list');
+            let favEl = document.getElementById('t-favorites-list');
+
+            if (!listEl) return;
+
+            let todosMateriais = [];
+            let sapsVistos = new Set();
+
+            (db.materiais || []).forEach(m => {
+                if (m.sap && !sapsVistos.has(m.sap)) {
+                    todosMateriais.push({ sap: m.sap, desc: m.desc });
+                    sapsVistos.add(m.sap);
+                }
+            });
+
+            (db.estoqueFisico || []).forEach(ef => {
+                if (ef.sap && !sapsVistos.has(ef.sap)) {
+                    todosMateriais.push({ sap: ef.sap, desc: ef.desc });
+                    sapsVistos.add(ef.sap);
+                }
+            });
+
+            if (usuarioLogado && usuarioLogado.mala) {
+                usuarioLogado.mala.forEach(m => {
+                    if (m.sap && !sapsVistos.has(m.sap)) {
+                        todosMateriais.push({ sap: m.sap, desc: m.desc });
+                        sapsVistos.add(m.sap);
+                    }
+                });
+            }
+
+            let html = "";
+            let filtrados = todosMateriais.filter(m => m.desc.toLowerCase().includes(filtro) || m.sap.toLowerCase().includes(filtro));
+
+            filtrados.forEach(m => {
+                let isFav = (db.favoritos || []).some(f => (typeof f === 'object' ? f.desc === m.desc || f.sap === m.sap : f === m.desc));
+                let starColor = isFav ? "text-amber-400 fill-amber-400" : "text-zinc-600";
+                
+                let itemMala = (usuarioLogado.mala || []).find(x => x.sap === m.sap);
+                let qtdMala = itemMala ? itemMala.qtd : 0;
+
+                let descEscaped = m.desc.replace(/'/g, "\\'");
+
+                html += `
+                    <div class="flex justify-between items-center p-2 bg-zinc-900 rounded-lg border border-zinc-800">
+                        <div class="truncate mr-2">
+                            <b class="text-red-400">${m.sap}</b> - <span class="text-zinc-300">${m.desc}</span>
+                            <span class="text-[10px] text-zinc-400 block">Em Mala: ${qtdMala} un</span>
+                        </div>
+                        <div class="space-x-2 flex items-center flex-shrink-0">
+                            <button type="button" onclick="toggleFavTech('${descEscaped}', '${m.sap}')" class="${starColor}"><i data-lucide="star" class="w-4 h-4 inline"></i></button>
+                            <button type="button" onclick="addCarrinhoTech('${m.sap}', '${descEscaped}')" class="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-[10px]">Add</button>
+                        </div>
+                    </div>
+                `;
+            });
+            listEl.innerHTML = html || '<p class="text-zinc-500 text-center text-xs py-2">Nenhum material cadastrado no sistema.</p>';
+
+            let favHtml = "";
+            (db.favoritos || []).forEach(f => {
+                let descStr = typeof f === 'object' ? f.desc : f;
+                let sapStr = typeof f === 'object' ? f.sap : '';
+                let descEscaped = descStr.replace(/'/g, "\\'");
+                favHtml += `
+                    <div class="inline-flex items-center space-x-1 px-2.5 py-1 bg-red-950/40 border border-red-900 text-red-300 rounded-lg text-xs font-bold">
+                        <span onclick="addCarrinhoTechPorDesc('${descEscaped}', '${sapStr}')" class="cursor-pointer">${descStr}</span>
+                        <button type="button" onclick="removerFavTech('${descEscaped}')" class="text-zinc-400 hover:text-white ml-1">×</button>
+                    </div>
+                `;
+            });
+            if(favEl) favEl.innerHTML = favHtml || '<span class="text-zinc-500 text-xs italic">Nenhum favorito.</span>';
+            lucide.createIcons();
+        }
+
+        function toggleFavTech(desc, sap) {
+            if(!db.favoritos) db.favoritos = [];
+            let idx = db.favoritos.findIndex(f => typeof f === 'object' ? f.sap === sap || f.desc === desc : f === desc);
+            if(idx >= 0) db.favoritos.splice(idx, 1);
+            else db.favoritos.push({ sap: sap || 'N/A', desc: desc });
+            salvarDb(); 
+            renderizarSelecaoTecnico();
+        }
+
+        function removerFavTech(desc) {
+            if(!db.favoritos) db.favoritos = [];
+            let idx = db.favoritos.findIndex(f => typeof f === 'object' ? f.desc === desc : f === desc);
+            if(idx >= 0) db.favoritos.splice(idx, 1);
+            salvarDb(); 
+            renderizarSelecaoTecnico();
+        }
+
+        function addCarrinhoTech(sap, desc) {
+            let item = carrinhoAtual.find(i => i.sap === sap);
+            if(item) item.qtd += 1;
+            else carrinhoAtual.push({ sap, material: desc, qtd: 1, descarte: 0 });
+            renderizarCarrinhoTecnico();
+        }
+
+        function addCarrinhoTechPorDesc(desc, sap) {
+            let sapEncontrado = sap;
+            if (!sapEncontrado) {
+                let mat = (db.materiais || []).find(x => x.desc === desc) || (db.estoqueFisico || []).find(x => x.desc === desc);
+                if (mat) sapEncontrado = mat.sap;
+            }
+            if (sapEncontrado) addCarrinhoTech(sapEncontrado, desc);
+            else addCarrinhoTech("CAD-00", desc);
+        }
+
+        function renderizarCarrinhoTecnico() {
+            let tbody = document.getElementById('t-cart-table');
+            if(!tbody) return;
+            if(carrinhoAtual.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-zinc-500">Nenhum item adicionado.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = carrinhoAtual.map((it, idx) => `
+                <tr class="border-b border-zinc-800">
+                    <td class="p-2"><b>${it.sap}</b> - ${it.material}</td>
+                    <td class="p-2 text-center">
+                        <input type="number" min="1" value="${it.qtd}" onchange="carrinhoAtual[${idx}].qtd = Number(this.value)" class="w-16 px-2 py-1 bg-black border border-zinc-700 rounded text-center text-red-400 font-bold outline-none">
+                    </td>
+                    <td class="p-2 text-center"><button onclick="carrinhoAtual.splice(${idx},1); renderizarCarrinhoTecnico();" class="text-red-500 font-bold">X</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function salvarLoteTecnico() {
+            let projeto = document.getElementById('t-projeto').value;
+            let node = document.getElementById('t-node').value.trim();
+            if(!node) { alert("Informe o Node!"); return; }
+            if(carrinhoAtual.length === 0) { alert("Adicione itens!"); return; }
+
+            for(let it of carrinhoAtual) {
+                if(!usuarioLogado.mala) usuarioLogado.mala = [];
+                let malaItem = usuarioLogado.mala.find(m => m.sap === it.sap || m.desc === it.material);
+                if(malaItem) {
+                    malaItem.qtd = Math.max(0, malaItem.qtd - it.qtd);
+                    malaItem.lancado = (malaItem.lancado || 0) + it.qtd;
+                } else {
+                    usuarioLogado.mala.push({
+                        sap: it.sap,
+                        desc: it.material,
+                        qtd: 0,
+                        lancado: it.qtd,
+                        abastecido: 0,
+                        seriais: []
+                    });
+                }
+            }
+
+            db.lancamentos.push({
+                id: Date.now(),
+                data: new Date().toISOString().split('T')[0],
+                tecnico: usuarioLogado.name,
+                projeto: projeto,
+                node: node,
+                local_descarga: "865323",
+                items: [...carrinhoAtual]
+            });
+
+            registrarMovimentacao("Lançamento Campo", usuarioLogado.name, `Lançou no Node ${node} (${projeto})`);
+            db.notificacoes.push({ text: `${usuarioLogado.name} lançou no Node ${node} (${projeto})`, time: new Date().toLocaleDateString(), tipo: "info" });
+            carrinhoAtual = [];
+            salvarDb();
+            alert("✅ Lançamento efetuado e mala atualizada!");
+            abrirCardTech('lancamento');
+        }
+
+        function solicitarReposicaoTech() {
+            let matDesc = document.getElementById('t-rep-mat').value;
+            let qtd = Number(document.getElementById('t-rep-qtd').value);
+            if(qtd <= 0) { alert("Informe uma quantidade válida."); return; }
+
+            db.reposicoes.push({
+                id: Date.now(),
+                tecnico: usuarioLogado.name,
+                techLogin: usuarioLogado.login,
+                material: matDesc,
+                qtd: qtd,
+                status: "Pendente"
+            });
+            registrarMovimentacao("Reposição Solicitada", usuarioLogado.name, `Solicitou reposição de ${qtd}x ${matDesc}`);
+            db.notificacoes.push({ text: `${usuarioLogado.name} solicitou reposição de ${matDesc} (${qtd} un).`, time: new Date().toLocaleDateString(), tipo: "info" });
+            salvarDb();
+            alert("✅ Pedido de reposição enviado para a Base Central!");
+        }
+
+        // SOLICITAÇÃO DE AMIZADE
+        function enviarPedidoAmizadeTech() {
+            let loginBusca = document.getElementById('colega-busca-login').value.trim().toLowerCase();
+            let amigo = db.tecnicos.find(t => t.login === loginBusca);
+            if(!amigo) { alert("Técnico não encontrado!"); return; }
+            if(amigo.login === usuarioLogado.login) { alert("Você não pode adicionar a si mesmo."); return; }
+            if((usuarioLogado.amigos || []).includes(amigo.login)) { alert("Vocês já são colegas!"); return; }
+
+            if(!amigo.pedidosAmizade) amigo.pedidosAmizade = [];
+            if(amigo.pedidosAmizade.find(p => (p.login || p) === usuarioLogado.login)) { alert("Pedido já enviado anteriormente!"); return; }
+
+            amigo.pedidosAmizade.push({ login: usuarioLogado.login, nome: usuarioLogado.name });
+            registrarMovimentacao("Solicitação Amizade", usuarioLogado.name, `Enviou pedido para ${amigo.name}`);
+            salvarDb();
+            alert("✅ Solicitação de amizade enviada com sucesso!");
+            document.getElementById('colega-busca-login').value = '';
+        }
+
+        function aceitarPedidoAmizade(loginColega) {
+            if(!usuarioLogado.amigos) usuarioLogado.amigos = [];
+            usuarioLogado.amigos.push(loginColega);
+            usuarioLogado.pedidosAmizade = usuarioLogado.pedidosAmizade.filter(p => (p.login || p) !== loginColega);
+
+            let colegaObj = db.tecnicos.find(t => t.login === loginColega);
+            if(colegaObj) {
+                if(!colegaObj.amigos) colegaObj.amigos = [];
+                if(!colegaObj.amigos.includes(usuarioLogado.login)) colegaObj.amigos.push(usuarioLogado.login);
+            }
+            salvarDb();
+            alert("✅ Pedido de amizade aceito!");
+            abrirCardTech('colega');
+        }
+
+        function recusarPedidoAmizade(pIdx) {
+            usuarioLogado.pedidosAmizade.splice(pIdx, 1);
+            salvarDb();
+            abrirCardTech('colega');
+        }
+
+        // --- CHAT DIRECT ---
+        function selecionarChatTech(dest) {
+            chatDestinatarioAtual = dest;
+            db.mensagens.forEach(m => {
+                if(m.destinatario === usuarioLogado.name && m.remetente === dest) m.lido = true;
+            });
+            salvarDb();
+            atualizarMsgTechBox();
+            atualizarBadgesChatTech();
+        }
+
+        function renderizarColegasChatTech() {
+            let html = "";
+            (usuarioLogado.amigos || []).forEach(loginAmigo => {
+                let amigoObj = db.tecnicos.find(t => t.login === loginAmigo);
+                if(amigoObj) {
+                    let avatar = amigoObj.avatar ? `<img src="${amigoObj.avatar}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">${amigoObj.name.charAt(0)}</div>`;
+                    let badgeOn = amigoObj.online ? 'bg-emerald-500' : 'bg-zinc-600';
+                    let naoLidas = db.mensagens.filter(m => m.remetente === amigoObj.name && m.destinatario === usuarioLogado.name && !m.lido).length;
+                    let badgeHtml = naoLidas > 0 ? `<span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">${naoLidas}</span>` : '';
+                    html += `
+                        <div onclick="selecionarChatTech('${amigoObj.name}')" class="flex items-center space-x-2 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl cursor-pointer hover:border-red-600 flex-shrink-0 relative">
+                            <div class="relative">${avatar}<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${badgeOn} border border-black"></span></div>
+                            <div class="text-left"><span class="text-xs font-bold text-white block">${amigoObj.name}</span><span class="text-[9px] text-zinc-400">Online: ${amigoObj.lastSeen || 'Offline'}</span></div>
+                            ${badgeHtml}
+                        </div>
+                    `;
+                }
+            });
+            let colegasContainer = document.getElementById('tech-colleagues-chat-btns');
+            if(colegasContainer) colegasContainer.innerHTML = html;
+            atualizarBadgesChatTech();
+        }
+
+        function atualizarBadgesChatTech() {
+            let naoLidasBase = db.mensagens.filter(m => m.remetente === "Base" && (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login) && !m.lido).length;
+            let btnBase = document.getElementById('btn-chat-Base');
+            if(btnBase) {
+                if(naoLidasBase > 0) btnBase.innerHTML = `Base Central <span class="ml-1 bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[9px]">${naoLidasBase}</span>`;
+                else btnBase.innerHTML = `Base Central`;
+            }
+
+            let totalNaoLidasGeral = db.mensagens.filter(m => (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login) && !m.lido).length;
+            let badgeCard = document.getElementById('badge-tech-chat-card');
+            if(badgeCard) {
+                if(totalNaoLidasGeral > 0) { badgeCard.classList.remove('hidden'); badgeCard.innerText = totalNaoLidasGeral; }
+                else badgeCard.classList.add('hidden');
+            }
+        }
+
+        function atualizarMsgTechBox() {
+            let box = document.getElementById('tech-chat-box');
+            if(!box) return;
+            let filtradas = db.mensagens.filter(m => 
+                (m.remetente === usuarioLogado.name && m.destinatario === chatDestinatarioAtual) ||
+                (m.remetente === chatDestinatarioAtual && m.destinatario === usuarioLogado.name) ||
+                (m.remetente === usuarioLogado.login && m.destinatario === chatDestinatarioAtual) ||
+                (m.remetente === chatDestinatarioAtual && m.destinatario === usuarioLogado.login)
+            );
+            box.innerHTML = filtradas.map(m => {
+                let eu = m.remetente === usuarioLogado.name || m.remetente === usuarioLogado.login;
+                let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-200 mr-auto';
+                return `<div class="max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow"><b class="block text-[9px] opacity-75">${m.remetente} • ${m.hora}</b>${m.texto}</div>`;
+            }).join('') || '<p class="text-zinc-500 text-center italic">Nenhuma mensagem com ' + chatDestinatarioAtual + '.</p>';
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function enviarMsgTech() {
+            let input = document.getElementById('tech-chat-input');
+            let texto = input.value.trim();
+            if(!texto) return;
+            db.mensagens.push({
+                remetente: usuarioLogado.name,
+                destinatario: chatDestinatarioAtual,
+                texto: texto,
+                hora: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                lido: false
+            });
+            input.value = '';
+            salvarDb();
+            atualizarMsgTechBox();
+            renderizarColegasChatTech();
+        }
+
+        // --- CHAT ADMIN ---
+        let chatAdminAtual = null;
+        function atualizarChatAdminLista() {
+            let contatosDiv = document.getElementById('admin-chat-contacts');
+            if(!contatosDiv) return;
+
+            let html = "";
+            db.tecnicos.forEach(t => {
+                let naoLidas = db.mensagens.filter(m => (m.remetente === t.name || m.remetente === t.login) && m.destinatario === "Base" && !m.lido).length;
+                let badge = naoLidas > 0 ? `<span class="bg-red-600 text-white text-[9px] px-2 py-0.5 rounded-full font-bold ml-auto">${naoLidas}</span>` : '';
+                let avatar = t.avatar ? `<img src="${t.avatar}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">${t.name.charAt(0)}</div>`;
+                html += `
+                    <div onclick="selecionarChatAdmin('${t.name}')" class="flex items-center space-x-3 p-3 rounded-xl cursor-pointer hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition ${chatAdminAtual === t.name ? 'bg-zinc-900 border-red-600' : ''}">
+                        ${avatar}
+                        <div class="flex-1 overflow-hidden"><h5 class="font-bold text-white text-xs">${t.name}</h5><p class="text-[9px] text-zinc-400">Online: ${t.lastSeen || 'Offline'}</p></div>
+                        ${badge}
+                    </div>
+                `;
+            });
+            contatosDiv.innerHTML = html;
+        }
+
+        function selecionarChatAdmin(nomeTecnico) {
+            chatAdminAtual = nomeTecnico;
+            let tech = db.tecnicos.find(t => t.name === nomeTecnico || t.login === nomeTecnico);
+            db.mensagens.forEach(m => {
+                if((m.remetente === nomeTecnico || (tech && m.remetente === tech.login)) && m.destinatario === "Base") m.lido = true;
+            });
+            salvarDb();
+            document.getElementById('admin-chat-header').innerHTML = `<span>Conversando com ${nomeTecnico}</span>`;
+            atualizarMensagensAdminBox();
+            atualizarChatAdminLista();
+            atualizarPainelAdmin();
+        }
+
+        function atualizarMensagensAdminBox() {
+            let box = document.getElementById('admin-chat-messages');
+            if(!box || !chatAdminAtual) return;
+            let tech = db.tecnicos.find(t => t.name === chatAdminAtual || t.login === chatAdminAtual);
+            let msgs = db.mensagens.filter(m => 
+                (m.remetente === chatAdminAtual && m.destinatario === "Base") ||
+                (tech && m.remetente === tech.login && m.destinatario === "Base") ||
+                (m.remetente === "Base" && (m.destinatario === chatAdminAtual || (tech && m.destinatario === tech.login)))
+            );
+            box.innerHTML = msgs.map(m => {
+                let eu = m.remetente === "Base";
+                let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-200 mr-auto';
+                return `<div class="max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow"><b class="block text-[9px] opacity-75">${m.remetente} • ${m.hora}</b>${m.texto}</div>`;
+            }).join('') || '<p class="text-zinc-500 text-center italic">Nenhuma mensagem.</p>';
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function enviarMensagemAdmin() {
+            if(isVisualizador) return;
+            if(!chatAdminAtual) { alert("Selecione um técnico primeiro!"); return; }
+            let input = document.getElementById('admin-chat-input');
+            let texto = input.value.trim();
+            if(!texto) return;
+            db.mensagens.push({
+                remetente: "Base",
+                destinatario: chatAdminAtual,
+                texto: texto,
+                hora: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                lido: false
+            });
+            input.value = '';
+            salvarDb();
+            atualizarMensagensAdminBox();
+        }
+
+        // Inicializar PWA ao carregar a página
+        document.addEventListener('DOMContentLoaded', inicializarPWA);
+    </script>
+</body>
+</html>
