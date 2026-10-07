@@ -28,6 +28,37 @@
         
         /* ESTILO MODO VISUALIZADOR (SOMENTE LEITURA) */
         .mode-visualizador .action-btn-write { display: none !important; }
+
+        /* MODO CLARO (BRANCO) DEDICADO */
+        body.theme-light {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+        body.theme-light .bg-black,
+        body.theme-light .bg-zinc-950,
+        body.theme-light .bg-zinc-900 {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
+        body.theme-light aside {
+            background-color: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+        }
+        body.theme-light .text-white {
+            color: #0f172a !important;
+        }
+        body.theme-light .text-zinc-300,
+        body.theme-light .text-zinc-400 {
+            color: #475569 !important;
+        }
+        body.theme-light input,
+        body.theme-light select,
+        body.theme-light textarea {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
     </style>
 </head>
 <body class="bg-black text-slate-100 font-sans antialiased min-h-screen" id="app-body-container">
@@ -86,6 +117,9 @@
                 <button onclick="switchAdminTab('tecnicos')" id="atab-tecnicos" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
                     <i data-lucide="users" class="w-4 h-4"></i><span>Gestão de Técnicos</span>
                 </button>
+                <button onclick="switchAdminTab('estoque-padrao')" id="atab-estoque-padrao" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="layers" class="w-4 h-4"></i><span>Estoque Padrão</span>
+                </button>
                 <button onclick="switchAdminTab('estoque-fisico')" id="atab-estoque-fisico" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
                     <i data-lucide="warehouse" class="w-4 h-4"></i><span>Estoque Físico (Bipagem)</span>
                 </button>
@@ -127,10 +161,14 @@
 
         <!-- Main Content Admin -->
         <main class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-            <!-- Topbar -->
+            <!-- Topbar com Alternador de Tema Preto / Branco -->
             <div class="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl border border-zinc-800 shadow-sm">
                 <span class="font-bold text-white text-sm">Painel de Controle Central Oficial</span>
                 <div class="flex items-center space-x-3">
+                    <button onclick="toggleTheme()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                        <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+                        <span id="theme-toggle-text">Modo Claro (Branco)</span>
+                    </button>
                     <button onclick="baixarExcelGeral()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
                         <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Baixar Excel Geral</span>
                     </button>
@@ -222,10 +260,14 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm gap-4">
                     <div>
                         <h2 class="text-xl font-bold text-white">Gestão de Técnicos</h2>
-                        <p class="text-xs text-zinc-400">Cadastre logins e senhas autorizados</p>
+                        <p class="text-xs text-zinc-400">Cadastre logins e senhas autorizados com estoque inicial padrão</p>
                     </div>
-                    <div class="flex flex-wrap gap-2 action-btn-write">
+                    <div class="flex flex-wrap gap-2 items-center action-btn-write">
                         <input type="text" id="quick-add-login" placeholder="Adicionar por Login..." class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <label class="flex items-center space-x-1 text-xs text-zinc-300">
+                            <input type="checkbox" id="quick-add-use-padrao" checked class="w-4 h-4 text-red-600 rounded">
+                            <span>Usar Estoque Padrão</span>
+                        </label>
                         <button onclick="adicionarTecnicoPorLoginRapido()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Adicionar Rápido</button>
                         <button onclick="abrirModalTecnico()" class="px-4 py-2.5 bg-zinc-800 text-white rounded-xl text-xs font-bold">Novo Completo</button>
                     </div>
@@ -244,6 +286,33 @@
                         </thead>
                         <tbody id="admin-tech-table" class="divide-y divide-zinc-800"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- ESTOQUE PADRÃO (CONFIGURAÇÃO INICIAL DA MALA) -->
+            <div id="acontent-estoque-padrao" class="admin-tab hidden space-y-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4 action-btn-write">
+                    <h2 class="text-xl font-bold text-white">Configurar Estoque Padrão Inicial do Técnico</h2>
+                    <p class="text-xs text-zinc-400">Defina os materiais e as quantidades iniciais que serão carregados na mala de **qualquer novo técnico** cadastrado com essa opção ativada.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input type="text" id="padrao-sap" placeholder="Código SAP (ex: 22026267)" class="px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <input type="text" id="padrao-desc" placeholder="Descrição do Material" class="px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <input type="number" id="padrao-qtd" placeholder="Qtd Inicial Padrão" min="1" value="100" class="px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                    </div>
+                    <button onclick="adicionarItemEstoquePadrao()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow">Adicionar ao Estoque Padrão</button>
+                </div>
+
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm">
+                    <h3 class="font-bold text-white text-sm mb-3">Lista de Materiais do Estoque Padrão Configurado</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left text-zinc-300">
+                            <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
+                               <tr><th class="p-3">SAP</th><th class="p-3">Descrição</th><th class="p-3 text-center">Quantidade Inicial Padrão</th><th class="p-3 text-center">Ações</th></tr>
+                            </thead>
+                            <tbody id="admin-padrao-table" class="divide-y divide-zinc-800"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -371,18 +440,19 @@
                 </div>
             </div>
 
-            <!-- LANÇAMENTOS & SIAKI -->
+            <!-- LANÇAMENTOS & SIAKI (COM FILTRO DIA X ATÉ DIA Y) -->
             <div id="acontent-lancamentos" class="admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div>
                             <h2 class="text-xl font-bold text-white">Lançamentos & Padrão SIAKI</h2>
                             <p class="text-xs text-zinc-400">Colunas: COD SAP | Material | PROJETOS | CIDADE | LOCAL DE DESCARGA | Node | QTD. CONSUMO | QTD. DESCARTE</p>
                         </div>
-                        <div class="flex items-center space-x-2 text-xs text-zinc-300">
-                            <label class="font-bold">Filtrar Data:</label>
-                            <input type="date" id="admin-filter-date" onchange="atualizarPainelAdmin()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl outline-none text-white">
-                            <button onclick="document.getElementById('admin-filter-date').value=''; atualizarPainelAdmin();" class="px-3 py-2 bg-zinc-800 text-white rounded-xl font-bold">Limpar</button>
+                        <div class="flex flex-wrap items-center gap-2 text-xs text-zinc-300">
+                            <span class="font-bold text-red-400">Filtrar Período:</span>
+                            <label class="flex items-center gap-1">De: <input type="date" id="admin-filter-date-start" onchange="atualizarPainelAdmin()" class="px-2.5 py-1.5 bg-black border border-zinc-800 rounded-xl outline-none text-white"></label>
+                            <label class="flex items-center gap-1">Até: <input type="date" id="admin-filter-date-end" onchange="atualizarPainelAdmin()" class="px-2.5 py-1.5 bg-black border border-zinc-800 rounded-xl outline-none text-white"></label>
+                            <button onclick="limparFiltroDatasLancamentos()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold">Limpar</button>
                         </div>
                     </div>
                     <div class="flex space-x-3 pt-2">
@@ -405,7 +475,7 @@
                 </div>
             </div>
 
-            <!-- CHAT INSTAGRAM STYLE COM GRAVAÇÃO DE ÁUDIO -->
+            <!-- CHAT INSTAGRAM STYLE COM EXCLUSÃO DE MENSAGEM & ÁUDIO -->
             <div id="acontent-chat" class="admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm h-[650px] flex flex-col">
                     <h2 class="text-xl font-bold text-white mb-2">Chat Central</h2>
@@ -475,7 +545,7 @@
     <div id="tech-screen" class="hidden min-h-screen flex flex-col bg-black text-white items-center">
         <!-- Container Padrão Celular Centralizado -->
         <div class="w-full max-w-md mx-auto flex flex-col min-h-screen">
-            <!-- Header Técnico -->
+            <!-- Header Técnico com botão de tema -->
             <header class="bg-zinc-900 text-white p-3.5 shadow-xl border-b border-red-900/40 flex justify-between items-center w-full sticky top-0 z-30">
                 <div class="flex items-center space-x-2.5">
                     <div class="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center font-bold text-base overflow-hidden border-2 border-red-500 shadow-lg flex-shrink-0" id="tech-avatar-box">
@@ -493,6 +563,9 @@
                 </div>
                 
                 <div class="flex items-center space-x-1.5">
+                    <button onclick="toggleTheme()" class="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold" title="Alternar Tema">
+                        <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+                    </button>
                     <button onclick="abrirModalChamada()" class="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center" title="Ligar">
                         <i data-lucide="phone-call" class="w-4 h-4"></i>
                     </button>
@@ -553,7 +626,7 @@
         </div>
     </div>
 
-    <!-- MODAL SEGURANÇA & OPERADORES (MUDAR SENHA ADMIN E OPERADOR VISUALIZADOR) -->
+    <!-- MODAL SEGURANÇA & OPERADORES -->
     <div id="modal-seguranca" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 p-6 rounded-3xl w-full max-w-lg space-y-6 shadow-2xl border border-red-900 text-white max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
@@ -590,7 +663,7 @@
         </div>
     </div>
 
-    <!-- MODAL ADM: CADASTRAR TÉCNICO -->
+    <!-- MODAL ADM: CADASTRAR TÉCNICO COM OPÇÃO DE ESTOQUE PADRÃO -->
     <div id="modal-tecnico" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 p-6 rounded-3xl w-full max-w-md space-y-4 shadow-2xl border border-red-950 text-white">
             <h3 id="modal-tech-title" class="text-lg font-bold">Cadastrar Técnico</h3>
@@ -610,6 +683,10 @@
             <div>
                 <label class="block text-xs font-bold text-red-400 mb-1">Veículo</label>
                 <input type="text" id="tech-form-car" placeholder="Ex: V-102" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none">
+            </div>
+            <div class="flex items-center space-x-2 pt-2 border-t border-zinc-800">
+                <input type="checkbox" id="tech-form-apply-padrao" checked class="w-4 h-4 text-red-600 bg-black border-zinc-800 rounded focus:ring-red-600">
+                <label for="tech-form-apply-padrao" class="text-xs font-bold text-zinc-300">Carregar Estoque Padrão Configurado na Mala</label>
             </div>
             <div class="flex justify-end space-x-2 pt-2">
                 <button onclick="fecharModalTecnico()" class="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-xl text-xs font-bold">Cancelar</button>
@@ -680,6 +757,10 @@
         let db = {
             adminPass: "Constru007",
             operadores: [],
+            estoquePadrao: [
+                { sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtdInicial: 500 },
+                { sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtdInicial: 100 }
+            ],
             tecnicos: [
                 { name: "João Silva", login: "joao", senha: "123", car: "V-102 (Fiorino)", avatar: "", lat: -9.6658, lng: -35.7350, rua: "Av. Fernandes Lima, 1000 - Maceió", trackingOn: false, online: false, lastSeen: "Hoje às 08:30", amigos: ["carlos"], pedidosAmizade: [], notificacoes: [], mala: [
                     {sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtd: 500, lancado: 0, abastecido: 500, seriais: []},
@@ -713,6 +794,7 @@
         let chartEstoqueInstance = null;
         let isVisualizador = false;
         let gpsWatchId = null;
+        let themeMode = localStorage.getItem('boxfield_theme') || 'dark';
 
         // Variáveis de Gravação de Áudio Chat
         let mediaRecorder = null;
@@ -723,13 +805,35 @@
             dbRef.set(db);
         }
 
-        // --- SINCRONIZAÇÃO EM TEMPO REAL SEM FECHAR O TECLADO MOBILE ---
+        // --- SISTEMA DE ALTERNÂNCIA DE TEMA (CLARO / ESCURO) ---
+        function applyTheme() {
+            const btnText = document.getElementById('theme-toggle-text');
+            if (themeMode === 'light') {
+                document.body.classList.add('theme-light');
+                if(btnText) btnText.innerText = "Modo Escuro (Preto)";
+            } else {
+                document.body.classList.remove('theme-light');
+                if(btnText) btnText.innerText = "Modo Claro (Branco)";
+            }
+        }
+
+        function toggleTheme() {
+            themeMode = themeMode === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('boxfield_theme', themeMode);
+            applyTheme();
+        }
+
+        // --- SINCRONIZAÇÃO EM TEMPO REAL ---
         dbRef.on('value', (snapshot) => {
             const serverData = snapshot.val();
             if (serverData) {
                 db = serverData;
                 if(!db.tecnicos) db.tecnicos = [];
                 if(!db.operadores) db.operadores = [];
+                if(!db.estoquePadrao) db.estoquePadrao = [
+                    { sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtdInicial: 500 },
+                    { sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtdInicial: 100 }
+                ];
                 if(!db.materiais) db.materiais = [];
                 if(!db.estoqueFisico) db.estoqueFisico = [];
                 if(!db.favoritos) db.favoritos = [];
@@ -740,7 +844,6 @@
                 if(!db.notificacoes) db.notificacoes = [];
                 if(db.adminPass) ADMIN_PASS = db.adminPass;
 
-                // Prevenir fechamento do teclado mobile ao atualizar interface
                 const activeEl = document.activeElement;
                 const isUserTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
 
@@ -786,6 +889,7 @@
         });
 
         function inicializarPWA() {
+            applyTheme();
             const manifest = {
                 name: "Mala & Estoque Red & Black",
                 short_name: "MalaEstoque",
@@ -808,7 +912,7 @@
 
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE_NAME = 'mala-estoque-v4';
+                    const CACHE_NAME = 'mala-estoque-v5';
                     const urlsToCache = ['./', 'https://cdn.tailwindcss.com', 'https://unpkg.com/lucide@latest', 'https://cdn.jsdelivr.net/npm/chart.js'];
                     self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache)).then(() => self.skipWaiting())); });
                     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
@@ -854,14 +958,14 @@
             }
         }
 
-        // --- LOGIN INTELIGENTE (ADMIN, OPERADOR VISUALIZADOR E TÉCNICO) ---
+        // --- LOGIN INTELIGENTE ---
         function handleLogin(event) {
             event.preventDefault();
             const userInput = document.getElementById('login-user').value.trim();
             const passInput = document.getElementById('login-pass').value.trim();
             const currentAdminPass = db.adminPass || ADMIN_PASS;
 
-            // 1. ACESSO ADMINISTRADOR COMPLETO
+            // 1. ADMIN
             if (userInput.toLowerCase() === 'admin' && passInput === currentAdminPass) {
                 isVisualizador = false;
                 document.getElementById('app-body-container').classList.remove('mode-visualizador');
@@ -875,7 +979,7 @@
                 return;
             }
 
-            // 2. ACESSO OPERADOR / VISUALIZADOR (APENAS LEITURA)
+            // 2. OPERADOR
             let operador = (db.operadores || []).find(o => o.login.toLowerCase() === userInput.toLowerCase() && o.senha === passInput);
             if (operador) {
                 isVisualizador = true;
@@ -888,7 +992,7 @@
                 return;
             }
 
-            // 3. ACESSO TÉCNICO
+            // 3. TÉCNICO
             let tech = db.tecnicos.find(t => t.login.toLowerCase() === userInput.toLowerCase() && t.senha === passInput);
             if (tech) {
                 isVisualizador = false;
@@ -896,7 +1000,6 @@
                 tech.online = true;
                 tech.lastSeen = "Agora";
                 
-                // ATIVAÇÃO AUTOMÁTICA DO GPS NO LOGIN
                 iniciarGpsAutomaticoTecnico();
 
                 registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema oficial com GPS Automático.`);
@@ -910,7 +1013,7 @@
             alert("Acesso negado! Usuário ou senha incorretos.");
         }
 
-        // --- ATIVAÇÃO DE GPS AUTOMÁTICO DO TÉCNICO ---
+        // --- GPS AUTOMÁTICO ---
         function iniciarGpsAutomaticoTecnico() {
             if(!usuarioLogado) return;
             usuarioLogado.trackingOn = true;
@@ -972,7 +1075,7 @@
         }
 
         function registrarMovimentacao(tipo, responsavel, detalhes) {
-            if(isVisualizador) return; // Operador de leitura não registra nada
+            if(isVisualizador) return;
             if(!db.movimentacoes) db.movimentacoes = [];
             db.movimentacoes.unshift({
                 data: new Date().toLocaleString(),
@@ -982,7 +1085,7 @@
             });
         }
 
-        // --- SEGURANÇA ADM & CADASTRO DE OPERADORES VISUALIZADORES ---
+        // --- SEGURANÇA ADM ---
         function abrirModalSegurancaADM() {
             if(isVisualizador) { alert("Visualizadores não têm acesso às configurações de segurança."); return; }
             renderizarListaOperadores();
@@ -1060,8 +1163,11 @@
                 el.classList.add('text-zinc-400');
             });
             document.getElementById('acontent-' + tabId).classList.remove('hidden');
-            document.getElementById('atab-' + tabId).classList.add('bg-red-600', 'text-white');
-            document.getElementById('atab-' + tabId).classList.remove('text-zinc-400');
+            let btn = document.getElementById('atab-' + tabId);
+            if(btn) {
+                btn.classList.add('bg-red-600', 'text-white');
+                btn.classList.remove('text-zinc-400');
+            }
             atualizarPainelAdmin();
         }
 
@@ -1159,7 +1265,7 @@
 
             renderizarGraficosDashboard();
 
-            // Alerta SOS Banner
+            // Alerta SOS
             let sosBanner = document.getElementById('sos-alert-banner');
             if(db.sosAtivo) {
                 sosBanner.classList.remove('hidden');
@@ -1216,7 +1322,24 @@
             });
             document.getElementById('admin-tech-table').innerHTML = tHtml || '<tr><td colspan="6" class="p-4 text-center">Nenhum técnico.</td></tr>';
 
-            // Estoque Físico Tabela
+            // Tabela Estoque Padrão
+            let padraoHtml = '';
+            (db.estoquePadrao || []).forEach((ep, idx) => {
+                padraoHtml += `
+                    <tr class="border-b border-zinc-800">
+                        <td class="p-3 font-mono text-red-400 font-bold">${ep.sap}</td>
+                        <td class="p-3 text-white">${ep.desc}</td>
+                        <td class="p-3 text-center font-bold text-emerald-400">${ep.qtdInicial} un</td>
+                        <td class="p-3 text-center">
+                            <button onclick="removerItemEstoquePadrao(${idx})" class="action-btn-write text-red-500 font-bold hover:underline">Remover</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            let padraoTable = document.getElementById('admin-padrao-table');
+            if(padraoTable) padraoTable.innerHTML = padraoHtml || '<tr><td colspan="4" class="p-4 text-center text-zinc-500">Nenhum material no estoque padrão.</td></tr>';
+
+            // Tabela Estoque Físico
             let fisicoHtml = '';
             db.estoqueFisico.forEach((ef, idx) => {
                 let seriaisStr = ef.seriais && ef.seriais.length > 0 ? ef.seriais.join(', ') : '<span class="text-zinc-500">Apenas Miscelânea</span>';
@@ -1233,7 +1356,7 @@
             });
             document.getElementById('admin-fisico-table').innerHTML = fisicoHtml || '<tr><td colspan="6" class="p-4 text-center">Estoque físico vazio.</td></tr>';
 
-            // Select Passar p/ Técnicos & Malas
+            // Selects
             let passTechSel = document.getElementById('pass-tech-select');
             let passMatSel = document.getElementById('pass-mat-select');
             let malaSelect = document.getElementById('admin-select-mala-tech');
@@ -1254,16 +1377,24 @@
                 renderizarMalaAdmin();
             }
 
-            // Catálogo de Materiais
+            // Catálogo Materiais
             let matHtml = '';
             db.materiais.forEach((m, i) => {
                 matHtml += `<div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs"><div><b class="text-red-400">${m.sap}</b> - ${m.desc}</div><button onclick="removerMaterialAdmin(${i})" class="action-btn-write text-red-500 font-bold hover:underline">Remover</button></div>`;
             });
             document.getElementById('admin-materiais-list').innerHTML = matHtml;
 
-            // Lançamentos Padrão SIAKI
-            let dataFiltro = document.getElementById('admin-filter-date').value;
-            let lancamentosFiltrados = dataFiltro ? db.lancamentos.filter(l => l.data === dataFiltro) : db.lancamentos;
+            // Lançamentos Padrão SIAKI com FILTRO DE DIA X ATÉ DIA Y
+            let dtStart = document.getElementById('admin-filter-date-start')?.value;
+            let dtEnd = document.getElementById('admin-filter-date-end')?.value;
+
+            let lancamentosFiltrados = db.lancamentos.filter(l => {
+                if (!l.data) return true;
+                if (dtStart && l.data < dtStart) return false;
+                if (dtEnd && l.data > dtEnd) return false;
+                return true;
+            });
+
             let lHtml = '';
             lancamentosFiltrados.forEach((l, index) => {
                 let itensStr = l.items.map(it => `${it.material} (${it.qtd})`).join(' | ');
@@ -1278,7 +1409,7 @@
                     </tr>
                 `;
             });
-            document.getElementById('admin-launch-history').innerHTML = lHtml || '<tr><td colspan="6" class="p-4 text-center">Nenhum lançamento.</td></tr>';
+            document.getElementById('admin-launch-history').innerHTML = lHtml || '<tr><td colspan="6" class="p-4 text-center text-zinc-500">Nenhum lançamento encontrado no período selecionado.</td></tr>';
 
             renderizarMapaAdmin();
             renderizarHistoricoGeral();
@@ -1286,7 +1417,53 @@
             lucide.createIcons();
         }
 
-        // --- MAPA E MONITORAMENTO DE GPS REAL ---
+        function limparFiltroDatasLancamentos() {
+            if(document.getElementById('admin-filter-date-start')) document.getElementById('admin-filter-date-start').value = '';
+            if(document.getElementById('admin-filter-date-end')) document.getElementById('admin-filter-date-end').value = '';
+            atualizarPainelAdmin();
+        }
+
+        // --- ESTOQUE PADRÃO ADM ---
+        function adicionarItemEstoquePadrao() {
+            if(isVisualizador) return;
+            let sap = document.getElementById('padrao-sap').value.trim();
+            let desc = document.getElementById('padrao-desc').value.trim();
+            let qtd = Number(document.getElementById('padrao-qtd').value);
+
+            if(!sap || !desc || qtd <= 0) { alert("Preencha SAP, Descrição e quantidade válidos!"); return; }
+            if(!db.estoquePadrao) db.estoquePadrao = [];
+
+            let exist = db.estoquePadrao.find(e => e.sap === sap);
+            if(exist) {
+                exist.qtdInicial = qtd;
+                exist.desc = desc;
+            } else {
+                db.estoquePadrao.push({ sap, desc, qtdInicial: qtd });
+            }
+
+            if (!db.materiais.some(m => m.sap === sap)) {
+                db.materiais.push({ sap, desc });
+            }
+
+            registrarMovimentacao("Estoque Padrão", "Admin", `Configurado item ${desc} (${sap}) com qtd inicial ${qtd}`);
+            salvarDb();
+            document.getElementById('padrao-sap').value = '';
+            document.getElementById('padrao-desc').value = '';
+            document.getElementById('padrao-qtd').value = '100';
+            alert("✅ Material adicionado ao Estoque Padrão!");
+            atualizarPainelAdmin();
+        }
+
+        function removerItemEstoquePadrao(idx) {
+            if(isVisualizador) return;
+            if(confirm("Remover este item do Estoque Padrão?")) {
+                db.estoquePadrao.splice(idx, 1);
+                salvarDb();
+                atualizarPainelAdmin();
+            }
+        }
+
+        // --- MAPA ---
         function renderizarMapaAdmin() {
             let mapTechsHtml = '';
             db.tecnicos.forEach(t => {
@@ -1512,7 +1689,7 @@
             document.getElementById('modal-comprovante').classList.add('hidden');
         }
 
-        // --- CONTROLE DE MALAS ADMIN (COM BOTÃO DE EXCLUIR MATERIAL) ---
+        // --- CONTROLE DE MALAS ADMIN ---
         function switchMalaSubTab(sub) {
             subMalaAtual = sub;
             document.querySelectorAll('.mala-subcontent').forEach(el => el.classList.add('hidden'));
@@ -1588,7 +1765,6 @@
             }
         }
 
-        // EXCLUIR MATERIAL ESPECÍFICO DA MALA DO TÉCNICO
         function excluirMaterialMalaAdmin(techLogin, itemIdx) {
             if(isVisualizador) return;
             let tech = db.tecnicos.find(t => t.login === techLogin);
@@ -1706,7 +1882,7 @@
             alert("📋 Dados copiados no padrão SIAKI!");
         }
 
-        // CRUD TÉCNICO
+        // CRUD TÉCNICO COM CARREGAMENTO DO ESTOQUE PADRÃO
         function abrirModalTecnico(index = -1) {
             if(isVisualizador) return;
             document.getElementById('edit-tech-index').value = index;
@@ -1717,16 +1893,19 @@
                 document.getElementById('tech-form-login').value = t.login;
                 document.getElementById('tech-form-pass').value = t.senha;
                 document.getElementById('tech-form-car').value = t.car;
+                document.getElementById('tech-form-apply-padrao').checked = false;
             } else {
                 document.getElementById('modal-tech-title').innerText = "Cadastrar Técnico";
                 document.getElementById('tech-form-name').value = '';
                 document.getElementById('tech-form-login').value = '';
                 document.getElementById('tech-form-pass').value = '';
                 document.getElementById('tech-form-car').value = '';
+                document.getElementById('tech-form-apply-padrao').checked = true;
             }
             document.getElementById('modal-tecnico').classList.remove('hidden');
         }
         function fecharModalTecnico() { document.getElementById('modal-tecnico').classList.add('hidden'); }
+        
         function salvarTecnicoForm() {
             if(isVisualizador) return;
             let index = parseInt(document.getElementById('edit-tech-index').value);
@@ -1734,27 +1913,65 @@
             let login = document.getElementById('tech-form-login').value.trim().toLowerCase();
             let senha = document.getElementById('tech-form-pass').value;
             let car = document.getElementById('tech-form-car').value;
+            let applyPadrao = document.getElementById('tech-form-apply-padrao').checked;
+
             if(!name || !login || !senha) { alert("Preencha todos os campos!"); return; }
+
             if(index >= 0) {
-                db.tecnicos[index].name = name; db.tecnicos[index].login = login; db.tecnicos[index].senha = senha; db.tecnicos[index].car = car;
+                db.tecnicos[index].name = name; 
+                db.tecnicos[index].login = login; 
+                db.tecnicos[index].senha = senha; 
+                db.tecnicos[index].car = car;
             } else {
+                let malaInicial = [];
+                if (applyPadrao && db.estoquePadrao && db.estoquePadrao.length > 0) {
+                    malaInicial = db.estoquePadrao.map(ep => ({
+                        sap: ep.sap,
+                        desc: ep.desc,
+                        qtd: Number(ep.qtdInicial || 0),
+                        lancado: 0,
+                        abastecido: Number(ep.qtdInicial || 0),
+                        seriais: []
+                    }));
+                } else {
+                    malaInicial = db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}));
+                }
+
                 db.tecnicos.push({
                     name, login, senha, car, avatar: "", lat: -9.6658, lng: -35.7350, rua: "Maceió - AL", trackingOn: false, online: false, lastSeen: "Nunca", amigos: [], pedidosAmizade: [], notificacoes: [],
-                    mala: db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}))
+                    mala: malaInicial
                 });
             }
             salvarDb();
             fecharModalTecnico(); 
             atualizarPainelAdmin();
         }
+
         function editarTecnico(i) { abrirModalTecnico(i); }
         function excluirTecnico(i) { if(isVisualizador) return; if(confirm("Excluir técnico?")) { db.tecnicos.splice(i, 1); salvarDb(); atualizarPainelAdmin(); } }
 
         function adicionarTecnicoPorLoginRapido() {
             if(isVisualizador) return;
             let login = document.getElementById('quick-add-login').value.trim().toLowerCase();
+            let usePadrao = document.getElementById('quick-add-use-padrao').checked;
+
             if(!login) { alert("Digite o login!"); return; }
             if(db.tecnicos.find(t => t.login === login)) { alert("Técnico já existe!"); return; }
+
+            let malaInicial = [];
+            if (usePadrao && db.estoquePadrao && db.estoquePadrao.length > 0) {
+                malaInicial = db.estoquePadrao.map(ep => ({
+                    sap: ep.sap,
+                    desc: ep.desc,
+                    qtd: Number(ep.qtdInicial || 0),
+                    lancado: 0,
+                    abastecido: Number(ep.qtdInicial || 0),
+                    seriais: []
+                }));
+            } else {
+                malaInicial = db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}));
+            }
+
             db.tecnicos.push({
                 name: login.toUpperCase(),
                 login: login,
@@ -1770,11 +1987,11 @@
                 amigos: [],
                 pedidosAmizade: [],
                 notificacoes: [],
-                mala: db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}))
+                mala: malaInicial
             });
             document.getElementById('quick-add-login').value = '';
             salvarDb();
-            alert("✅ Técnico adicionado com sucesso!");
+            alert("✅ Técnico adicionado com sucesso com estoque padrão configurado!");
             atualizarPainelAdmin();
         }
 
@@ -1830,7 +2047,7 @@
             atualizarPainelAdmin();
         }
 
-        // --- PAINEL DO TÉCNICO & GEOLOCALIZAÇÃO ---
+        // --- PAINEL DO TÉCNICO ---
         function inicializarPainelTecnico() {
             document.getElementById('tech-welcome-name').innerText = usuarioLogado.name + " (" + usuarioLogado.car + ")";
             if(usuarioLogado.avatar) document.getElementById('tech-avatar-box').innerHTML = `<img src="${usuarioLogado.avatar}" class="w-full h-full object-cover">`;
@@ -2041,7 +2258,21 @@
             lucide.createIcons();
         }
 
-        // --- RECURSO DE GRAVAÇÃO E ENVIAR MENSAGEM DE ÁUDIO NO CHAT ---
+        // --- EXCLUSÃO DE MENSAGEM CHAT DIRECT ---
+        function apagarMensagemChat(msgId) {
+            if(isVisualizador) return;
+            if(confirm("Deseja apagar esta mensagem do chat?")) {
+                let idx = db.mensagens.findIndex(m => m.id === msgId);
+                if(idx !== -1) {
+                    db.mensagens.splice(idx, 1);
+                    salvarDb();
+                    if(usuarioLogado) atualizarMsgTechBox();
+                    else atualizarMensagensAdminBox();
+                }
+            }
+        }
+
+        // --- GRAVAÇÃO DE ÁUDIO NO CHAT ---
         async function toggleGravarAudio(isTech = true) {
             const btnId = isTech ? 'btn-rec-audio-tech' : 'btn-rec-audio-admin';
             const btn = document.getElementById(btnId);
@@ -2098,6 +2329,7 @@
         function enviarAudioTech(audioDataUrl) {
             if(!audioDataUrl || !usuarioLogado) return;
             db.mensagens.push({
+                id: Date.now() + Math.random(),
                 remetente: usuarioLogado.name,
                 destinatario: chatDestinatarioAtual,
                 texto: "🎤 Mensagem de áudio",
@@ -2113,6 +2345,7 @@
         function enviarAudioAdmin(audioDataUrl) {
             if(isVisualizador || !chatAdminAtual) return;
             db.mensagens.push({
+                id: Date.now() + Math.random(),
                 remetente: "Base",
                 destinatario: chatAdminAtual,
                 texto: "🎤 Mensagem de áudio",
@@ -2314,7 +2547,7 @@
             alert("✅ Pedido de reposição enviado para a Base Central!");
         }
 
-        // SOLICITAÇÃO DE AMIZADE
+        // AMIZADE
         function enviarPedidoAmizadeTech() {
             let loginBusca = document.getElementById('colega-busca-login').value.trim().toLowerCase();
             let amigo = db.tecnicos.find(t => t.login === loginBusca);
@@ -2416,7 +2649,17 @@
                 let eu = m.remetente === usuarioLogado.name || m.remetente === usuarioLogado.login;
                 let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-200 mr-auto';
                 let audioMarkup = m.audio ? `<div class="mt-1"><audio controls src="${m.audio}" class="max-w-[210px] w-full h-8 rounded-lg"></audio></div>` : '';
-                return `<div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow"><b class="block text-[9px] opacity-75">${m.remetente} • ${m.hora}</b><div>${m.texto}</div>${audioMarkup}</div>`;
+                let msgId = m.id || 0;
+                return `
+                    <div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow relative group">
+                        <div class="flex items-center justify-between border-b border-white/10 pb-1 mb-1">
+                            <b class="text-[9px] opacity-75">${m.remetente} • ${m.hora}</b>
+                            <button onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-[10px] opacity-70 hover:opacity-100 hover:text-red-200 ml-2 font-bold">✕</button>
+                        </div>
+                        <div>${m.texto}</div>
+                        ${audioMarkup}
+                    </div>
+                `;
             }).join('') || '<p class="text-zinc-500 text-center italic">Nenhuma mensagem com ' + chatDestinatarioAtual + '.</p>';
             box.scrollTop = box.scrollHeight;
         }
@@ -2426,6 +2669,7 @@
             let texto = input.value.trim();
             if(!texto) return;
             db.mensagens.push({
+                id: Date.now() + Math.random(),
                 remetente: usuarioLogado.name,
                 destinatario: chatDestinatarioAtual,
                 texto: texto,
@@ -2486,8 +2730,18 @@
                 let eu = m.remetente === "Base";
                 let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-200 mr-auto';
                 let audioMarkup = m.audio ? `<div class="mt-1"><audio controls src="${m.audio}" class="max-w-[210px] w-full h-8 rounded-lg"></audio></div>` : '';
-                return `<div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow"><b class="block text-[9px] opacity-75">${m.remetente} • ${m.hora}</b><div>${m.texto}</div>${audioMarkup}</div>`;
-            }).join('') || '<p class="text-zinc-500 text-center italic">Nenhuma mensagem.</p>';
+                let msgId = m.id || 0;
+                return `
+                    <div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow relative group">
+                        <div class="flex items-center justify-between border-b border-white/10 pb-1 mb-1">
+                            <b class="text-[9px] opacity-75">${m.remetente} • ${m.hora}</b>
+                            <button onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-[10px] opacity-70 hover:opacity-100 hover:text-red-200 ml-2 font-bold">✕</button>
+                        </div>
+                        <div>${m.texto}</div>
+                        ${audioMarkup}
+                    </div>
+                `;
+            }).join('') || '<p class="text-zinc-500 text-center italic">Nenhuma mensagem com ' + chatAdminAtual + '.</p>';
             box.scrollTop = box.scrollHeight;
         }
 
@@ -2498,6 +2752,7 @@
             let texto = input.value.trim();
             if(!texto) return;
             db.mensagens.push({
+                id: Date.now() + Math.random(),
                 remetente: "Base",
                 destinatario: chatAdminAtual,
                 texto: texto,
