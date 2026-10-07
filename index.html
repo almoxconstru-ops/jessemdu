@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mala & Estoque | Logística Avançada Red & Black (Oficial)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -42,7 +42,7 @@
 
     <!-- ================= TELA DE LOGIN ================= -->
     <div id="login-screen" class="min-h-screen flex items-center justify-center bg-red-black-gradient p-4">
-        <div class="bg-zinc-900/90 backdrop-blur-2xl p-8 rounded-3xl shadow-2xl border border-red-900/40 w-full max-w-md text-white">
+        <div class="bg-zinc-900/90 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl shadow-2xl border border-red-900/40 w-full max-w-md text-white">
             <div class="text-center mb-6">
                 <div class="inline-flex p-4 bg-red-600 rounded-2xl mb-3 shadow-lg shadow-red-600/40 animate-pulse">
                     <i data-lucide="boxes" class="w-8 h-8 text-white"></i>
@@ -54,11 +54,11 @@
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase text-red-400 mb-1">Usuário / Login</label>
-                    <input type="text" id="login-user" required class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition" placeholder="admin, operador ou seu login">
+                    <input type="text" id="login-user" required autocomplete="off" class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition" placeholder="admin, operador ou seu login">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-red-400 mb-1">Senha</label>
-                    <input type="password" id="login-pass" required class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition" placeholder="••••••••">
+                    <input type="password" id="login-pass" required autocomplete="off" class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition" placeholder="••••••••">
                 </div>
                 <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 font-bold rounded-xl shadow-lg shadow-red-600/30 transition text-sm">
                     Acessar Sistema Oficial
@@ -338,7 +338,7 @@
                     <div id="mala-subcontent-miscelaneas" class="mala-subcontent overflow-x-auto pt-2">
                         <table class="w-full text-xs text-left text-zinc-300">
                             <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
-                                <tr><th class="p-3">SAP</th><th class="p-3">Descrição</th><th class="p-3 text-center">Atual</th><th class="p-3 text-center">Lançado</th><th class="p-3 text-center">Ações (Editar Qtd)</th></tr>
+                                <tr><th class="p-3">SAP</th><th class="p-3">Descrição</th><th class="p-3 text-center">Atual</th><th class="p-3 text-center">Lançado</th><th class="p-3 text-center">Ações (Editar / Excluir Material)</th></tr>
                             </thead>
                             <tbody id="admin-mala-table" class="divide-y divide-zinc-800"></tbody>
                         </table>
@@ -405,7 +405,7 @@
                 </div>
             </div>
 
-            <!-- CHAT INSTAGRAM STYLE -->
+            <!-- CHAT INSTAGRAM STYLE COM GRAVAÇÃO DE ÁUDIO -->
             <div id="acontent-chat" class="admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm h-[650px] flex flex-col">
                     <h2 class="text-xl font-bold text-white mb-2">Chat Central</h2>
@@ -414,9 +414,12 @@
                         <div class="flex-1 flex flex-col bg-zinc-950">
                             <div id="admin-chat-header" class="p-4 border-b border-zinc-800 font-bold text-sm bg-zinc-900 text-white flex items-center justify-between">Selecione um contato</div>
                             <div id="admin-chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs"></div>
-                            <div class="p-3 border-t border-zinc-800 flex space-x-2 bg-zinc-900 action-btn-write">
-                                <input type="text" id="admin-chat-input" placeholder="Enviar mensagem..." class="flex-1 px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
-                                <button onclick="enviarMensagemAdmin()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Enviar</button>
+                            <div class="p-3 border-t border-zinc-800 flex items-center space-x-2 bg-zinc-900 action-btn-write">
+                                <input type="text" id="admin-chat-input" autocomplete="off" onkeydown="if(event.key==='Enter') enviarMensagemAdmin()" placeholder="Enviar mensagem..." class="flex-1 px-4 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none focus:border-red-600">
+                                <button type="button" id="btn-rec-audio-admin" onclick="toggleGravarAudio(false)" title="Gravar Áudio" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center">
+                                    <i data-lucide="mic" class="w-4 h-4 text-red-400"></i>
+                                </button>
+                                <button type="button" onclick="enviarMensagemAdmin()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition">Enviar</button>
                             </div>
                         </div>
                     </div>
@@ -468,84 +471,86 @@
         </main>
     </div>
 
-    <!-- ================= PAINEL DO TÉCNICO ================= -->
-    <div id="tech-screen" class="hidden min-h-screen flex flex-col bg-black text-white">
-        <!-- Header Técnico -->
-        <header class="bg-zinc-900 text-white p-4 shadow-xl border-b border-red-900/40 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center font-bold text-lg overflow-hidden border-2 border-red-500 shadow-lg" id="tech-avatar-box">
-                    <span id="tech-avatar-text">T</span>
-                </div>
-                <div>
-                    <h2 id="tech-welcome-name" class="font-bold text-sm">Técnico</h2>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-[10px] text-emerald-400 font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block mr-1"></span> Online</span>
-                        <label class="text-[10px] text-red-400 cursor-pointer underline"><input type="file" id="photo-upload" class="hidden" onchange="mudarFotoPerfil(event)">Alterar Foto</label>
+    <!-- ================= PAINEL DO TÉCNICO (CELULAR CENTRALIZADO) ================= -->
+    <div id="tech-screen" class="hidden min-h-screen flex flex-col bg-black text-white items-center">
+        <!-- Container Padrão Celular Centralizado -->
+        <div class="w-full max-w-md mx-auto flex flex-col min-h-screen">
+            <!-- Header Técnico -->
+            <header class="bg-zinc-900 text-white p-3.5 shadow-xl border-b border-red-900/40 flex justify-between items-center w-full sticky top-0 z-30">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center font-bold text-base overflow-hidden border-2 border-red-500 shadow-lg flex-shrink-0" id="tech-avatar-box">
+                        <span id="tech-avatar-text">T</span>
                     </div>
-                </div>
-            </div>
-            
-            <div class="flex items-center space-x-2">
-                <button onclick="toggleGpsTecnico()" id="btn-gps-status" class="px-3 py-1.5 bg-zinc-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow transition">
-                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i><span id="gps-text">GPS Desligado</span>
-                </button>
-                <button onclick="abrirModalChamada()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow">
-                    <i data-lucide="phone-call" class="w-3.5 h-3.5"></i><span>Ligar</span>
-                </button>
-                <button onclick="acionarSOS()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-600/40 flex items-center space-x-1 animate-bounce">
-                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i><span>SOS</span>
-                </button>
-                <div class="relative">
-                    <button onclick="toggleTechNotifDropdown()" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl relative transition">
-                        <i data-lucide="bell" class="w-4 h-4 text-red-400"></i>
-                        <span id="tech-notif-counter" class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
-                    </button>
-                    <div id="tech-notif-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-700 z-50 p-4 space-y-2 text-white">
-                        <div class="flex justify-between items-center border-b border-zinc-800 pb-1">
-                            <h4 class="font-bold text-xs text-red-400">Notificações</h4>
-                            <button onclick="limparTechNotificacoes()" class="text-[10px] text-zinc-400">Limpar</button>
+                    <div>
+                        <h2 id="tech-welcome-name" class="font-bold text-xs truncate max-w-[130px] sm:max-w-[180px]">Técnico</h2>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-[9px] text-emerald-400 font-bold flex items-center bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded-md">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1 animate-pulse"></span> GPS Automático
+                            </span>
+                            <label class="text-[9px] text-red-400 cursor-pointer underline"><input type="file" id="photo-upload" class="hidden" onchange="mudarFotoPerfil(event)">Foto</label>
                         </div>
-                        <div id="tech-notif-list" class="max-h-48 overflow-y-auto space-y-2 text-xs"></div>
                     </div>
                 </div>
-                <button onclick="logout()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold flex items-center space-x-1">
-                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i><span>Sair</span>
-                </button>
-            </div>
-        </header>
+                
+                <div class="flex items-center space-x-1.5">
+                    <button onclick="abrirModalChamada()" class="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center" title="Ligar">
+                        <i data-lucide="phone-call" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="acionarSOS()" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-600/40 flex items-center space-x-1 animate-bounce">
+                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i><span>SOS</span>
+                    </button>
+                    <div class="relative">
+                        <button onclick="toggleTechNotifDropdown()" class="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl relative transition">
+                            <i data-lucide="bell" class="w-4 h-4 text-red-400"></i>
+                            <span id="tech-notif-counter" class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                        </button>
+                        <div id="tech-notif-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-700 z-50 p-4 space-y-2 text-white">
+                            <div class="flex justify-between items-center border-b border-zinc-800 pb-1">
+                                <h4 class="font-bold text-xs text-red-400">Notificações</h4>
+                                <button onclick="limparTechNotificacoes()" class="text-[10px] text-zinc-400">Limpar</button>
+                            </div>
+                            <div id="tech-notif-list" class="max-h-48 overflow-y-auto space-y-2 text-xs"></div>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold flex items-center justify-center" title="Sair">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </header>
 
-        <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
-            <div class="bg-gradient-to-r from-red-950 via-zinc-900 to-black text-white p-6 rounded-3xl shadow-2xl border border-red-900/40 text-center">
-                <h3 class="text-xl font-extrabold">BoxField</h3>
-                <p class="text-xs text-red-300 mt-1">Gerencie seus lançamentos, visualize sua mala serializada e converse com a base ou colegas.</p>
-            </div>
+            <main class="flex-1 w-full p-3 sm:p-4 space-y-4">
+                <div class="bg-gradient-to-r from-red-950 via-zinc-900 to-black text-white p-4 sm:p-5 rounded-3xl shadow-2xl border border-red-900/40 text-center">
+                    <h3 class="text-lg sm:text-xl font-extrabold">BoxField Mobile</h3>
+                    <p class="text-[11px] text-red-300 mt-0.5">Gestão de lançamentos, mala e comunicação em campo.</p>
+                </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 justify-center">
-                <div onclick="abrirCardTech('lancamento')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl">
-                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="clipboard-list" class="w-5 h-5"></i></div>
-                    <h4 class="font-bold text-xs">Lançar</h4>
+                <div class="grid grid-cols-5 gap-1.5 sm:gap-2 justify-center">
+                    <div onclick="abrirCardTech('lancamento')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="clipboard-list" class="w-4 h-4"></i></div>
+                        <h4 class="font-bold text-[10px]">Lançar</h4>
+                    </div>
+                    <div onclick="abrirCardTech('mala')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="backpack" class="w-4 h-4"></i></div>
+                        <h4 class="font-bold text-[10px]">Mala</h4>
+                    </div>
+                    <div onclick="abrirCardTech('chat')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl relative">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="message-square" class="w-4 h-4"></i></div>
+                        <h4 class="font-bold text-[10px]">Chat</h4>
+                        <span id="badge-tech-chat-card" class="hidden absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold px-1 rounded-full">0</span>
+                    </div>
+                    <div onclick="abrirCardTech('reposicao')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="package-plus" class="w-4 h-4"></i></div>
+                        <h4 class="font-bold text-[10px]">Reposição</h4>
+                    </div>
+                    <div onclick="abrirCardTech('colega')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="user-plus" class="w-4 h-4"></i></div>
+                        <h4 class="font-bold text-[10px]">Colega</h4>
+                    </div>
                 </div>
-                <div onclick="abrirCardTech('mala')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl">
-                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="backpack" class="w-5 h-5"></i></div>
-                    <h4 class="font-bold text-xs">Minha Mala</h4>
-                </div>
-                <div onclick="abrirCardTech('chat')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl relative">
-                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="message-square" class="w-5 h-5"></i></div>
-                    <h4 class="font-bold text-xs">Chat Direct</h4>
-                    <span id="badge-tech-chat-card" class="hidden absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">0</span>
-                </div>
-                <div onclick="abrirCardTech('reposicao')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl">
-                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="package-plus" class="w-5 h-5"></i></div>
-                    <h4 class="font-bold text-xs">Reposição</h4>
-                </div>
-                <div onclick="abrirCardTech('colega')" class="bg-zinc-900/90 border border-red-900/40 p-4 rounded-3xl cursor-pointer card-hover text-center space-y-2 shadow-xl">
-                    <div class="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl mx-auto flex items-center justify-center"><i data-lucide="user-plus" class="w-5 h-5"></i></div>
-                    <h4 class="font-bold text-xs">Add Colega</h4>
-                </div>
-            </div>
 
-            <div id="tech-section-content" class="bg-zinc-900/90 p-6 rounded-3xl border border-red-900/40 shadow-2xl"></div>
-        </main>
+                <div id="tech-section-content" class="bg-zinc-900/90 p-4 sm:p-5 rounded-3xl border border-red-900/40 shadow-2xl"></div>
+            </main>
+        </div>
     </div>
 
     <!-- MODAL SEGURANÇA & OPERADORES (MUDAR SENHA ADMIN E OPERADOR VISUALIZADOR) -->
@@ -709,10 +714,16 @@
         let isVisualizador = false;
         let gpsWatchId = null;
 
+        // Variáveis de Gravação de Áudio Chat
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecordingAudio = false;
+
         function salvarDb() {
             dbRef.set(db);
         }
 
+        // --- SINCRONIZAÇÃO EM TEMPO REAL SEM FECHAR O TECLADO MOBILE ---
         dbRef.on('value', (snapshot) => {
             const serverData = snapshot.val();
             if (serverData) {
@@ -729,16 +740,29 @@
                 if(!db.notificacoes) db.notificacoes = [];
                 if(db.adminPass) ADMIN_PASS = db.adminPass;
 
+                // Prevenir fechamento do teclado mobile ao atualizar interface
+                const activeEl = document.activeElement;
+                const isUserTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+
                 if (!document.getElementById('admin-screen').classList.contains('hidden')) {
-                    atualizarPainelAdmin();
+                    if (!isUserTyping) {
+                        atualizarPainelAdmin();
+                    } else if (chatAdminAtual) {
+                        atualizarMensagensAdminBox();
+                    }
                 }
+                
                 if (usuarioLogado && !document.getElementById('tech-screen').classList.contains('hidden')) {
                     let techAtualizada = db.tecnicos.find(t => t.login === usuarioLogado.login);
                     if (techAtualizada) {
                         usuarioLogado = techAtualizada;
                         atualizarTechNotificacoesBadge();
                     }
-                    renderizarCardTechAtivo();
+                    if (!isUserTyping) {
+                        renderizarCardTechAtivo();
+                    } else if (cardTechAtivo === 'chat') {
+                        atualizarMsgTechBox();
+                    }
                 }
             } else {
                 salvarDb();
@@ -784,7 +808,7 @@
 
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE_NAME = 'mala-estoque-v3';
+                    const CACHE_NAME = 'mala-estoque-v4';
                     const urlsToCache = ['./', 'https://cdn.tailwindcss.com', 'https://unpkg.com/lucide@latest', 'https://cdn.jsdelivr.net/npm/chart.js'];
                     self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache)).then(() => self.skipWaiting())); });
                     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
@@ -871,7 +895,11 @@
                 usuarioLogado = tech;
                 tech.online = true;
                 tech.lastSeen = "Agora";
-                registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema oficial.`);
+                
+                // ATIVAÇÃO AUTOMÁTICA DO GPS NO LOGIN
+                iniciarGpsAutomaticoTecnico();
+
+                registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema oficial com GPS Automático.`);
                 salvarDb();
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('tech-screen').classList.remove('hidden');
@@ -880,6 +908,43 @@
             }
 
             alert("Acesso negado! Usuário ou senha incorretos.");
+        }
+
+        // --- ATIVAÇÃO DE GPS AUTOMÁTICO DO TÉCNICO ---
+        function iniciarGpsAutomaticoTecnico() {
+            if(!usuarioLogado) return;
+            usuarioLogado.trackingOn = true;
+            let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
+            if(t) t.trackingOn = true;
+
+            if ("geolocation" in navigator) {
+                if(gpsWatchId !== null) {
+                    navigator.geolocation.clearWatch(gpsWatchId);
+                }
+                gpsWatchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        let lat = pos.coords.latitude;
+                        let lng = pos.coords.longitude;
+                        if(usuarioLogado) {
+                            usuarioLogado.lat = lat;
+                            usuarioLogado.lng = lng;
+                            usuarioLogado.rua = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                        }
+                        let techNoDb = db.tecnicos.find(x => x.login === (usuarioLogado ? usuarioLogado.login : ''));
+                        if(techNoDb) {
+                            techNoDb.lat = lat;
+                            techNoDb.lng = lng;
+                            techNoDb.rua = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                            techNoDb.trackingOn = true;
+                        }
+                        salvarDb();
+                    },
+                    (err) => {
+                        console.warn("Aviso GPS Automático: " + err.message);
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+                );
+            }
         }
 
         function logout() {
@@ -1133,7 +1198,7 @@
             db.tecnicos.forEach((t, index) => {
                 let avatarImg = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
                 let statusBadge = t.online ? '<span class="text-emerald-400 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block mr-1"></span>Online</span>' : `<span class="text-zinc-500 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-zinc-600 inline-block mr-1"></span>Offline (Visto: ${t.lastSeen || 'N/A'})</span>`;
-                let gpsBadge = t.trackingOn ? '<span class="text-emerald-400 text-[10px] font-bold block">🟢 GPS Ativo</span>' : '<span class="text-red-400 text-[10px] font-bold block">🔴 GPS Desativado</span>';
+                let gpsBadge = t.trackingOn ? '<span class="text-emerald-400 text-[10px] font-bold block">🟢 GPS Automático</span>' : '<span class="text-red-400 text-[10px] font-bold block">🔴 GPS Inativo</span>';
 
                 tHtml += `
                     <tr class="border-b border-zinc-800">
@@ -1227,7 +1292,7 @@
             db.tecnicos.forEach(t => {
                 let badgeOn = t.online ? 'bg-emerald-500' : 'bg-zinc-600';
                 let avatar = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
-                let gpsStatusStr = t.trackingOn ? '<span class="text-emerald-400 font-bold">🟢 GPS Ativo</span>' : '<span class="text-zinc-500 font-bold">🔴 GPS Desativado</span>';
+                let gpsStatusStr = t.trackingOn ? '<span class="text-emerald-400 font-bold">🟢 GPS Automático</span>' : '<span class="text-zinc-500 font-bold">🔴 GPS Inativo</span>';
                 mapTechsHtml += `
                     <div title="Endereço: ${t.rua || 'Localização em campo'}" onclick="selecionarEPlugarMapa('${t.login}')" class="bg-black border border-zinc-800 rounded-2xl p-4 flex items-center space-x-3 shadow-sm hover:border-red-600 transition cursor-pointer">
                         ${avatar}
@@ -1258,7 +1323,7 @@
                 if(tech && tech.trackingOn && tech.lat && tech.lng) {
                     iframe.src = `https://maps.google.com/maps?q=${tech.lat},${tech.lng}&z=16&output=embed`;
                 } else {
-                    alert(`O GPS do técnico ${tech ? tech.name : ''} está DESATIVADO no momento.`);
+                    alert(`O GPS do técnico ${tech ? tech.name : ''} está aguardando sinal no dispositivo.`);
                     iframe.src = "https://maps.google.com/maps?q=-9.6658,-35.7350&z=12&output=embed";
                 }
             }
@@ -1447,7 +1512,7 @@
             document.getElementById('modal-comprovante').classList.add('hidden');
         }
 
-        // --- CONTROLE DE MALAS ADMIN ---
+        // --- CONTROLE DE MALAS ADMIN (COM BOTÃO DE EXCLUIR MATERIAL) ---
         function switchMalaSubTab(sub) {
             subMalaAtual = sub;
             document.querySelectorAll('.mala-subcontent').forEach(el => el.classList.add('hidden'));
@@ -1477,7 +1542,8 @@
                         <td class="p-3 text-center text-amber-400">${m.lancado}</td>
                         <td class="p-3 text-center space-x-2">
                             <input type="number" id="edit-mala-${idx}" value="${m.qtd}" class="w-16 px-2 py-1 bg-black border border-zinc-700 rounded text-center text-red-400 font-bold outline-none inline-block">
-                            <button onclick="salvarEdicaoMalaAdmin('${tech.login}', ${idx})" class="action-btn-write px-2 py-1 bg-emerald-600 text-white rounded text-[10px] font-bold">Salvar</button>
+                            <button onclick="salvarEdicaoMalaAdmin('${tech.login}', ${idx})" class="action-btn-write px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">Salvar</button>
+                            <button onclick="excluirMaterialMalaAdmin('${tech.login}', ${idx})" class="action-btn-write px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-bold">Excluir</button>
                         </td>
                     </tr>
                 `).join('') || '<tr><td colspan="5" class="p-4 text-center">Nenhum item na mala.</td></tr>';
@@ -1519,6 +1585,22 @@
                 salvarDb();
                 alert("✅ Quantidade atualizada com sucesso!");
                 renderizarMalaAdmin();
+            }
+        }
+
+        // EXCLUIR MATERIAL ESPECÍFICO DA MALA DO TÉCNICO
+        function excluirMaterialMalaAdmin(techLogin, itemIdx) {
+            if(isVisualizador) return;
+            let tech = db.tecnicos.find(t => t.login === techLogin);
+            if(tech && tech.mala[itemIdx]) {
+                let itemNome = tech.mala[itemIdx].desc;
+                if(confirm(`Tem certeza que deseja excluir o material "${itemNome}" da mala do técnico ${tech.name}?`)) {
+                    tech.mala.splice(itemIdx, 1);
+                    registrarMovimentacao("Exclusão Material Mala", "Admin", `Removeu ${itemNome} da mala de ${tech.name}`);
+                    salvarDb();
+                    renderizarMalaAdmin();
+                    alert("✅ Material removido da mala com sucesso!");
+                }
             }
         }
 
@@ -1748,7 +1830,7 @@
             atualizarPainelAdmin();
         }
 
-        // --- PAINEL DO TÉCNICO & GEOLOCALIZAÇÃO EM TEMPO REAL ---
+        // --- PAINEL DO TÉCNICO & GEOLOCALIZAÇÃO ---
         function inicializarPainelTecnico() {
             document.getElementById('tech-welcome-name').innerText = usuarioLogado.name + " (" + usuarioLogado.car + ")";
             if(usuarioLogado.avatar) document.getElementById('tech-avatar-box').innerHTML = `<img src="${usuarioLogado.avatar}" class="w-full h-full object-cover">`;
@@ -1759,50 +1841,6 @@
             }
             atualizarTechNotificacoesBadge();
             abrirCardTech('lancamento');
-        }
-
-        function toggleGpsTecnico() {
-            if(!usuarioLogado) return;
-            usuarioLogado.trackingOn = !usuarioLogado.trackingOn;
-            let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
-            if(t) t.trackingOn = usuarioLogado.trackingOn;
-
-            let btn = document.getElementById('btn-gps-status');
-            let txt = document.getElementById('gps-text');
-
-            if(usuarioLogado.trackingOn) {
-                if(btn) btn.className = "px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow transition";
-                if(txt) txt.innerText = "GPS Ativo";
-
-                if ("geolocation" in navigator) {
-                    gpsWatchId = navigator.geolocation.watchPosition(
-                        (pos) => {
-                            let lat = pos.coords.latitude;
-                            let lng = pos.coords.longitude;
-                            usuarioLogado.lat = lat;
-                            usuarioLogado.lng = lng;
-                            usuarioLogado.rua = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-                            if(t) { t.lat = lat; t.lng = lng; t.rua = usuarioLogado.rua; t.trackingOn = true; }
-                            salvarDb();
-                        },
-                        (err) => {
-                            console.warn("Aviso GPS: " + err.message);
-                        },
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                    );
-                } else {
-                    alert("Seu dispositivo não possui suporte a geolocalização.");
-                }
-            } else {
-                if(gpsWatchId !== null) {
-                    navigator.geolocation.clearWatch(gpsWatchId);
-                    gpsWatchId = null;
-                }
-                if(btn) btn.className = "px-3 py-1.5 bg-zinc-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow transition";
-                if(txt) txt.innerText = "GPS Desligado";
-                if(t) t.trackingOn = false;
-            }
-            salvarDb();
         }
 
         function atualizarTechNotificacoesBadge() {
@@ -1878,34 +1916,34 @@
             if(tipo === 'lancamento') {
                 content.innerHTML = `
                     <div class="space-y-4">
-                        <h4 class="font-bold text-red-400 text-sm flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Lançamento de Materiais em Campo</span></h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <h4 class="font-bold text-red-400 text-xs sm:text-sm flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Lançamento em Campo</span></h4>
+                        <div class="grid grid-cols-1 gap-2.5">
                             <div>
-                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Projeto</label>
-                                <select id="t-projeto" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+                                <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Projeto</label>
+                                <select id="t-projeto" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
                                     <option value="MDU GPON F">MDU GPON F</option>
                                     <option value="MDU GPON ON GOING">MDU GPON ON GOING</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Node / Imóvel</label>
-                                <input type="text" id="t-node" placeholder="Ex: 378556075" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+                                <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Node / Imóvel</label>
+                                <input type="text" id="t-node" autocomplete="off" placeholder="Ex: 378556075" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Local de Descarga</label>
-                                <input type="text" id="t-local-desc" value="865323" readonly class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-red-400 font-bold outline-none">
+                                <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Local de Descarga</label>
+                                <input type="text" id="t-local-desc" value="865323" readonly class="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-red-400 font-bold outline-none">
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div class="space-y-3 pt-1">
                             <div>
-                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Buscar Material no Catálogo / Estoque Central</label>
-                                <input type="text" id="t-search-mat" oninput="renderizarSelecaoTecnico()" placeholder="Digite o SAP ou Descrição..." class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white mb-2">
-                                <div id="t-material-list" class="max-h-52 overflow-y-auto space-y-1 border border-zinc-800 p-2 rounded-xl bg-black"></div>
+                                <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Buscar Material no Catálogo</label>
+                                <input type="text" id="t-search-mat" autocomplete="off" oninput="renderizarSelecaoTecnico()" placeholder="Digite o SAP ou Descrição..." class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white mb-2">
+                                <div id="t-material-list" class="max-h-48 overflow-y-auto space-y-1 border border-zinc-800 p-2 rounded-xl bg-black"></div>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-zinc-400 mb-1">Favoritos Rápido</label>
-                                <div id="t-favorites-list" class="flex flex-wrap gap-1.5 p-2 border border-zinc-800 rounded-xl bg-black max-h-52 overflow-y-auto"></div>
+                                <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Favoritos Rápido</label>
+                                <div id="t-favorites-list" class="flex flex-wrap gap-1.5 p-2 border border-zinc-800 rounded-xl bg-black max-h-36 overflow-y-auto"></div>
                             </div>
                         </div>
 
@@ -1916,7 +1954,7 @@
                                 <tbody id="t-cart-table" class="divide-y divide-zinc-800"><tr><td colspan="3" class="p-3 text-center text-zinc-500">Nenhum item adicionado.</td></tr></tbody>
                             </table>
                         </div>
-                        <button onclick="salvarLoteTecnico()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg">Confirmar e Enviar Lançamento</button>
+                        <button onclick="salvarLoteTecnico()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg transition">Confirmar e Enviar Lançamento</button>
                     </div>
                 `;
                 renderizarSelecaoTecnico();
@@ -1924,20 +1962,20 @@
             } else if(tipo === 'mala') {
                 content.innerHTML = `
                     <div class="space-y-4">
-                        <h4 class="font-bold text-red-400 text-sm">Minha Mala (Miscelâneas e Seriais MIS)</h4>
+                        <h4 class="font-bold text-red-400 text-xs sm:text-sm">Minha Mala (Miscelâneas e Seriais MIS)</h4>
                         <div class="overflow-x-auto">
                             <table class="w-full text-xs text-left text-zinc-300">
                                 <thead class="bg-black border-b border-zinc-800 text-zinc-400">
-                                    <tr><th class="p-3">SAP</th><th class="p-3">Descrição</th><th class="p-3 text-center">Qtd Atual</th><th class="p-3 text-center">Lançado</th><th class="p-3">Seriais (MIS)</th></tr>
+                                    <tr><th class="p-2.5">SAP</th><th class="p-2.5">Descrição</th><th class="p-2.5 text-center">Qtd</th><th class="p-2.5 text-center">Lançado</th><th class="p-2.5">Seriais</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-zinc-800">
                                     ${(usuarioLogado.mala || []).map(m => `
                                         <tr>
-                                            <td class="p-3 font-mono text-red-400">${m.sap}</td>
-                                            <td class="p-3">${m.desc}</td>
-                                            <td class="p-3 text-center font-bold text-white">${m.qtd}</td>
-                                            <td class="p-3 text-center text-amber-400">${m.lancado || 0}</td>
-                                            <td class="p-3 font-mono text-xs text-emerald-300">${m.seriais && m.seriais.length > 0 ? m.seriais.join(', ') : 'Nenhum serial'}</td>
+                                            <td class="p-2.5 font-mono text-red-400">${m.sap}</td>
+                                            <td class="p-2.5">${m.desc}</td>
+                                            <td class="p-2.5 text-center font-bold text-white">${m.qtd}</td>
+                                            <td class="p-2.5 text-center text-amber-400">${m.lancado || 0}</td>
+                                            <td class="p-2.5 font-mono text-[10px] text-emerald-300">${m.seriais && m.seriais.length > 0 ? m.seriais.join(', ') : '-'}</td>
                                         </tr>
                                     `).join('') || '<tr><td colspan="5" class="p-4 text-center text-zinc-500">Nenhum item na mala.</td></tr>'}
                                 </tbody>
@@ -1947,16 +1985,19 @@
                 `;
             } else if(tipo === 'chat') {
                 content.innerHTML = `
-                    <div class="space-y-4 h-[500px] flex flex-col">
-                        <h4 class="font-bold text-red-400 text-sm">Chat Direct</h4>
-                        <div class="flex space-x-2 overflow-x-auto pb-2" id="tech-chat-contacts-bar">
+                    <div class="space-y-3 h-[450px] flex flex-col">
+                        <h4 class="font-bold text-red-400 text-xs sm:text-sm">Chat Direct</h4>
+                        <div class="flex space-x-2 overflow-x-auto pb-1" id="tech-chat-contacts-bar">
                             <button onclick="selecionarChatTech('Base')" id="btn-chat-Base" class="px-3 py-1.5 bg-red-600 text-white rounded-xl text-xs font-bold flex-shrink-0 relative">Base Central</button>
                             <div id="tech-colleagues-chat-btns" class="flex space-x-2"></div>
                         </div>
                         <div id="tech-chat-box" class="flex-1 bg-black border border-zinc-800 rounded-xl p-3 overflow-y-auto space-y-2 text-xs"></div>
-                        <div class="flex space-x-2">
-                            <input type="text" id="tech-chat-input" placeholder="Mensagem..." class="flex-1 px-4 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
-                            <button onclick="enviarMsgTech()" class="px-5 py-2 bg-red-600 text-white rounded-xl text-xs font-bold">Enviar</button>
+                        <div class="flex items-center space-x-1.5 sm:space-x-2">
+                            <input type="text" id="tech-chat-input" autocomplete="off" onkeydown="if(event.key==='Enter') enviarMsgTech()" placeholder="Mensagem..." class="flex-1 px-3.5 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none focus:border-red-600">
+                            <button type="button" id="btn-rec-audio-tech" onclick="toggleGravarAudio(true)" title="Gravar Áudio" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center">
+                                <i data-lucide="mic" class="w-4 h-4 text-red-400"></i>
+                            </button>
+                            <button type="button" onclick="enviarMsgTech()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition">Enviar</button>
                         </div>
                     </div>
                 `;
@@ -1965,12 +2006,12 @@
             } else if(tipo === 'reposicao') {
                 content.innerHTML = `
                     <div class="space-y-4 max-w-md mx-auto">
-                        <h4 class="font-bold text-red-400 text-sm">Solicitar Reposição de Material</h4>
+                        <h4 class="font-bold text-red-400 text-xs sm:text-sm">Solicitar Reposição de Material</h4>
                         <select id="t-rep-mat" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
-                            ${db.materiais.map(m => `<option value="${m.desc}">${m.sap} - ${m.desc}</option>`).join('')}
+                            ${db.materiais.map(m => `<option value="${m.desc}">${m.sap} -${m.desc}</option>`).join('')}
                         </select>
                         <input type="number" id="t-rep-qtd" min="1" value="10" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white" placeholder="Quantidade">
-                        <button onclick="solicitarReposicaoTech()" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl text-xs">Enviar Pedido de Reposição</button>
+                        <button onclick="solicitarReposicaoTech()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition">Enviar Pedido de Reposição</button>
                     </div>
                 `;
             } else if(tipo === 'colega') {
@@ -1986,7 +2027,7 @@
 
                 content.innerHTML = `
                     <div class="space-y-4 max-w-md mx-auto">
-                        <h4 class="font-bold text-red-400 text-sm">Adicionar Colega de Trabalho</h4>
+                        <h4 class="font-bold text-red-400 text-xs sm:text-sm">Adicionar Colega de Trabalho</h4>
                         <input type="text" id="colega-busca-login" placeholder="Insira o login (ex: carlos)" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
                         <button onclick="enviarPedidoAmizadeTech()" class="w-full py-2.5 bg-red-600 text-white font-bold rounded-xl text-xs">Enviar Solicitação de Amizade</button>
                         
@@ -1998,6 +2039,89 @@
                 `;
             }
             lucide.createIcons();
+        }
+
+        // --- RECURSO DE GRAVAÇÃO E ENVIAR MENSAGEM DE ÁUDIO NO CHAT ---
+        async function toggleGravarAudio(isTech = true) {
+            const btnId = isTech ? 'btn-rec-audio-tech' : 'btn-rec-audio-admin';
+            const btn = document.getElementById(btnId);
+
+            if (!isRecordingAudio) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = () => {
+                            const base64Audio = reader.result;
+                            if (isTech) {
+                                enviarAudioTech(base64Audio);
+                            } else {
+                                enviarAudioAdmin(base64Audio);
+                            }
+                        };
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                    isRecordingAudio = true;
+                    if (btn) {
+                        btn.classList.add('animate-pulse', 'bg-red-600');
+                        btn.innerHTML = `<i data-lucide="square" class="w-4 h-4 text-white"></i>`;
+                        lucide.createIcons();
+                    }
+                } catch (err) {
+                    alert("Não foi possível acessar o microfone para gravar áudio.");
+                    console.error(err);
+                }
+            } else {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+                isRecordingAudio = false;
+                if (btn) {
+                    btn.classList.remove('animate-pulse', 'bg-red-600');
+                    btn.innerHTML = `<i data-lucide="mic" class="w-4 h-4 text-red-400"></i>`;
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        function enviarAudioTech(audioDataUrl) {
+            if(!audioDataUrl || !usuarioLogado) return;
+            db.mensagens.push({
+                remetente: usuarioLogado.name,
+                destinatario: chatDestinatarioAtual,
+                texto: "🎤 Mensagem de áudio",
+                audio: audioDataUrl,
+                hora: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                lido: false
+            });
+            salvarDb();
+            atualizarMsgTechBox();
+            renderizarColegasChatTech();
+        }
+
+        function enviarAudioAdmin(audioDataUrl) {
+            if(isVisualizador || !chatAdminAtual) return;
+            db.mensagens.push({
+                remetente: "Base",
+                destinatario: chatAdminAtual,
+                texto: "🎤 Mensagem de áudio",
+                audio: audioDataUrl,
+                hora: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                lido: false
+            });
+            salvarDb();
+            atualizarMensagensAdminBox();
         }
 
         function renderizarSelecaoTecnico() {
@@ -2229,7 +2353,7 @@
             abrirCardTech('colega');
         }
 
-        // --- CHAT DIRECT ---
+        // --- CHAT DIRECT TÉCNICO ---
         function selecionarChatTech(dest) {
             chatDestinatarioAtual = dest;
             db.mensagens.forEach(m => {
@@ -2291,7 +2415,8 @@
             box.innerHTML = filtradas.map(m => {
                 let eu = m.remetente === usuarioLogado.name || m.remetente === usuarioLogado.login;
                 let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-200 mr-auto';
-                return `<div class="max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow"><b class="block text-[9px] opacity-75">${m.remetente} • ${m.hora}</b>${m.texto}</div>`;
+                let audioMarkup = m.audio ? `<div class="mt-1"><audio controls src="${m.audio}" class="max-w-[210px] w-full h-8 rounded-lg"></audio></div>` : '';
+                return `<div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow"><b class="block text-[9px] opacity-75">${m.remetente} • ${m.hora}</b><div>${m.texto}</div>${audioMarkup}</div>`;
             }).join('') || '<p class="text-zinc-500 text-center italic">Nenhuma mensagem com ' + chatDestinatarioAtual + '.</p>';
             box.scrollTop = box.scrollHeight;
         }
@@ -2360,7 +2485,8 @@
             box.innerHTML = msgs.map(m => {
                 let eu = m.remetente === "Base";
                 let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-200 mr-auto';
-                return `<div class="max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow"><b class="block text-[9px] opacity-75">${m.remetente} • ${m.hora}</b>${m.texto}</div>`;
+                let audioMarkup = m.audio ? `<div class="mt-1"><audio controls src="${m.audio}" class="max-w-[210px] w-full h-8 rounded-lg"></audio></div>` : '';
+                return `<div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow"><b class="block text-[9px] opacity-75">${m.remetente} • ${m.hora}</b><div>${m.texto}</div>${audioMarkup}</div>`;
             }).join('') || '<p class="text-zinc-500 text-center italic">Nenhuma mensagem.</p>';
             box.scrollTop = box.scrollHeight;
         }
