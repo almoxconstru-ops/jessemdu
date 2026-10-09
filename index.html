@@ -138,7 +138,7 @@
                     <i data-lucide="users" class="w-4 h-4"></i><span>Gestão de Técnicos</span>
                 </button>
                 <button onclick="switchAdminTab('autonomia')" id="atab-autonomia" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
-                    <i data-lucide="gauge" class="w-4 h-4"></i><span>Autonomia & Percursos</span>
+                    <i data-lucide="gauge" class="w-4 h-4"></i><span>Autonomia & Paradas</span>
                 </button>
                 <button onclick="switchAdminTab('estoque-padrao')" id="atab-estoque-padrao" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
                     <i data-lucide="layers" class="w-4 h-4"></i><span>Estoque Padrão</span>
@@ -228,7 +228,6 @@
 
             <!-- DASHBOARD -->
             <div id="acontent-dash" class="admin-tab space-y-6">
-                <!-- CARDS RESUMO -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm text-center">
                         <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Técnicos Cadastrados</p>
@@ -248,7 +247,6 @@
                     </div>
                 </div>
 
-                <!-- GRÁFICOS DINÂMICOS -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
                     <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-3">
                         <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
@@ -313,20 +311,19 @@
                 </div>
             </div>
 
-            <!-- AUTONOMIA & PERCURSOS (MÓDULO TOTALMENTE AUTOMÁTICO) -->
+            <!-- AUTONOMIA & PARADAS (COM EXPORTAÇÃO EXCEL DETALHADA POR DATA) -->
             <div id="acontent-autonomia" class="admin-tab hidden space-y-6">
-                <!-- RESUMO AUTONOMIA -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm text-center">
                         <p class="text-xs font-bold uppercase text-zinc-400">Total KM Percorridos</p>
                         <h3 id="stat-auto-km" class="text-2xl font-extrabold text-amber-400 mt-1">0 KM</h3>
                     </div>
                     <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm text-center">
-                        <p class="text-xs font-bold uppercase text-zinc-400">Consumo em Litros</p>
+                        <p class="text-xs font-bold uppercase text-zinc-400">Consumo em Litros (10km/L)</p>
                         <h3 id="stat-auto-litros" class="text-2xl font-extrabold text-blue-400 mt-1">0 L</h3>
                     </div>
                     <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm text-center">
-                        <p class="text-xs font-bold uppercase text-zinc-400">Custo Total Gasolina</p>
+                        <p class="text-xs font-bold uppercase text-zinc-400">Custo Total (R$ 6,10/L)</p>
                         <h3 id="stat-auto-custo" class="text-2xl font-extrabold text-emerald-400 mt-1">R$ 0,00</h3>
                     </div>
                     <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm text-center">
@@ -335,73 +332,33 @@
                     </div>
                 </div>
 
-                <!-- REGISTRO / CONFIGURAÇÃO AUTOMÁTICA DE PERCURSO -->
-                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4 action-btn-write">
-                    <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <!-- PAINEL DE EXPORTAÇÃO EXCEL DETALHADA POR DATA ESPECÍFICA -->
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-800 pb-3 gap-3">
                         <div>
                             <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-                                <i data-lucide="gauge" class="w-5 h-5 text-red-500"></i>
-                                <span>Cálculo Automático de Autonomia por Deslocamento</span>
+                                <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-400"></i>
+                                <span>Exportar Relatório Detalhado por Data Específica (Excel / CSV)</span>
                             </h2>
-                            <p class="text-xs text-zinc-400">Acompanhamento e registro manual/automático de percursos por veículos e motoristas</p>
+                            <p class="text-xs text-zinc-400">Extraia informações detalhadas de cada técnico, onde parou, tempo parado em cada canto e autonomia.</p>
                         </div>
-                        <button onclick="exportarExcelAutonomia()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
-                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Baixar Excel Autonomia</span>
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Técnico / Motorista</label>
-                            <select id="auto-tech-select" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none"></select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Origem</label>
-                            <input type="text" id="auto-origem" placeholder="Ex: Base Central" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Destino</label>
-                            <input type="text" id="auto-destino" placeholder="Ex: Pajuçara - Node 88" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Data do Trajeto</label>
-                            <input type="date" id="auto-data" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <label class="text-xs text-zinc-300">Data:</label>
+                            <input type="date" id="export-excel-date" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                            <select id="export-excel-tech" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                                <option value="todos">👥 Todos os Técnicos</option>
+                            </select>
+                            <button onclick="baixarExcelDetalhadoPorData()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
+                                <i data-lucide="download" class="w-4 h-4"></i><span>Baixar Excel Detalhado</span>
+                            </button>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">KM Inicial</label>
-                            <input type="number" id="auto-km-ini" placeholder="Ex: 45000" oninput="calcularAutonomiaSimulacao()" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">KM Final</label>
-                            <input type="number" id="auto-km-fim" placeholder="Ex: 45080" oninput="calcularAutonomiaSimulacao()" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Consumo do Veículo (KM/L)</label>
-                            <input type="number" step="0.1" id="auto-km-por-litro" value="10.0" oninput="calcularAutonomiaSimulacao()" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Preço Gasolina (R$/L)</label>
-                            <input type="number" step="0.01" id="auto-preco-gasolina" value="6.00" oninput="calcularAutonomiaSimulacao()" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
-                        </div>
-                    </div>
-
-                    <div id="auto-preview-calc" class="p-3 bg-black/60 border border-zinc-800 rounded-xl text-xs text-zinc-300 flex flex-wrap justify-between items-center gap-2">
-                        <span><b>KM Percorrido:</b> <span id="prev-km" class="text-amber-400 font-mono font-bold">0 KM</span></span>
-                        <span><b>Litros Estimados:</b> <span id="prev-litros" class="text-blue-400 font-mono font-bold">0 L</span></span>
-                        <span><b>Custo Estimado:</b> <span id="prev-custo" class="text-emerald-400 font-mono font-bold">R$ 0,00</span></span>
-                        <span><b>Custo por KM:</b> <span id="prev-custo-km" class="text-red-400 font-mono font-bold">R$ 0,00 / KM</span></span>
-                    </div>
-
-                    <button onclick="registrarPercursoAutonomia()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow">Registrar Trajeto & Autonomia</button>
                 </div>
 
-                <!-- HISTÓRICO DE TRAJETOS -->
+                <!-- HISTÓRICO DE PARADAS & PERCURSOS AUTOMÁTICOS -->
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <h3 class="font-bold text-white text-sm">Histórico Detalhado de Percursos e Consumo de Gasolina</h3>
+                        <h3 class="font-bold text-white text-sm">Histórico de Paradas, Tempo Parado & Percursos Automáticos</h3>
                         <div class="flex items-center space-x-2">
                             <input type="text" id="filter-auto-tech" oninput="renderizarHistoricoAutonomia()" placeholder="Filtrar por técnico..." class="px-3 py-1.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
                             <input type="date" id="filter-auto-date" onchange="renderizarHistoricoAutonomia()" class="px-3 py-1.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
@@ -413,14 +370,14 @@
                         <table class="w-full text-xs text-left text-zinc-300">
                             <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
                                 <tr>
-                                    <th class="p-3">Data</th>
+                                    <th class="p-3">Data / Hora</th>
                                     <th class="p-3">Técnico / Veículo</th>
-                                    <th class="p-3">Origem ➔ Destino</th>
+                                    <th class="p-3">Local / Parada Final</th>
+                                    <th class="p-3 text-center">Tempo Parado</th>
                                     <th class="p-3 text-center">KM Percorrido</th>
-                                    <th class="p-3 text-center">Litros (L)</th>
-                                    <th class="p-3 text-center">Custo Total (R$)</th>
-                                    <th class="p-3 text-center">R$ / KM</th>
-                                    <th class="p-3 text-center">Status GPS Celular</th>
+                                    <th class="p-3 text-center">Litros (10km/L)</th>
+                                    <th class="p-3 text-center">Custo (R$ 6,10/L)</th>
+                                    <th class="p-3 text-center">Status GPS</th>
                                     <th class="p-3 text-center">Ações</th>
                                 </tr>
                             </thead>
@@ -646,7 +603,7 @@
                                 <i data-lucide="map-pin" class="w-5 h-5 text-red-500"></i>
                                 <span>Mapa em Tempo Real (Estilo Life360)</span>
                             </h2>
-                            <p class="text-xs text-zinc-400">Veja a foto do técnico e o nome no alfinete em tempo real. Identifique se o GPS está ativado/desativado.</p>
+                            <p class="text-xs text-zinc-400">Selecione um técnico no mapa ou ao lado para visualizar a rota, paradas, tempo parado e status de paradeiro (Parada Final).</p>
                         </div>
                         <div class="flex items-center space-x-2">
                             <select id="map-select-tech" onchange="renderizarPinsMapaLeaflet()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
@@ -686,9 +643,7 @@
 
     <!-- ================= PAINEL DO TÉCNICO (CELULAR CENTRALIZADO) ================= -->
     <div id="tech-screen" class="hidden min-h-screen flex flex-col bg-black text-white items-center justify-between w-full">
-        <!-- Container Padrão Celular Centralizado -->
         <div class="w-full max-w-md mx-auto flex flex-col min-h-screen">
-            <!-- Header Técnico com botões ajustados e foto -->
             <header class="bg-zinc-900 text-white p-3.5 shadow-xl border-b border-red-900/40 flex justify-between items-center w-full sticky top-0 z-30">
                 <div class="flex items-center space-x-2.5">
                     <div class="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center font-bold text-base overflow-hidden border-2 border-red-500 shadow-lg flex-shrink-0" id="tech-avatar-box">
@@ -740,28 +695,32 @@
                     <p class="text-[11px] text-red-300 mt-0.5">Gestão de lançamentos, mala e comunicação em campo.</p>
                 </div>
 
-                <!-- CARD TELEMETRIA AUTOMÁTICA DE PERCURSO EM CAMPO -->
+                <!-- CARD TELEMETRIA AUTOMÁTICA & PARADAS EM CAMPO -->
                 <div class="p-3.5 bg-zinc-900/90 border border-amber-600/40 rounded-2xl space-y-2 shadow-xl text-center">
                     <div class="flex justify-between items-center border-b border-zinc-800 pb-1.5">
                         <span class="text-[10px] font-bold uppercase text-amber-400 flex items-center gap-1">
                             <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block"></span>
-                            Deslocamento Automático GPS
+                            Segundo Plano GPS & Paradas
                         </span>
                         <span id="tech-auto-km-live" class="text-xs font-mono font-bold text-white">0.00 KM</span>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                    <div class="grid grid-cols-3 gap-1.5 text-[11px]">
                         <div class="bg-black/60 p-2 rounded-xl border border-zinc-800">
-                            <span class="text-zinc-400 block text-[9px]">Consumo Litros</span>
+                            <span class="text-zinc-400 block text-[9px]">Combustível</span>
                             <b id="tech-auto-litros-live" class="text-blue-400 font-mono">0.00 L</b>
                         </div>
                         <div class="bg-black/60 p-2 rounded-xl border border-zinc-800">
-                            <span class="text-zinc-400 block text-[9px]">Custo Estimado</span>
+                            <span class="text-zinc-400 block text-[9px]">Custo (R$ 6,10)</span>
                             <b id="tech-auto-custo-live" class="text-emerald-400 font-mono">R$ 0,00</b>
+                        </div>
+                        <div class="bg-black/60 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400 block text-[9px]">Status Parada</span>
+                            <b id="tech-status-parada-live" class="text-amber-400 font-mono text-[10px]">Em movimento</b>
                         </div>
                     </div>
                 </div>
 
-                <!-- BOTÕES DE MENU TÉCNICO CENTRALIZADOS E AJUSTADOS -->
+                <!-- BOTÕES DE MENU TÉCNICO -->
                 <div class="grid grid-cols-3 gap-2 justify-center items-center">
                     <div onclick="abrirCardTech('lancamento')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
                         <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="clipboard-list" class="w-4 h-4"></i></div>
@@ -803,7 +762,6 @@
                 <button onclick="fecharModalSegurancaADM()" class="text-zinc-400 hover:text-white font-bold text-sm">✕</button>
             </div>
 
-            <!-- Alterar Senha ADM -->
             <div class="p-4 bg-black/60 rounded-2xl border border-zinc-800 space-y-3">
                 <h4 class="font-bold text-xs text-red-400 uppercase tracking-wider">Alterar Senha do Administrador</h4>
                 <div class="space-y-2">
@@ -812,7 +770,6 @@
                 </div>
             </div>
 
-            <!-- Cadastrar Operador / Visualizador -->
             <div class="p-4 bg-black/60 rounded-2xl border border-zinc-800 space-y-3">
                 <h4 class="font-bold text-xs text-red-400 uppercase tracking-wider">Cadastrar Operador / Visualizador (Apenas Leitura)</h4>
                 <p class="text-[11px] text-zinc-400">Este usuário acessa o painel completo mas não consegue alterar, apagar ou cadastrar nada.</p>
@@ -824,7 +781,6 @@
                 <button onclick="cadastrarOperadorVisualizador()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-xs text-white shadow">Cadastrar Operador Visualizador</button>
             </div>
 
-            <!-- Lista de Operadores Cadastrados -->
             <div class="p-4 bg-black/60 rounded-2xl border border-zinc-800 space-y-2">
                 <h4 class="font-bold text-xs text-zinc-300">Operadores / Visualizadores Ativos</h4>
                 <div id="operadores-list-container" class="space-y-1.5 text-xs"></div>
@@ -903,7 +859,9 @@
         lucide.createIcons();
 
         // --- CONSTANTES & SEGURANÇA ---
-        let ADMIN_PASS = "Constru007"; // Senha oficial configurada do Administrador
+        let ADMIN_PASS = "Constru007"; 
+        const PRECO_GASOLINA_ATUAL = 6.10; // Preço atual do litro da gasolina
+        const AUTONOMIA_KM_LITRO = 10;     // 10 km com 1 litro
 
         // --- FIREBASE CONFIGURATION & INITIALIZATION ---
         const firebaseConfig = {
@@ -920,9 +878,9 @@
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
-        const dbRef = firebase.database().ref('mala_estoque_db_v7');
+        const dbRef = firebase.database().ref('mala_estoque_db_v7_paradas');
 
-        // --- BANCO DE DADOS EM NUVEM (ESTRUTURA BASE COM AUTONOMIA E GPS) ---
+        // --- BANCO DE DADOS EM NUVEM ---
         let db = {
             adminPass: "Constru007",
             operadores: [],
@@ -953,7 +911,7 @@
             favoritos: ["CABO DROP LOW F FIG8 1FO CINZA", "CONECTOR FO CAMPO CPO SC APC FRKW"],
             lancamentos: [],
             trajetos: [
-                { id: 101, data: "2026-10-08", techLogin: "joao", techNome: "João Silva", veiculo: "V-102 (Fiorino)", origem: "Base Central", destino: "MDU GPON Node 37855", kmIni: 45000, kmFim: 45050, kmPercorrido: 50, kmPorLitro: 10, litros: 5.0, precoGasolina: 6.00, custoTotal: 30.00, custoPorKm: 0.60, gpsAtivo: true }
+                { id: 101, data: "2026-10-08", techLogin: "joao", techNome: "João Silva", veiculo: "V-102 (Fiorino)", origem: "Base Central", destino: "MDU GPON Node 37855", kmIni: 45000, kmFim: 45050, kmPercorrido: 50, kmPorLitro: 10, litros: 5.0, precoGasolina: 6.10, custoTotal: 30.50, custoPorKm: 0.61, gpsAtivo: true, paradaFinal: "Parada Final - Node 37855", tempoParado: "1h 15min" }
             ],
             reposicoes: [],
             mensagens: [],
@@ -968,6 +926,13 @@
         let gpsWatchId = null;
         let themeMode = localStorage.getItem('boxfield_theme') || 'dark';
 
+        // Variáveis de Controle de Parada em Segundo Plano
+        let lastPositionTime = Date.now();
+        let lastLat = null;
+        let lastLng = null;
+        let paradaInicioTime = null;
+        let statusParadaAtual = "Em movimento";
+
         // Variáveis de Gravação de Áudio Chat
         let mediaRecorder = null;
         let audioChunks = [];
@@ -981,10 +946,9 @@
             dbRef.set(db);
         }
 
-        // --- CALCULAR DISTÂNCIA EM KM (HAVERSINE GPS) ---
         function calcularDistanciaKM(lat1, lon1, lat2, lon2) {
             if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
-            const R = 6371; // Raio da Terra em KM
+            const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = 
@@ -995,7 +959,6 @@
             return R * c;
         }
 
-        // --- SISTEMA DE ALTERNÂNCIA DE TEMA (CLARO / ESCURO) ---
         function applyTheme() {
             const btnText = document.getElementById('theme-toggle-text');
             if (themeMode === 'light') {
@@ -1013,7 +976,6 @@
             applyTheme();
         }
 
-        // --- SINCRONIZAÇÃO EM TEMPO REAL ---
         dbRef.on('value', (snapshot) => {
             const serverData = snapshot.val();
             if (serverData) {
@@ -1101,7 +1063,7 @@
 
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE_NAME = 'mala-estoque-v5';
+                    const CACHE_NAME = 'mala-estoque-v7';
                     const urlsToCache = ['./', 'https://cdn.tailwindcss.com', 'https://unpkg.com/lucide@latest', 'https://cdn.jsdelivr.net/npm/chart.js'];
                     self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache)).then(() => self.skipWaiting())); });
                     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
@@ -1123,7 +1085,7 @@
 
             if (!isOnline) {
                 banner.className = 'fixed top-0 left-0 right-0 z-50 p-2 bg-amber-600 text-white text-center text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
-                banner.innerHTML = '<span>⚡ Modo Offline Ativo: Você pode continuar operando. Os dados serão sincronizados ao reconectar.</span>';
+                banner.innerHTML = '<span>⚡ Modo Offline Ativo: Dados salvos localmente e sincronizados ao reconectar.</span>';
                 banner.classList.remove('hidden');
             } else {
                 if(!banner.classList.contains('hidden')) {
@@ -1147,14 +1109,12 @@
             }
         }
 
-        // --- LOGIN INTELIGENTE ---
         function handleLogin(event) {
             event.preventDefault();
             const userInput = document.getElementById('login-user').value.trim();
             const passInput = document.getElementById('login-pass').value.trim();
             const currentAdminPass = db.adminPass || ADMIN_PASS;
 
-            // 1. ADMIN
             if (userInput.toLowerCase() === 'admin' && passInput === currentAdminPass) {
                 isVisualizador = false;
                 document.getElementById('app-body-container').classList.remove('mode-visualizador');
@@ -1168,7 +1128,6 @@
                 return;
             }
 
-            // 2. OPERADOR
             let operador = (db.operadores || []).find(o => o.login.toLowerCase() === userInput.toLowerCase() && o.senha === passInput);
             if (operador) {
                 isVisualizador = true;
@@ -1181,7 +1140,6 @@
                 return;
             }
 
-            // 3. TÉCNICO
             let tech = db.tecnicos.find(t => t.login.toLowerCase() === userInput.toLowerCase() && t.senha === passInput);
             if (tech) {
                 isVisualizador = false;
@@ -1191,7 +1149,7 @@
                 
                 iniciarGpsAutomaticoTecnico();
 
-                registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema oficial com verificação de GPS e cálculo de autonomia.`);
+                registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema com rastreamento em segundo plano e detecção de paradas.`);
                 salvarDb();
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('tech-screen').classList.remove('hidden');
@@ -1202,10 +1160,9 @@
             alert("Acesso negado! Usuário ou senha incorretos.");
         }
 
-        // --- AUTONOMIA & DESLOCAMENTO 100% AUTOMÁTICO VIA GPS REAL ---
+        // --- GPS EM SEGUNDO PLANO E DETECÇÃO INTELIGENTE DE PARADAS ---
         function iniciarGpsAutomaticoTecnico() {
             if(!usuarioLogado) return;
-
             let techNoDb = db.tecnicos.find(x => x.login === usuarioLogado.login);
 
             if ("geolocation" in navigator) {
@@ -1220,13 +1177,34 @@
                         let oldLat = techNoDb ? techNoDb.lat : usuarioLogado.lat;
                         let oldLng = techNoDb ? techNoDb.lng : usuarioLogado.lng;
 
-                        // Se se deslocou mais de 10 metros, incrementa percurso automático!
                         let distKm = calcularDistanciaKM(oldLat, oldLng, lat, lng);
-                        if (distKm > 0.01) { // 10 metros
+                        
+                        // Lógica de Detecção de Parada / Parada Final vs Movimento
+                        if (distKm < 0.01) { // Menos de 10 metros de deslocamento = Parado
+                            if (!paradaInicioTime) {
+                                paradaInicioTime = Date.now();
+                                statusParadaAtual = "Em Parada";
+                            } else {
+                                let minutosParado = Math.floor((Date.now() - paradaInicioTime) / 60000);
+                                if (minutosParado >= 2) {
+                                    statusParadaAtual = `Parada Final (${minutosParado} min)`;
+                                }
+                            }
+                        } else {
+                            // Movimentou! Se estava parado há mais de 2 min, registra no histórico de trajetos/paradas
+                            if (paradaInicioTime) {
+                                let minutosParado = Math.floor((Date.now() - paradaInicioTime) / 60000);
+                                if (minutosParado >= 1) {
+                                    registrarParadaTrajetoAutomatico(usuarioLogado, `Parada de ${minutosParado} min em campo`);
+                                }
+                            }
+                            paradaInicioTime = null;
+                            statusParadaAtual = "Em movimento";
+
                             let kmAtual = (techNoDb ? techNoDb.autoKm : usuarioLogado.autoKm) || 0;
                             let novoKm = kmAtual + distKm;
-                            let litrosConsumidos = novoKm / 10.0; // 10 KM/L Padrão
-                            let custoConsumido = litrosConsumidos * 6.00; // R$ 6.00/L Padrão
+                            let litrosConsumidos = novoKm / AUTONOMIA_KM_LITRO; // 10 km por 1 litro
+                            let custoConsumido = litrosConsumidos * PRECO_GASOLINA_ATUAL; // R$ 6,10 / L
 
                             if(usuarioLogado) {
                                 usuarioLogado.autoKm = novoKm;
@@ -1243,14 +1221,14 @@
                         if(usuarioLogado) {
                             usuarioLogado.lat = lat;
                             usuarioLogado.lng = lng;
-                            usuarioLogado.rua = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                            usuarioLogado.rua = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
                             usuarioLogado.trackingOn = true;
                             usuarioLogado.gpsStatus = "ativado";
                         }
                         if(techNoDb) {
                             techNoDb.lat = lat;
                             techNoDb.lng = lng;
-                            techNoDb.rua = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                            techNoDb.rua = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
                             techNoDb.trackingOn = true;
                             techNoDb.gpsStatus = "ativado";
                         }
@@ -1260,26 +1238,41 @@
                         salvarDb();
                     },
                     (err) => {
-                        console.warn("Aviso/Erro no GPS: " + err.message);
-                        if(usuarioLogado) {
-                            usuarioLogado.trackingOn = false;
-                            usuarioLogado.gpsStatus = "desativado";
-                        }
-                        if(techNoDb) {
-                            techNoDb.trackingOn = false;
-                            techNoDb.gpsStatus = "desativado";
-                        }
+                        console.warn("Aviso/Erro GPS em segundo plano: " + err.message);
+                        if(usuarioLogado) { usuarioLogado.trackingOn = false; usuarioLogado.gpsStatus = "desativado"; }
+                        if(techNoDb) { techNoDb.trackingOn = false; techNoDb.gpsStatus = "desativado"; }
                         atualizarBadgeGpsCelularTech(false);
                         salvarDb();
                     },
-                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+                    { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
                 );
-            } else {
-                if(usuarioLogado) usuarioLogado.gpsStatus = "desativado";
-                if(techNoDb) techNoDb.gpsStatus = "desativado";
-                atualizarBadgeGpsCelularTech(false);
-                salvarDb();
             }
+        }
+
+        function registrarParadaTrajetoAutomatico(tech, infoParada) {
+            let minutos = Math.floor((Date.now() - paradaInicioTime) / 60000);
+            if(!db.trajetos) db.trajetos = [];
+            db.trajetos.push({
+                id: Date.now(),
+                data: new Date().toISOString().split('T')[0],
+                techLogin: tech.login,
+                techNome: tech.name,
+                veiculo: tech.car,
+                origem: "Deslocamento Anterior",
+                destino: "Parada Final / Atendimento",
+                kmIni: 0,
+                kmFim: 0,
+                kmPercorrido: 0,
+                kmPorLitro: AUTONOMIA_KM_LITRO,
+                litros: 0,
+                precoGasolina: PRECO_GASOLINA_ATUAL,
+                custoTotal: 0,
+                custoPorKm: 0,
+                gpsAtivo: true,
+                paradaFinal: infoParada,
+                tempoParado: `${minutos} min`
+            });
+            salvarDb();
         }
 
         function atualizarTelemetriaTecnicoLive() {
@@ -1291,10 +1284,12 @@
             let kmEl = document.getElementById('tech-auto-km-live');
             let litrosEl = document.getElementById('tech-auto-litros-live');
             let custoEl = document.getElementById('tech-auto-custo-live');
+            let statusParadaEl = document.getElementById('tech-status-parada-live');
 
             if (kmEl) kmEl.innerText = km.toFixed(2) + " KM";
             if (litrosEl) litrosEl.innerText = litros.toFixed(2) + " L";
             if (custoEl) custoEl.innerText = "R$ " + custo.toFixed(2);
+            if (statusParadaEl) statusParadaEl.innerText = statusParadaAtual;
         }
 
         function atualizarBadgeGpsCelularTech(ativo) {
@@ -1302,7 +1297,7 @@
             if(!badge) return;
             if(ativo) {
                 badge.className = "text-[9px] text-emerald-400 font-bold flex items-center bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded-md";
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1 animate-pulse"></span> GPS Ativado`;
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1 animate-pulse"></span> GPS Ativo (Background)`;
             } else {
                 badge.className = "text-[9px] text-red-400 font-bold flex items-center bg-red-950/60 border border-red-800/60 px-1.5 py-0.5 rounded-md";
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block mr-1"></span> GPS Desativado`;
@@ -1344,7 +1339,6 @@
             });
         }
 
-        // --- SEGURANÇA ADM ---
         function abrirModalSegurancaADM() {
             if(isVisualizador) { alert("Visualizadores não têm acesso às configurações de segurança."); return; }
             renderizarListaOperadores();
@@ -1414,7 +1408,6 @@
             }
         }
 
-        // --- ADMIN PANEL ---
         function switchAdminTab(tabId) {
             document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('aside nav button').forEach(el => {
@@ -1528,7 +1521,6 @@
             renderizarGraficosDashboard();
             renderizarResumoAutonomiaEHist();
 
-            // Alerta SOS
             let sosBanner = document.getElementById('sos-alert-banner');
             if(db.sosAtivo) {
                 sosBanner.classList.remove('hidden');
@@ -1537,7 +1529,6 @@
                 sosBanner.classList.add('hidden');
             }
 
-            // Notificações ADM
             let notifCounter = document.getElementById('notif-counter');
             if(db.notificacoes.length > 0) {
                 notifCounter.classList.remove('hidden');
@@ -1552,7 +1543,6 @@
             });
             document.getElementById('notif-list').innerHTML = notifHtml || '<p class="text-zinc-400 text-center py-4">Nenhuma notificação.</p>';
 
-            // Badge Chat Admin
             let naoLidasAdmin = db.mensagens.filter(m => m.destinatario === "Base" && !m.lido).length;
             let badgeAdminChat = document.getElementById('badge-admin-chat');
             if(naoLidasAdmin > 0) {
@@ -1562,7 +1552,6 @@
                 badgeAdminChat.classList.add('hidden');
             }
 
-            // Tabela Técnicos
             let tHtml = '';
             db.tecnicos.forEach((t, index) => {
                 let avatarImg = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
@@ -1570,7 +1559,7 @@
                 
                 let isGpsAtivo = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
                 let gpsBadge = isGpsAtivo 
-                    ? '<span class="text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full inline-block">🟢 GPS ATIVADO NO CELULAR</span>' 
+                    ? '<span class="text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full inline-block">🟢 GPS ATIVADO (FUNDO)</span>' 
                     : '<span class="text-red-400 font-bold bg-red-950/60 border border-red-800/80 px-2 py-0.5 rounded-full inline-block">🔴 GPS DESATIVADO</span>';
 
                 tHtml += `
@@ -1590,7 +1579,6 @@
             });
             document.getElementById('admin-tech-table').innerHTML = tHtml || '<tr><td colspan="7" class="p-4 text-center">Nenhum técnico.</td></tr>';
 
-            // Tabela Estoque Padrão
             let padraoHtml = '';
             (db.estoquePadrao || []).forEach((ep, idx) => {
                 padraoHtml += `
@@ -1607,7 +1595,6 @@
             let padraoTable = document.getElementById('admin-padrao-table');
             if(padraoTable) padraoTable.innerHTML = padraoHtml || '<tr><td colspan="4" class="p-4 text-center text-zinc-500">Nenhum material no estoque padrão.</td></tr>';
 
-            // Tabela Estoque Físico
             let fisicoHtml = '';
             db.estoqueFisico.forEach((ef, idx) => {
                 let seriaisStr = ef.seriais && ef.seriais.length > 0 ? ef.seriais.join(', ') : '<span class="text-zinc-500">Apenas Miscelânea</span>';
@@ -1624,21 +1611,23 @@
             });
             document.getElementById('admin-fisico-table').innerHTML = fisicoHtml || '<tr><td colspan="6" class="p-4 text-center">Estoque físico vazio.</td></tr>';
 
-            // Selects
             let passTechSel = document.getElementById('pass-tech-select');
             let passMatSel = document.getElementById('pass-mat-select');
             let malaSelect = document.getElementById('admin-select-mala-tech');
             let mapSelectTech = document.getElementById('map-select-tech');
-            let autoTechSelect = document.getElementById('auto-tech-select');
+            let exportTechSel = document.getElementById('export-excel-tech');
 
             if(passTechSel) passTechSel.innerHTML = db.tecnicos.map(t => `<option value="${t.login}">${t.name} (${t.car})</option>`).join('');
             if(passMatSel) passMatSel.innerHTML = db.estoqueFisico.map(e => `<option value="${e.sap}">${e.sap} - ${e.desc} (${e.qtd})</option>`).join('');
-            if(autoTechSelect) autoTechSelect.innerHTML = db.tecnicos.map(t => `<option value="${t.login}">${t.name} (${t.car})</option>`).join('');
+
+            if(exportTechSel) {
+                exportTechSel.innerHTML = `<option value="todos">👥 Todos os Técnicos</option>` + db.tecnicos.map(t => `<option value="${t.login}">${t.name} (${t.car})</option>`).join('');
+            }
 
             if(mapSelectTech) {
                 let currentVal = mapSelectTech.value;
                 mapSelectTech.innerHTML = `<option value="geral">🌐 Visão Geral (Todos)</option>` + db.tecnicos.map(t => {
-                    let gpsStr = (t.gpsStatus === 'ativado' || t.trackingOn) ? '🟢 GPS Ativado' : '🔴 GPS Desativado';
+                    let gpsStr = (t.gpsStatus === 'ativado' || t.trackingOn) ? '🟢 GPS Ativo' : '🔴 GPS Desativado';
                     return `<option value="${t.login}">${t.name} (${t.car}) - ${gpsStr}</option>`;
                 }).join('');
                 mapSelectTech.value = currentVal;
@@ -1651,14 +1640,12 @@
                 renderizarMalaAdmin();
             }
 
-            // Catálogo Materiais
             let matHtml = '';
             db.materiais.forEach((m, i) => {
                 matHtml += `<div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs"><div><b class="text-red-400">${m.sap}</b> - ${m.desc}</div><button onclick="removerMaterialAdmin(${i})" class="action-btn-write text-red-500 font-bold hover:underline">Remover</button></div>`;
             });
             document.getElementById('admin-materiais-list').innerHTML = matHtml;
 
-            // Lançamentos Padrão SIAKI
             let dtStart = document.getElementById('admin-filter-date-start')?.value;
             let dtEnd = document.getElementById('admin-filter-date-end')?.value;
 
@@ -1691,14 +1678,13 @@
             lucide.createIcons();
         }
 
-        // --- MAPA EM TEMPO REAL COM ESRI DARK GRAY (GRATUITO, SEM API KEY) ---
+        // --- MAPA LEAFLET COM ROTA, PARADAS E TEMPO PARADO ---
         function inicializarMapaLeaflet() {
             let container = document.getElementById('map-leaflet-container');
             if (!container) return;
 
             if (!mapLeaflet) {
                 mapLeaflet = L.map('map-leaflet-container').setView([-9.6658, -35.7350], 13);
-                // Utilizando Esri Dark Gray Canvas gratuito (Sem exigir API Key)
                 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 16,
                     attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
@@ -1723,7 +1709,7 @@
                         ${avatarContent}
                     </div>
                     <div style="margin-top: 2px; background: rgba(9, 9, 11, 0.9); color: #ffffff; border: 1px solid #3f3f46; border-radius: 8px; padding: 1px 6px; font-size: 10px; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
-                        ${tech.name}
+                        ${tech.name} (${statusParadaAtual})
                     </div>
                 </div>
             `;
@@ -1753,16 +1739,16 @@
                 let marker = L.marker([lat, lng], { icon: criarIconeTecnicoLeaflet(t) }).addTo(mapLeaflet);
                 
                 let isGpsOn = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
-                let gpsStatusText = isGpsOn ? "<b style='color:#10b981;'>🟢 GPS ATIVO NO CELULAR</b>" : "<b style='color:#ef4444;'>🔴 GPS DESATIVADO</b>";
+                let gpsStatusText = isGpsOn ? "<b style='color:#10b981;'>🟢 GPS ATIVO (FUNDO)</b>" : "<b style='color:#ef4444;'>🔴 GPS DESATIVADO</b>";
 
                 let popupContent = `
                     <div style="font-family: sans-serif; font-size: 12px; color: #ffffff; padding: 4px;">
                         <div style="font-weight: bold; font-size: 14px; border-bottom: 1px solid #3f3f46; padding-bottom: 4px; margin-bottom: 4px; color: #ef4444;">${t.name}</div>
                         <div><b>Veículo:</b> ${t.car || 'N/A'}</div>
                         <div><b>Status GPS:</b> ${gpsStatusText}</div>
-                        <div><b>Último Visto:</b> ${t.lastSeen || 'Agora'}</div>
-                        <div><b>Endereço:</b> ${t.rua || 'Localização em campo'}</div>
-                        <div><b>Km Rodado Hoje:</b> ${(t.autoKm || 0).toFixed(2)} KM</div>
+                        <div><b>Status Parada:</b> <span style="color:#f59e0b;">${statusParadaAtual}</span></div>
+                        <div><b>Km Rodado:</b> ${(t.autoKm || 0).toFixed(2)} KM</div>
+                        <div><b>Consumo (10km/L):</b> ${(t.autoLitros || 0).toFixed(2)} L (R$ ${(t.autoCusto || 0).toFixed(2)})</div>
                     </div>
                 `;
                 marker.bindPopup(popupContent);
@@ -1786,15 +1772,15 @@
                 let avatar = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
                 
                 let isGpsAtivo = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
-                let gpsStatusStr = isGpsAtivo ? '<span class="text-emerald-400 font-bold">🟢 GPS Ativado</span>' : '<span class="text-red-400 font-bold">🔴 GPS Desativado</span>';
+                let gpsStatusStr = isGpsAtivo ? '<span class="text-emerald-400 font-bold">🟢 GPS Ativo</span>' : '<span class="text-red-400 font-bold">🔴 GPS Desativado</span>';
 
                 mapTechsHtml += `
-                    <div title="Endereço: ${t.rua || 'Localização em campo'}" onclick="selecionarEPlugarMapa('${t.login}')" class="bg-black border border-zinc-800 rounded-2xl p-4 flex items-center space-x-3 shadow-sm hover:border-red-600 transition cursor-pointer">
+                    <div onclick="selecionarEPlugarMapa('${t.login}')" class="bg-black border border-zinc-800 rounded-2xl p-4 flex items-center space-x-3 shadow-sm hover:border-red-600 transition cursor-pointer">
                         ${avatar}
                         <div class="flex-1">
                             <h4 class="font-bold text-white text-sm">${t.name}</h4>
                             <p class="text-[10px] text-red-400">${t.car}</p>
-                            <p class="text-[10px] text-zinc-400 truncate">📍 ${t.rua || 'Endereço não informado'}</p>
+                            <p class="text-[10px] text-zinc-400 truncate">📍 ${t.rua || 'Localização em campo'}</p>
                             <div class="flex justify-between items-center mt-1">
                                 <span class="text-[10px] font-bold text-zinc-300 flex items-center"><span class="w-2 h-2 rounded-full ${badgeOn} inline-block mr-1"></span>${t.online ? 'Online' : 'Offline'}</span>
                                 <span class="text-[10px]">${gpsStatusStr}</span>
@@ -1812,77 +1798,7 @@
             if(sel) { sel.value = login; renderizarPinsMapaLeaflet(); }
         }
 
-        // --- AUTONOMIA E RELATÓRIOS ---
-        function calcularAutonomiaSimulacao() {
-            let kmIni = Number(document.getElementById('auto-km-ini')?.value || 0);
-            let kmFim = Number(document.getElementById('auto-km-fim')?.value || 0);
-            let kmPorLitro = Number(document.getElementById('auto-km-por-litro')?.value || 10);
-            let precoGasolina = Number(document.getElementById('auto-preco-gasolina')?.value || 6.00);
-
-            let kmDiff = Math.max(0, kmFim - kmIni);
-            let litros = kmPorLitro > 0 ? (kmDiff / kmPorLitro) : 0;
-            let custoTotal = litros * precoGasolina;
-            let custoKm = kmDiff > 0 ? (custoTotal / kmDiff) : 0;
-
-            if(document.getElementById('prev-km')) document.getElementById('prev-km').innerText = kmDiff + " KM";
-            if(document.getElementById('prev-litros')) document.getElementById('prev-litros').innerText = litros.toFixed(2) + " L";
-            if(document.getElementById('prev-custo')) document.getElementById('prev-custo').innerText = "R$ " + custoTotal.toFixed(2);
-            if(document.getElementById('prev-custo-km')) document.getElementById('prev-custo-km').innerText = "R$ " + custoKm.toFixed(2) + " / KM";
-        }
-
-        function registrarPercursoAutonomia() {
-            if(isVisualizador) return;
-            let techLogin = document.getElementById('auto-tech-select').value;
-            let tech = db.tecnicos.find(t => t.login === techLogin);
-            let origem = document.getElementById('auto-origem').value.trim();
-            let destino = document.getElementById('auto-destino').value.trim();
-            let dataTrajeto = document.getElementById('auto-data').value || new Date().toISOString().split('T')[0];
-            
-            let kmIni = Number(document.getElementById('auto-km-ini').value);
-            let kmFim = Number(document.getElementById('auto-km-fim').value);
-            let kmPorLitro = Number(document.getElementById('auto-km-por-litro').value);
-            let precoGas = Number(document.getElementById('auto-preco-gasolina').value);
-
-            if(!tech || !origem || !destino) { alert("Preencha todos os campos do trajeto!"); return; }
-            if(kmFim <= kmIni) { alert("O KM Final deve ser maior que o KM Inicial!"); return; }
-
-            let kmPercorrido = kmFim - kmIni;
-            let litros = kmPorLitro > 0 ? (kmPercorrido / kmPorLitro) : 0;
-            let custoTotal = litros * precoGas;
-            let custoPorKm = custoTotal / kmPercorrido;
-
-            if(!db.trajetos) db.trajetos = [];
-            db.trajetos.push({
-                id: Date.now(),
-                data: dataTrajeto,
-                techLogin: tech.login,
-                techNome: tech.name,
-                veiculo: tech.car,
-                origem: origem,
-                destino: destino,
-                kmIni: kmIni,
-                kmFim: kmFim,
-                kmPercorrido: kmPercorrido,
-                kmPorLitro: kmPorLitro,
-                litros: litros,
-                precoGasolina: precoGas,
-                custoTotal: custoTotal,
-                custoPorKm: custoPorKm,
-                gpsAtivo: (tech.gpsStatus === 'ativado' || tech.trackingOn)
-            });
-
-            registrarMovimentacao("Registro Trajeto", tech.name, `Registrado percurso de ${kmPercorrido} KM (${origem} ➔ ${destino}) - Custo: R$ ${custoTotal.toFixed(2)}`);
-            salvarDb();
-            
-            document.getElementById('auto-origem').value = '';
-            document.getElementById('auto-destino').value = '';
-            document.getElementById('auto-km-ini').value = '';
-            document.getElementById('auto-km-fim').value = '';
-
-            alert("✅ Percurso e autonomia registrados com sucesso!");
-            atualizarPainelAdmin();
-        }
-
+        // --- RELATÓRIOS, AUTONOMIA E EXPORTAÇÃO EXCEL DETALHADA POR DATA ESPECÍFICA ---
         function renderizarResumoAutonomiaEHist() {
             if(!db.trajetos) db.trajetos = [];
 
@@ -1921,23 +1837,26 @@
 
             tbody.innerHTML = lista.map((t) => {
                 let gpsStatusTag = t.gpsAtivo 
-                    ? '<span class="text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded">🟢 Ativado</span>'
+                    ? '<span class="text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded">🟢 Ativo (Fundo)</span>'
                     : '<span class="text-red-400 font-bold bg-red-950/60 px-2 py-0.5 rounded">🔴 Desativado</span>';
+
+                let paradaInfo = t.paradaFinal ? `<b class="text-amber-400">${t.paradaFinal}</b>` : `<b>${t.origem}</b> ➔ <b>${t.destino}</b>`;
+                let tempoParadoInfo = t.tempoParado ? `<span class="text-emerald-400 font-bold">${t.tempoParado}</span>` : '-';
 
                 return `
                     <tr class="border-b border-zinc-800">
                         <td class="p-3 text-zinc-400">${t.data}</td>
                         <td class="p-3 font-bold text-white">${t.techNome} <br><span class="text-[10px] text-red-400 font-normal">${t.veiculo}</span></td>
-                        <td class="p-3 text-zinc-300"><b>${t.origem}</b> ➔ <b>${t.destino}</b></td>
-                        <td class="p-3 text-center font-bold text-amber-400 font-mono">${t.kmPercorrido} KM <br><span class="text-[9px] text-zinc-500">(${t.kmIni} - ${t.kmFim})</span></td>
+                        <td class="p-3 text-zinc-300">${paradaInfo}</td>
+                        <td class="p-3 text-center">${tempoParadoInfo}</td>
+                        <td class="p-3 text-center font-bold text-amber-400 font-mono">${t.kmPercorrido} KM</td>
                         <td class="p-3 text-center font-bold text-blue-400 font-mono">${Number(t.litros).toFixed(2)} L</td>
                         <td class="p-3 text-center font-bold text-emerald-400 font-mono">R$ ${Number(t.custoTotal).toFixed(2)}</td>
-                        <td class="p-3 text-center font-bold text-red-400 font-mono">R$ ${Number(t.custoPorKm).toFixed(2)}</td>
                         <td class="p-3 text-center text-xs">${gpsStatusTag}</td>
                         <td class="p-3 text-center"><button onclick="excluirTrajetoAutonomia(${t.id})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button></td>
                     </tr>
                 `;
-            }).join('') || '<tr><td colspan="9" class="p-4 text-center text-zinc-500">Nenhum percurso registrado.</td></tr>';
+            }).join('') || '<tr><td colspan="9" class="p-4 text-center text-zinc-500">Nenhum percurso ou parada registrada.</td></tr>';
         }
 
         function limparFiltroAutonomia() {
@@ -1948,25 +1867,47 @@
 
         function excluirTrajetoAutonomia(trajetoId) {
             if(isVisualizador) return;
-            if(confirm("Deseja excluir este registro de trajeto e autonomia?")) {
+            if(confirm("Deseja excluir este registro de trajeto e paradas?")) {
                 db.trajetos = db.trajetos.filter(t => t.id !== trajetoId);
                 salvarDb();
                 atualizarPainelAdmin();
             }
         }
 
-        function exportarExcelAutonomia() {
-            let csvContent = "data:text/csv;charset=utf-8,Data;Tecnico;Veiculo;Origem;Destino;KM Inicial;KM Final;KM Percorrido;Consumo KM/L;Litros Usados;Preco Gasolina R$;Custo Total R$;Custo R$/KM;GPS Ativo\n";
-            (db.trajetos || []).forEach(t => {
-                csvContent += `${t.data};"${t.techNome}";"${t.veiculo}";"${t.origem}";"${t.destino}";${t.kmIni};${t.kmFim};${t.kmPercorrido};${t.kmPorLitro};${Number(t.litros).toFixed(2)};${t.precoGasolina};${Number(t.custoTotal).toFixed(2)};${Number(t.custoPorKm).toFixed(2)};${t.gpsAtivo ? 'SIM' : 'NAO'}\n`;
+        // FUNÇÃO DE EXPORTAÇÃO EXCEL ORGANIZADA POR DATA ESPECÍFICA COM DETALHES DE PARADAS
+        function baixarExcelDetalhadoPorData() {
+            let dataSelecionada = document.getElementById('export-excel-date').value;
+            let techSelecionado = document.getElementById('export-excel-tech').value;
+
+            if(!dataSelecionada) {
+                alert("Por favor, selecione uma Data Específica para extrair o relatório no Excel!");
+                return;
+            }
+
+            let filtrados = (db.trajetos || []).filter(t => {
+                if (t.data !== dataSelecionada) return false;
+                if (techSelecionado !== 'todos' && t.techLogin !== techSelecionado) return false;
+                return true;
             });
+
+            if (filtrados.length === 0) {
+                alert("Nenhum registro encontrado para esta data e técnico selecionados.");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,Data;Tecnico;Veiculo;Local Parada / Destino;Tempo Parado;KM Percorrido;Litros (10km/L);Preco Gasolina (R$);Custo Total (R$);GPS Fundo\n";
+            filtrados.forEach(t => {
+                csvContent += `${t.data};"${t.techNome}";"${t.veiculo}";"${t.paradaFinal || t.destino}";"${t.tempoParado || 'N/A'}";${t.kmPercorrido};${Number(t.litros).toFixed(2)};${t.precoGasolina};${Number(t.custoTotal).toFixed(2)};${t.gpsAtivo ? 'SIM' : 'NAO'}\n`;
+            });
+
             let encodedUri = encodeURI(csvContent);
             let link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "relatorio_autonomia_combustivel.csv");
+            link.setAttribute("download", `relatorio_detalhado_${dataSelecionada}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            alert("✅ Relatório Excel detalhado exportado com sucesso!");
         }
 
         function limparFiltroDatasLancamentos() {
@@ -1975,7 +1916,6 @@
             atualizarPainelAdmin();
         }
 
-        // --- ESTOQUE PADRÃO ADM ---
         function adicionarItemEstoquePadrao() {
             if(isVisualizador) return;
             let sap = document.getElementById('padrao-sap').value.trim();
@@ -2015,7 +1955,6 @@
             }
         }
 
-        // --- ESTOQUE FÍSICO & PASSAGEM MULTIPLA ---
         function adicionarEstoqueFisicoUnitario() {
             if(isVisualizador) return;
             let sap = document.getElementById('fisico-sap').value.trim();
@@ -2123,7 +2062,6 @@
             `).join('');
         }
 
-        // --- SUBTRAÇÃO E ADIÇÃO AUTOMÁTICA DE MATERIAIS PARA O TÉCNICO ---
         function executarPassagemMultiplaTecnico() {
             if(isVisualizador) return;
             let techLogin = document.getElementById('pass-tech-select').value;
@@ -2136,10 +2074,8 @@
                 let fisico = db.estoqueFisico.find(e => e.sap === it.sap);
                 if(!fisico || fisico.qtd < it.qtd) { alert(`Quantidade insuficiente para o material ${it.desc}`); return; }
                 
-                // SUBTRAI DO ESTOQUE FÍSICO CENTRAL
                 fisico.qtd -= it.qtd;
 
-                // SOMA NA MALA DO TÉCNICO AUTOMATICAMENTE
                 if(!tech.mala) tech.mala = [];
                 let itemMala = tech.mala.find(m => m.sap === it.sap);
                 if(itemMala) {
@@ -2197,7 +2133,6 @@
             document.getElementById('modal-comprovante').classList.add('hidden');
         }
 
-        // --- CONTROLE DE MALAS ADMIN ---
         function switchMalaSubTab(sub) {
             subMalaAtual = sub;
             document.querySelectorAll('.mala-subcontent').forEach(el => el.classList.add('hidden'));
@@ -2311,7 +2246,6 @@
             renderizarMalaAdmin();
         }
 
-        // --- HISTÓRICO GERAL & BACKUP ---
         function renderizarHistoricoGeral() {
             let dataFiltro = document.getElementById('filtro-hist-data').value;
             let histFiltrado = dataFiltro ? db.movimentacoes.filter(m => m.data.includes(dataFiltro)) : db.movimentacoes;
@@ -2362,7 +2296,6 @@
             dlAnchor.remove();
         }
 
-        // EXPORTAR SIAKI
         function exportarExcelSIAKI() {
             let csvContent = "data:text/csv;charset=utf-8,COD SAP;Material;PROJETOS;CIDADE;LOCAL DE DESCARGA;Node/Site/Cód Imóvel;QTD. CONSUMO;QTD. DESCARTE\n";
             db.lancamentos.forEach(l => {
@@ -2390,7 +2323,6 @@
             alert("📋 Dados copiados no padrão SIAKI!");
         }
 
-        // CRUD TÉCNICO COM CARREGAMENTO DO ESTOQUE PADRÃO
         function abrirModalTecnico(index = -1) {
             if(isVisualizador) return;
             document.getElementById('edit-tech-index').value = index;
@@ -2526,7 +2458,6 @@
         function removerMaterialAdmin(i) { if(isVisualizador) return; db.materiais.splice(i, 1); salvarDb(); atualizarPainelAdmin(); }
         function excluirLancamento(i) { if(isVisualizador) return; db.lancamentos.splice(i, 1); salvarDb(); atualizarPainelAdmin(); }
 
-        // SOS & Notificações
         function acionarSOS() {
             if(confirm("ATENÇÃO: Deseja acionar o alerta SOS de emergência para a Base?")) {
                 db.sosAtivo = {
@@ -2559,7 +2490,6 @@
             atualizarPainelAdmin();
         }
 
-        // --- PAINEL DO TÉCNICO ---
         function inicializarPainelTecnico() {
             document.getElementById('tech-welcome-name').innerText = usuarioLogado.name + " (" + usuarioLogado.car + ")";
             if(usuarioLogado.avatar) document.getElementById('tech-avatar-box').innerHTML = `<img src="${usuarioLogado.avatar}" class="w-full h-full object-cover">`;
@@ -2791,7 +2721,6 @@
             lucide.createIcons();
         }
 
-        // HISTÓRICO DE LANÇAMENTOS DO TÉCNICO
         function renderizarHistoricoLancesTecnico() {
             let container = document.getElementById('tech-hist-list');
             if(!container || !usuarioLogado) return;
@@ -2833,7 +2762,6 @@
             }).join('');
         }
 
-        // CHAT MENSAGENS E ÁUDIO
         function apagarMensagemChat(msgId) {
             if(isVisualizador) return;
             if(confirm("Deseja apagar esta mensagem do chat?")) {
@@ -2974,7 +2902,6 @@
                 
                 let itemMala = (usuarioLogado.mala || []).find(x => x.sap === m.sap);
                 let qtdMala = itemMala ? itemMala.qtd : 0;
-
                 let descEscaped = m.desc.replace(/'/g, "\\'");
 
                 html += `
@@ -3060,7 +2987,6 @@
             `).join('');
         }
 
-        // --- SUBTRAÇÃO AUTOMÁTICA DA MALA DO TÉCNICO AO LANÇAR MATERIAL ---
         function salvarLoteTecnico() {
             let projeto = document.getElementById('t-projeto').value;
             let node = document.getElementById('t-node').value.trim();
@@ -3075,7 +3001,6 @@
                 let malaItem = techNoDb.mala.find(m => m.sap === it.sap || m.desc === it.material);
                 
                 if(malaItem) {
-                    // Subtrai da mala no automático
                     malaItem.qtd = Math.max(0, Number(malaItem.qtd) - Number(it.qtd));
                     malaItem.lancado = Number(malaItem.lancado || 0) + Number(it.qtd);
                 } else {
@@ -3130,7 +3055,6 @@
             alert("✅ Pedido de reposição enviado para a Base Central!");
         }
 
-        // AMIZADE
         function enviarPedidoAmizadeTech() {
             let loginBusca = document.getElementById('colega-busca-login').value.trim().toLowerCase();
             let amigo = db.tecnicos.find(t => t.login === loginBusca);
@@ -3169,7 +3093,6 @@
             abrirCardTech('colega');
         }
 
-        // --- CHAT DIRECT TÉCNICO ---
         function selecionarChatTech(dest) {
             chatDestinatarioAtual = dest;
             db.mensagens.forEach(m => {
@@ -3265,7 +3188,6 @@
             renderizarColegasChatTech();
         }
 
-        // --- CHAT ADMIN ---
         let chatAdminAtual = null;
         function atualizarChatAdminLista() {
             let contatosDiv = document.getElementById('admin-chat-contacts');
@@ -3347,7 +3269,6 @@
             atualizarMensagensAdminBox();
         }
 
-        // Inicializar PWA ao carregar a página
         document.addEventListener('DOMContentLoaded', inicializarPWA);
     </script>
 </body>
