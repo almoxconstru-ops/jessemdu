@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mala & Estoque | Logística Avançada Red & Black (Oficial)</title>
+    <title>BOXFIELD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Chart.js para Gráficos Dinâmicos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet CSS & JS para Mapa Estilo Life360 com Pins/Fotos -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Firebase SDKs (Versão Compatível) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -59,9 +62,25 @@
             color: #0f172a !important;
             border-color: #cbd5e1 !important;
         }
+
+        /* ESTILO CUSTOMIZADO DE PINS NO MAPA ESTILO LIFE360 */
+        .custom-tech-pin {
+            background: transparent;
+            border: none;
+        }
+        .leaflet-popup-content-wrapper {
+            background: #18181b !important;
+            color: #ffffff !important;
+            border-radius: 1rem !important;
+            border: 1px solid #3f3f46 !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+        }
+        .leaflet-popup-tip {
+            background: #18181b !important;
+        }
     </style>
 </head>
-<body class="bg-black text-slate-100 font-sans antialiased min-h-screen" id="app-body-container">
+<body class="bg-black text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between" id="app-body-container">
 
     <!-- BANNER DE STATUS OFFLINE / ONLINE -->
     <div id="offline-banner" class="hidden fixed top-0 left-0 right-0 z-50 p-2 text-center text-xs font-bold transition-all"></div>
@@ -72,27 +91,28 @@
     </div>
 
     <!-- ================= TELA DE LOGIN ================= -->
-    <div id="login-screen" class="min-h-screen flex items-center justify-center bg-red-black-gradient p-4">
-        <div class="bg-zinc-900/90 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl shadow-2xl border border-red-900/40 w-full max-w-md text-white">
-            <div class="text-center mb-6">
+    <div id="login-screen" class="min-h-screen flex items-center justify-center bg-red-black-gradient p-4 sm:p-6 w-full">
+        <div class="bg-zinc-900/90 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl shadow-2xl border border-red-900/40 w-full max-w-md text-white text-center mx-auto">
+            <div class="text-center mb-6 flex flex-col items-center">
                 <div class="inline-flex p-4 bg-red-600 rounded-2xl mb-3 shadow-lg shadow-red-600/40 animate-pulse">
                     <i data-lucide="boxes" class="w-8 h-8 text-white"></i>
                 </div>
                 <h1 class="text-2xl font-extrabold tracking-tight">BoxField</h1>
-                <p class="text-xs text-red-300 mt-1">Jessé Moura</p>
+                <p class="text-xs text-red-300 mt-1">Gestão Inteligente de Campo & Estoque</p>
             </div>
             
-            <form onsubmit="handleLogin(event)" class="space-y-4">
+            <form onsubmit="handleLogin(event)" class="space-y-4 text-left">
                 <div>
                     <label class="block text-xs font-bold uppercase text-red-400 mb-1">Usuário / Login</label>
-                    <input type="text" id="login-user" required autocomplete="off" class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition" placeholder="admin, operador ou seu login">
+                    <input type="text" id="login-user" required autocomplete="off" class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition text-center sm:text-left" placeholder="admin, operador ou login técnico">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-red-400 mb-1">Senha</label>
-                    <input type="password" id="login-pass" required autocomplete="off" class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition" placeholder="••••••••">
+                    <input type="password" id="login-pass" required autocomplete="off" class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition text-center sm:text-left" placeholder="••••••••">
                 </div>
-                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 font-bold rounded-xl shadow-lg shadow-red-600/30 transition text-sm">
-                    Acessar Sistema Oficial
+                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 font-bold rounded-xl shadow-lg shadow-red-600/30 transition text-sm flex items-center justify-center space-x-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span>Acessar Sistema Oficial</span>
                 </button>
             </form>
         </div>
@@ -116,6 +136,9 @@
                 </button>
                 <button onclick="switchAdminTab('tecnicos')" id="atab-tecnicos" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
                     <i data-lucide="users" class="w-4 h-4"></i><span>Gestão de Técnicos</span>
+                </button>
+                <button onclick="switchAdminTab('autonomia')" id="atab-autonomia" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
+                    <i data-lucide="gauge" class="w-4 h-4"></i><span>Autonomia & Percursos</span>
                 </button>
                 <button onclick="switchAdminTab('estoque-padrao')" id="atab-estoque-padrao" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
                     <i data-lucide="layers" class="w-4 h-4"></i><span>Estoque Padrão</span>
@@ -208,15 +231,15 @@
                 <!-- CARDS RESUMO -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm text-center">
-                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Técnicos</p>
+                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Técnicos Cadastrados</p>
                         <h3 id="stat-techs" class="text-3xl font-extrabold text-white mt-2">0</h3>
                     </div>
                     <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm text-center">
-                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Lançamentos</p>
+                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Lançamentos Realizados</p>
                         <h3 id="stat-launches" class="text-3xl font-extrabold text-white mt-2">0</h3>
                     </div>
                     <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm text-center">
-                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Itens Consumidos</p>
+                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">Itens Consumidos (Mala)</p>
                         <h3 id="stat-consumed" class="text-3xl font-extrabold text-red-500 mt-2">0 un</h3>
                     </div>
                     <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm text-center">
@@ -259,8 +282,8 @@
             <div id="acontent-tecnicos" class="admin-tab hidden space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm gap-4">
                     <div>
-                        <h2 class="text-xl font-bold text-white">Gestão de Técnicos</h2>
-                        <p class="text-xs text-zinc-400">Cadastre logins e senhas autorizados com estoque inicial padrão</p>
+                        <h2 class="text-xl font-bold text-white">Gestão de Técnicos & Status GPS</h2>
+                        <p class="text-xs text-zinc-400">Cadastre logins, senhas e acompanhe o status da localização em tempo real</p>
                     </div>
                     <div class="flex flex-wrap gap-2 items-center action-btn-write">
                         <input type="text" id="quick-add-login" placeholder="Adicionar por Login..." class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
@@ -278,6 +301,7 @@
                             <tr>
                                 <th class="p-4">Foto</th>
                                 <th class="p-4">Nome / Status</th>
+                                <th class="p-4">GPS no Celular</th>
                                 <th class="p-4">Login</th>
                                 <th class="p-4">Senha</th>
                                 <th class="p-4">Veículo</th>
@@ -289,7 +313,124 @@
                 </div>
             </div>
 
-            <!-- ESTOQUE PADRÃO (CONFIGURAÇÃO INICIAL DA MALA) -->
+            <!-- AUTONOMIA & PERCURSOS (MÓDULO TOTALMENTE AUTOMÁTICO) -->
+            <div id="acontent-autonomia" class="admin-tab hidden space-y-6">
+                <!-- RESUMO AUTONOMIA -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm text-center">
+                        <p class="text-xs font-bold uppercase text-zinc-400">Total KM Percorridos</p>
+                        <h3 id="stat-auto-km" class="text-2xl font-extrabold text-amber-400 mt-1">0 KM</h3>
+                    </div>
+                    <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm text-center">
+                        <p class="text-xs font-bold uppercase text-zinc-400">Consumo em Litros</p>
+                        <h3 id="stat-auto-litros" class="text-2xl font-extrabold text-blue-400 mt-1">0 L</h3>
+                    </div>
+                    <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm text-center">
+                        <p class="text-xs font-bold uppercase text-zinc-400">Custo Total Gasolina</p>
+                        <h3 id="stat-auto-custo" class="text-2xl font-extrabold text-emerald-400 mt-1">R$ 0,00</h3>
+                    </div>
+                    <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm text-center">
+                        <p class="text-xs font-bold uppercase text-zinc-400">Média Custo por KM</p>
+                        <h3 id="stat-auto-por-km" class="text-2xl font-extrabold text-red-400 mt-1">R$ 0,00 / KM</h3>
+                    </div>
+                </div>
+
+                <!-- REGISTRO / CONFIGURAÇÃO AUTOMÁTICA DE PERCURSO -->
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4 action-btn-write">
+                    <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                                <i data-lucide="gauge" class="w-5 h-5 text-red-500"></i>
+                                <span>Cálculo Automático de Autonomia por Deslocamento</span>
+                            </h2>
+                            <p class="text-xs text-zinc-400">Acompanhamento e registro manual/automático de percursos por veículos e motoristas</p>
+                        </div>
+                        <button onclick="exportarExcelAutonomia()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Baixar Excel Autonomia</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-400 mb-1">Técnico / Motorista</label>
+                            <select id="auto-tech-select" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-400 mb-1">Origem</label>
+                            <input type="text" id="auto-origem" placeholder="Ex: Base Central" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-400 mb-1">Destino</label>
+                            <input type="text" id="auto-destino" placeholder="Ex: Pajuçara - Node 88" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-400 mb-1">Data do Trajeto</label>
+                            <input type="date" id="auto-data" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-400 mb-1">KM Inicial</label>
+                            <input type="number" id="auto-km-ini" placeholder="Ex: 45000" oninput="calcularAutonomiaSimulacao()" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-400 mb-1">KM Final</label>
+                            <input type="number" id="auto-km-fim" placeholder="Ex: 45080" oninput="calcularAutonomiaSimulacao()" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-400 mb-1">Consumo do Veículo (KM/L)</label>
+                            <input type="number" step="0.1" id="auto-km-por-litro" value="10.0" oninput="calcularAutonomiaSimulacao()" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-400 mb-1">Preço Gasolina (R$/L)</label>
+                            <input type="number" step="0.01" id="auto-preco-gasolina" value="6.00" oninput="calcularAutonomiaSimulacao()" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none font-mono">
+                        </div>
+                    </div>
+
+                    <div id="auto-preview-calc" class="p-3 bg-black/60 border border-zinc-800 rounded-xl text-xs text-zinc-300 flex flex-wrap justify-between items-center gap-2">
+                        <span><b>KM Percorrido:</b> <span id="prev-km" class="text-amber-400 font-mono font-bold">0 KM</span></span>
+                        <span><b>Litros Estimados:</b> <span id="prev-litros" class="text-blue-400 font-mono font-bold">0 L</span></span>
+                        <span><b>Custo Estimado:</b> <span id="prev-custo" class="text-emerald-400 font-mono font-bold">R$ 0,00</span></span>
+                        <span><b>Custo por KM:</b> <span id="prev-custo-km" class="text-red-400 font-mono font-bold">R$ 0,00 / KM</span></span>
+                    </div>
+
+                    <button onclick="registrarPercursoAutonomia()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow">Registrar Trajeto & Autonomia</button>
+                </div>
+
+                <!-- HISTÓRICO DE TRAJETOS -->
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <h3 class="font-bold text-white text-sm">Histórico Detalhado de Percursos e Consumo de Gasolina</h3>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="filter-auto-tech" oninput="renderizarHistoricoAutonomia()" placeholder="Filtrar por técnico..." class="px-3 py-1.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                            <input type="date" id="filter-auto-date" onchange="renderizarHistoricoAutonomia()" class="px-3 py-1.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                            <button onclick="limparFiltroAutonomia()" class="px-3 py-1.5 bg-zinc-800 text-white rounded-xl text-xs font-bold">Limpar</button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left text-zinc-300">
+                            <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
+                                <tr>
+                                    <th class="p-3">Data</th>
+                                    <th class="p-3">Técnico / Veículo</th>
+                                    <th class="p-3">Origem ➔ Destino</th>
+                                    <th class="p-3 text-center">KM Percorrido</th>
+                                    <th class="p-3 text-center">Litros (L)</th>
+                                    <th class="p-3 text-center">Custo Total (R$)</th>
+                                    <th class="p-3 text-center">R$ / KM</th>
+                                    <th class="p-3 text-center">Status GPS Celular</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-autonomia-table" class="divide-y divide-zinc-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ESTOQUE PADRÃO INICIAL -->
             <div id="acontent-estoque-padrao" class="admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4 action-btn-write">
                     <h2 class="text-xl font-bold text-white">Configurar Estoque Padrão Inicial do Técnico</h2>
@@ -358,7 +499,7 @@
             <div id="acontent-passar-tecnicos" class="admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4 max-w-3xl mx-auto">
                     <h2 class="text-xl font-bold text-white">Passar Múltiplos Materiais para Técnico</h2>
-                    <p class="text-xs text-zinc-400">Selecione o técnico, adicione um ou mais materiais (miscelâneas ou seriais MIS) e transfira gerando o termo de responsabilidade.</p>
+                    <p class="text-xs text-zinc-400">Selecione o técnico, adicione um ou mais materiais e transfira subtraindo do físico e somando à mala.</p>
 
                     <div>
                         <label class="block text-xs font-bold text-red-400 mb-1">Selecionar Técnico Destino</label>
@@ -407,7 +548,7 @@
                     <div id="mala-subcontent-miscelaneas" class="mala-subcontent overflow-x-auto pt-2">
                         <table class="w-full text-xs text-left text-zinc-300">
                             <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
-                                <tr><th class="p-3">SAP</th><th class="p-3">Descrição</th><th class="p-3 text-center">Atual</th><th class="p-3 text-center">Lançado</th><th class="p-3 text-center">Ações (Editar / Excluir Material)</th></tr>
+                                <tr><th class="p-3">SAP</th><th class="p-3">Descrição</th><th class="p-3 text-center">Atual em Mala</th><th class="p-3 text-center">Lançado</th><th class="p-3 text-center">Ações (Editar / Excluir)</th></tr>
                             </thead>
                             <tbody id="admin-mala-table" class="divide-y divide-zinc-800"></tbody>
                         </table>
@@ -440,7 +581,7 @@
                 </div>
             </div>
 
-            <!-- LANÇAMENTOS & SIAKI (COM FILTRO DIA X ATÉ DIA Y) -->
+            <!-- LANÇAMENTOS & SIAKI -->
             <div id="acontent-lancamentos" class="admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
                     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -475,10 +616,10 @@
                 </div>
             </div>
 
-            <!-- CHAT INSTAGRAM STYLE COM EXCLUSÃO DE MENSAGEM & ÁUDIO -->
+            <!-- CHAT DIRECT COM EXCLUSÃO DE MENSAGEM & ÁUDIO -->
             <div id="acontent-chat" class="admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm h-[650px] flex flex-col">
-                    <h2 class="text-xl font-bold text-white mb-2">Chat Central</h2>
+                    <h2 class="text-xl font-bold text-white mb-2">Chat Central Direct</h2>
                     <div class="flex-1 flex overflow-hidden border border-zinc-800 rounded-2xl bg-black">
                         <div id="admin-chat-contacts" class="w-1/3 border-r border-zinc-800 p-2 overflow-y-auto space-y-1"></div>
                         <div class="flex-1 flex flex-col bg-zinc-950">
@@ -496,23 +637,25 @@
                 </div>
             </div>
 
-            <!-- MAPA EM TEMPO REAL COM MONITORAMENTO DE GPS REAL -->
+            <!-- MAPA EM TEMPO REAL ESTILO LIFE360 (LEAFLET INTERATIVO COM PINS / FOTOS) -->
             <div id="acontent-mapa" class="admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h2 class="text-xl font-bold text-white">Mapa em Tempo Real (Sincronizado)</h2>
-                            <p class="text-xs text-zinc-400">Acompanhe a localização real dos técnicos quando o GPS estiver ATIVO.</p>
+                            <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                                <i data-lucide="map-pin" class="w-5 h-5 text-red-500"></i>
+                                <span>Mapa em Tempo Real (Estilo Life360)</span>
+                            </h2>
+                            <p class="text-xs text-zinc-400">Veja a foto do técnico e o nome no alfinete em tempo real. Identifique se o GPS está ativado/desativado.</p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <select id="map-select-tech" onchange="centralizarMapaTecnico()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                            <select id="map-select-tech" onchange="renderizarPinsMapaLeaflet()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
                                 <option value="geral">🌐 Visão Geral (Todos)</option>
                             </select>
                         </div>
                     </div>
-                    <div class="w-full h-96 rounded-2xl overflow-hidden border border-zinc-800 relative">
-                        <iframe id="iframe-mapa-central" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?q=-9.6658,-35.7350&z=13&output=embed"></iframe>
-                    </div>
+                    <!-- CONTÊINER DO MAPA LEAFLET COM ALFINETES LIFE360 -->
+                    <div id="map-leaflet-container" class="w-full h-[450px] rounded-2xl overflow-hidden border border-zinc-800 relative z-10 shadow-2xl"></div>
                     <div id="admin-map-techs-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-2"></div>
                 </div>
             </div>
@@ -542,10 +685,10 @@
     </div>
 
     <!-- ================= PAINEL DO TÉCNICO (CELULAR CENTRALIZADO) ================= -->
-    <div id="tech-screen" class="hidden min-h-screen flex flex-col bg-black text-white items-center">
+    <div id="tech-screen" class="hidden min-h-screen flex flex-col bg-black text-white items-center justify-between w-full">
         <!-- Container Padrão Celular Centralizado -->
         <div class="w-full max-w-md mx-auto flex flex-col min-h-screen">
-            <!-- Header Técnico com botão de tema -->
+            <!-- Header Técnico com botões ajustados e foto -->
             <header class="bg-zinc-900 text-white p-3.5 shadow-xl border-b border-red-900/40 flex justify-between items-center w-full sticky top-0 z-30">
                 <div class="flex items-center space-x-2.5">
                     <div class="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center font-bold text-base overflow-hidden border-2 border-red-500 shadow-lg flex-shrink-0" id="tech-avatar-box">
@@ -554,8 +697,8 @@
                     <div>
                         <h2 id="tech-welcome-name" class="font-bold text-xs truncate max-w-[130px] sm:max-w-[180px]">Técnico</h2>
                         <div class="flex items-center space-x-1.5">
-                            <span class="text-[9px] text-emerald-400 font-bold flex items-center bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded-md">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1 animate-pulse"></span> GPS Automático
+                            <span id="tech-gps-status-badge" class="text-[9px] text-emerald-400 font-bold flex items-center bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded-md">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1 animate-pulse"></span> GPS Ativo
                             </span>
                             <label class="text-[9px] text-red-400 cursor-pointer underline"><input type="file" id="photo-upload" class="hidden" onchange="mudarFotoPerfil(event)">Foto</label>
                         </div>
@@ -592,31 +735,57 @@
             </header>
 
             <main class="flex-1 w-full p-3 sm:p-4 space-y-4">
-                <div class="bg-gradient-to-r from-red-950 via-zinc-900 to-black text-white p-4 sm:p-5 rounded-3xl shadow-2xl border border-red-900/40 text-center">
-                    <h3 class="text-lg sm:text-xl font-extrabold">BoxField Mobile</h3>
+                <div class="bg-gradient-to-r from-red-950 via-zinc-900 to-black text-white p-4 rounded-3xl shadow-2xl border border-red-900/40 text-center">
+                    <h3 class="text-lg font-extrabold">BoxField Mobile</h3>
                     <p class="text-[11px] text-red-300 mt-0.5">Gestão de lançamentos, mala e comunicação em campo.</p>
                 </div>
 
-                <div class="grid grid-cols-5 gap-1.5 sm:gap-2 justify-center">
-                    <div onclick="abrirCardTech('lancamento')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="clipboard-list" class="w-4 h-4"></i></div>
+                <!-- CARD TELEMETRIA AUTOMÁTICA DE PERCURSO EM CAMPO -->
+                <div class="p-3.5 bg-zinc-900/90 border border-amber-600/40 rounded-2xl space-y-2 shadow-xl text-center">
+                    <div class="flex justify-between items-center border-b border-zinc-800 pb-1.5">
+                        <span class="text-[10px] font-bold uppercase text-amber-400 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block"></span>
+                            Deslocamento Automático GPS
+                        </span>
+                        <span id="tech-auto-km-live" class="text-xs font-mono font-bold text-white">0.00 KM</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-black/60 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400 block text-[9px]">Consumo Litros</span>
+                            <b id="tech-auto-litros-live" class="text-blue-400 font-mono">0.00 L</b>
+                        </div>
+                        <div class="bg-black/60 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400 block text-[9px]">Custo Estimado</span>
+                            <b id="tech-auto-custo-live" class="text-emerald-400 font-mono">R$ 0,00</b>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTÕES DE MENU TÉCNICO CENTRALIZADOS E AJUSTADOS -->
+                <div class="grid grid-cols-3 gap-2 justify-center items-center">
+                    <div onclick="abrirCardTech('lancamento')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="clipboard-list" class="w-4 h-4"></i></div>
                         <h4 class="font-bold text-[10px]">Lançar</h4>
                     </div>
-                    <div onclick="abrirCardTech('mala')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="backpack" class="w-4 h-4"></i></div>
+                    <div onclick="abrirCardTech('historico')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="history" class="w-4 h-4"></i></div>
+                        <h4 class="font-bold text-[10px]">Histórico</h4>
+                    </div>
+                    <div onclick="abrirCardTech('mala')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="backpack" class="w-4 h-4"></i></div>
                         <h4 class="font-bold text-[10px]">Mala</h4>
                     </div>
-                    <div onclick="abrirCardTech('chat')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl relative">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="message-square" class="w-4 h-4"></i></div>
+                    <div onclick="abrirCardTech('chat')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center relative">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="message-square" class="w-4 h-4"></i></div>
                         <h4 class="font-bold text-[10px]">Chat</h4>
-                        <span id="badge-tech-chat-card" class="hidden absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold px-1 rounded-full">0</span>
+                        <span id="badge-tech-chat-card" class="hidden absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">0</span>
                     </div>
-                    <div onclick="abrirCardTech('reposicao')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="package-plus" class="w-4 h-4"></i></div>
+                    <div onclick="abrirCardTech('reposicao')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="package-plus" class="w-4 h-4"></i></div>
                         <h4 class="font-bold text-[10px]">Reposição</h4>
                     </div>
-                    <div onclick="abrirCardTech('colega')" class="bg-zinc-900/90 border border-red-900/40 p-2.5 sm:p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl mx-auto flex items-center justify-center"><i data-lucide="user-plus" class="w-4 h-4"></i></div>
+                    <div onclick="abrirCardTech('colega')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
+                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="user-plus" class="w-4 h-4"></i></div>
                         <h4 class="font-bold text-[10px]">Colega</h4>
                     </div>
                 </div>
@@ -663,7 +832,7 @@
         </div>
     </div>
 
-    <!-- MODAL ADM: CADASTRAR TÉCNICO COM OPÇÃO DE ESTOQUE PADRÃO -->
+    <!-- MODAL ADM: CADASTRAR TÉCNICO -->
     <div id="modal-tecnico" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 p-6 rounded-3xl w-full max-w-md space-y-4 shadow-2xl border border-red-950 text-white">
             <h3 id="modal-tech-title" class="text-lg font-bold">Cadastrar Técnico</h3>
@@ -682,7 +851,7 @@
             </div>
             <div>
                 <label class="block text-xs font-bold text-red-400 mb-1">Veículo</label>
-                <input type="text" id="tech-form-car" placeholder="Ex: V-102" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none">
+                <input type="text" id="tech-form-car" placeholder="Ex: V-102 (Fiorino)" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none">
             </div>
             <div class="flex items-center space-x-2 pt-2 border-t border-zinc-800">
                 <input type="checkbox" id="tech-form-apply-padrao" checked class="w-4 h-4 text-red-600 bg-black border-zinc-800 rounded focus:ring-red-600">
@@ -753,7 +922,7 @@
         }
         const dbRef = firebase.database().ref('mala_estoque_db_v7');
 
-        // --- BANCO DE DADOS EM NUVEM (ESTRUTURA BASE) ---
+        // --- BANCO DE DADOS EM NUVEM (ESTRUTURA BASE COM AUTONOMIA E GPS) ---
         let db = {
             adminPass: "Constru007",
             operadores: [],
@@ -762,11 +931,11 @@
                 { sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtdInicial: 100 }
             ],
             tecnicos: [
-                { name: "João Silva", login: "joao", senha: "123", car: "V-102 (Fiorino)", avatar: "", lat: -9.6658, lng: -35.7350, rua: "Av. Fernandes Lima, 1000 - Maceió", trackingOn: false, online: false, lastSeen: "Hoje às 08:30", amigos: ["carlos"], pedidosAmizade: [], notificacoes: [], mala: [
+                { name: "João Silva", login: "joao", senha: "123", car: "V-102 (Fiorino)", avatar: "", lat: -9.6658, lng: -35.7350, rua: "Av. Fernandes Lima, 1000 - Maceió", trackingOn: false, gpsStatus: "desativado", autoKm: 0, autoLitros: 0, autoCusto: 0, online: false, lastSeen: "Hoje às 08:30", amigos: ["carlos"], pedidosAmizade: [], notificacoes: [], mala: [
                     {sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtd: 500, lancado: 0, abastecido: 500, seriais: []},
                     {sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtd: 100, lancado: 0, abastecido: 100, seriais: ["SER-101", "SER-102"]}
                 ] },
-                { name: "Carlos Mendes", login: "carlos", senha: "123", car: "V-088 (Fiorino)", avatar: "", lat: -9.6700, lng: -35.7400, rua: "Rua do Sol, 45 - Maceió", trackingOn: false, online: false, lastSeen: "Ontem às 17:45", amigos: ["joao"], pedidosAmizade: [], notificacoes: [], mala: [
+                { name: "Carlos Mendes", login: "carlos", senha: "123", car: "V-088 (Fiorino)", avatar: "", lat: -9.6700, lng: -35.7400, rua: "Rua do Sol, 45 - Maceió", trackingOn: false, gpsStatus: "desativado", autoKm: 0, autoLitros: 0, autoCusto: 0, online: false, lastSeen: "Ontem às 17:45", amigos: ["joao"], pedidosAmizade: [], notificacoes: [], mala: [
                     {sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtd: 500, lancado: 0, abastecido: 500, seriais: []},
                     {sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtd: 100, lancado: 0, abastecido: 100, seriais: ["SER-103"]}
                 ] }
@@ -783,6 +952,9 @@
             ],
             favoritos: ["CABO DROP LOW F FIG8 1FO CINZA", "CONECTOR FO CAMPO CPO SC APC FRKW"],
             lancamentos: [],
+            trajetos: [
+                { id: 101, data: "2026-10-08", techLogin: "joao", techNome: "João Silva", veiculo: "V-102 (Fiorino)", origem: "Base Central", destino: "MDU GPON Node 37855", kmIni: 45000, kmFim: 45050, kmPercorrido: 50, kmPorLitro: 10, litros: 5.0, precoGasolina: 6.00, custoTotal: 30.00, custoPorKm: 0.60, gpsAtivo: true }
+            ],
             reposicoes: [],
             mensagens: [],
             movimentacoes: [{ data: "12/09/2026 09:00", tipo: "Sistema", responsavel: "Admin", detalhes: "Sistema Red & Black v7 (Firebase Online) inicializado." }],
@@ -801,8 +973,26 @@
         let audioChunks = [];
         let isRecordingAudio = false;
 
+        // Variáveis do Mapa Leaflet
+        let mapLeaflet = null;
+        let mapMarkers = {};
+
         function salvarDb() {
             dbRef.set(db);
+        }
+
+        // --- CALCULAR DISTÂNCIA EM KM (HAVERSINE GPS) ---
+        function calcularDistanciaKM(lat1, lon1, lat2, lon2) {
+            if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+            const R = 6371; // Raio da Terra em KM
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
         }
 
         // --- SISTEMA DE ALTERNÂNCIA DE TEMA (CLARO / ESCURO) ---
@@ -830,14 +1020,12 @@
                 db = serverData;
                 if(!db.tecnicos) db.tecnicos = [];
                 if(!db.operadores) db.operadores = [];
-                if(!db.estoquePadrao) db.estoquePadrao = [
-                    { sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtdInicial: 500 },
-                    { sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtdInicial: 100 }
-                ];
+                if(!db.estoquePadrao) db.estoquePadrao = [];
                 if(!db.materiais) db.materiais = [];
                 if(!db.estoqueFisico) db.estoqueFisico = [];
                 if(!db.favoritos) db.favoritos = [];
                 if(!db.lancamentos) db.lancamentos = [];
+                if(!db.trajetos) db.trajetos = [];
                 if(!db.reposicoes) db.reposicoes = [];
                 if(!db.mensagens) db.mensagens = [];
                 if(!db.movimentacoes) db.movimentacoes = [];
@@ -860,6 +1048,7 @@
                     if (techAtualizada) {
                         usuarioLogado = techAtualizada;
                         atualizarTechNotificacoesBadge();
+                        atualizarTelemetriaTecnicoLive();
                     }
                     if (!isUserTyping) {
                         renderizarCardTechAtivo();
@@ -1002,7 +1191,7 @@
                 
                 iniciarGpsAutomaticoTecnico();
 
-                registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema oficial com GPS Automático.`);
+                registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema oficial com verificação de GPS e cálculo de autonomia.`);
                 salvarDb();
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('tech-screen').classList.remove('hidden');
@@ -1013,12 +1202,11 @@
             alert("Acesso negado! Usuário ou senha incorretos.");
         }
 
-        // --- GPS AUTOMÁTICO ---
+        // --- AUTONOMIA & DESLOCAMENTO 100% AUTOMÁTICO VIA GPS REAL ---
         function iniciarGpsAutomaticoTecnico() {
             if(!usuarioLogado) return;
-            usuarioLogado.trackingOn = true;
-            let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
-            if(t) t.trackingOn = true;
+
+            let techNoDb = db.tecnicos.find(x => x.login === usuarioLogado.login);
 
             if ("geolocation" in navigator) {
                 if(gpsWatchId !== null) {
@@ -1028,25 +1216,96 @@
                     (pos) => {
                         let lat = pos.coords.latitude;
                         let lng = pos.coords.longitude;
+                        
+                        let oldLat = techNoDb ? techNoDb.lat : usuarioLogado.lat;
+                        let oldLng = techNoDb ? techNoDb.lng : usuarioLogado.lng;
+
+                        // Se se deslocou mais de 10 metros, incrementa percurso automático!
+                        let distKm = calcularDistanciaKM(oldLat, oldLng, lat, lng);
+                        if (distKm > 0.01) { // 10 metros
+                            let kmAtual = (techNoDb ? techNoDb.autoKm : usuarioLogado.autoKm) || 0;
+                            let novoKm = kmAtual + distKm;
+                            let litrosConsumidos = novoKm / 10.0; // 10 KM/L Padrão
+                            let custoConsumido = litrosConsumidos * 6.00; // R$ 6.00/L Padrão
+
+                            if(usuarioLogado) {
+                                usuarioLogado.autoKm = novoKm;
+                                usuarioLogado.autoLitros = litrosConsumidos;
+                                usuarioLogado.autoCusto = custoConsumido;
+                            }
+                            if(techNoDb) {
+                                techNoDb.autoKm = novoKm;
+                                techNoDb.autoLitros = litrosConsumidos;
+                                techNoDb.autoCusto = custoConsumido;
+                            }
+                        }
+
                         if(usuarioLogado) {
                             usuarioLogado.lat = lat;
                             usuarioLogado.lng = lng;
                             usuarioLogado.rua = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                            usuarioLogado.trackingOn = true;
+                            usuarioLogado.gpsStatus = "ativado";
                         }
-                        let techNoDb = db.tecnicos.find(x => x.login === (usuarioLogado ? usuarioLogado.login : ''));
                         if(techNoDb) {
                             techNoDb.lat = lat;
                             techNoDb.lng = lng;
                             techNoDb.rua = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
                             techNoDb.trackingOn = true;
+                            techNoDb.gpsStatus = "ativado";
                         }
+                        
+                        atualizarBadgeGpsCelularTech(true);
+                        atualizarTelemetriaTecnicoLive();
                         salvarDb();
                     },
                     (err) => {
-                        console.warn("Aviso GPS Automático: " + err.message);
+                        console.warn("Aviso/Erro no GPS: " + err.message);
+                        if(usuarioLogado) {
+                            usuarioLogado.trackingOn = false;
+                            usuarioLogado.gpsStatus = "desativado";
+                        }
+                        if(techNoDb) {
+                            techNoDb.trackingOn = false;
+                            techNoDb.gpsStatus = "desativado";
+                        }
+                        atualizarBadgeGpsCelularTech(false);
+                        salvarDb();
                     },
                     { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
                 );
+            } else {
+                if(usuarioLogado) usuarioLogado.gpsStatus = "desativado";
+                if(techNoDb) techNoDb.gpsStatus = "desativado";
+                atualizarBadgeGpsCelularTech(false);
+                salvarDb();
+            }
+        }
+
+        function atualizarTelemetriaTecnicoLive() {
+            if (!usuarioLogado) return;
+            let km = usuarioLogado.autoKm || 0;
+            let litros = usuarioLogado.autoLitros || 0;
+            let custo = usuarioLogado.autoCusto || 0;
+
+            let kmEl = document.getElementById('tech-auto-km-live');
+            let litrosEl = document.getElementById('tech-auto-litros-live');
+            let custoEl = document.getElementById('tech-auto-custo-live');
+
+            if (kmEl) kmEl.innerText = km.toFixed(2) + " KM";
+            if (litrosEl) litrosEl.innerText = litros.toFixed(2) + " L";
+            if (custoEl) custoEl.innerText = "R$ " + custo.toFixed(2);
+        }
+
+        function atualizarBadgeGpsCelularTech(ativo) {
+            let badge = document.getElementById('tech-gps-status-badge');
+            if(!badge) return;
+            if(ativo) {
+                badge.className = "text-[9px] text-emerald-400 font-bold flex items-center bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded-md";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1 animate-pulse"></span> GPS Ativado`;
+            } else {
+                badge.className = "text-[9px] text-red-400 font-bold flex items-center bg-red-950/60 border border-red-800/60 px-1.5 py-0.5 rounded-md";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block mr-1"></span> GPS Desativado`;
             }
         }
 
@@ -1168,6 +1427,9 @@
                 btn.classList.add('bg-red-600', 'text-white');
                 btn.classList.remove('text-zinc-400');
             }
+            if (tabId === 'mapa') {
+                setTimeout(inicializarMapaLeaflet, 200);
+            }
             atualizarPainelAdmin();
         }
 
@@ -1264,6 +1526,7 @@
             document.getElementById('stat-fisico').innerText = totalFisico + " un";
 
             renderizarGraficosDashboard();
+            renderizarResumoAutonomiaEHist();
 
             // Alerta SOS
             let sosBanner = document.getElementById('sos-alert-banner');
@@ -1304,12 +1567,17 @@
             db.tecnicos.forEach((t, index) => {
                 let avatarImg = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
                 let statusBadge = t.online ? '<span class="text-emerald-400 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block mr-1"></span>Online</span>' : `<span class="text-zinc-500 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-zinc-600 inline-block mr-1"></span>Offline (Visto: ${t.lastSeen || 'N/A'})</span>`;
-                let gpsBadge = t.trackingOn ? '<span class="text-emerald-400 text-[10px] font-bold block">🟢 GPS Automático</span>' : '<span class="text-red-400 text-[10px] font-bold block">🔴 GPS Inativo</span>';
+                
+                let isGpsAtivo = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
+                let gpsBadge = isGpsAtivo 
+                    ? '<span class="text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full inline-block">🟢 GPS ATIVADO NO CELULAR</span>' 
+                    : '<span class="text-red-400 font-bold bg-red-950/60 border border-red-800/80 px-2 py-0.5 rounded-full inline-block">🔴 GPS DESATIVADO</span>';
 
                 tHtml += `
                     <tr class="border-b border-zinc-800">
                         <td class="p-4">${avatarImg}</td>
-                        <td class="p-4 font-bold text-white">${t.name} <br>${statusBadge} ${gpsBadge}</td>
+                        <td class="p-4 font-bold text-white">${t.name} <br>${statusBadge}</td>
+                        <td class="p-4">${gpsBadge}</td>
                         <td class="p-4 text-zinc-300 font-mono">@${t.login}</td>
                         <td class="p-4 text-zinc-300 font-mono">${t.senha}</td>
                         <td class="p-4 text-zinc-300">${t.car}</td>
@@ -1320,7 +1588,7 @@
                     </tr>
                 `;
             });
-            document.getElementById('admin-tech-table').innerHTML = tHtml || '<tr><td colspan="6" class="p-4 text-center">Nenhum técnico.</td></tr>';
+            document.getElementById('admin-tech-table').innerHTML = tHtml || '<tr><td colspan="7" class="p-4 text-center">Nenhum técnico.</td></tr>';
 
             // Tabela Estoque Padrão
             let padraoHtml = '';
@@ -1361,12 +1629,18 @@
             let passMatSel = document.getElementById('pass-mat-select');
             let malaSelect = document.getElementById('admin-select-mala-tech');
             let mapSelectTech = document.getElementById('map-select-tech');
+            let autoTechSelect = document.getElementById('auto-tech-select');
 
             if(passTechSel) passTechSel.innerHTML = db.tecnicos.map(t => `<option value="${t.login}">${t.name} (${t.car})</option>`).join('');
             if(passMatSel) passMatSel.innerHTML = db.estoqueFisico.map(e => `<option value="${e.sap}">${e.sap} - ${e.desc} (${e.qtd})</option>`).join('');
+            if(autoTechSelect) autoTechSelect.innerHTML = db.tecnicos.map(t => `<option value="${t.login}">${t.name} (${t.car})</option>`).join('');
+
             if(mapSelectTech) {
                 let currentVal = mapSelectTech.value;
-                mapSelectTech.innerHTML = `<option value="geral">🌐 Visão Geral (Todos)</option>` + db.tecnicos.map(t => `<option value="${t.login}">${t.name} (${t.car}) ${t.trackingOn ? '🟢' : '🔴'}</option>`).join('');
+                mapSelectTech.innerHTML = `<option value="geral">🌐 Visão Geral (Todos)</option>` + db.tecnicos.map(t => {
+                    let gpsStr = (t.gpsStatus === 'ativado' || t.trackingOn) ? '🟢 GPS Ativado' : '🔴 GPS Desativado';
+                    return `<option value="${t.login}">${t.name} (${t.car}) - ${gpsStr}</option>`;
+                }).join('');
                 mapSelectTech.value = currentVal;
             }
 
@@ -1384,7 +1658,7 @@
             });
             document.getElementById('admin-materiais-list').innerHTML = matHtml;
 
-            // Lançamentos Padrão SIAKI com FILTRO DE DIA X ATÉ DIA Y
+            // Lançamentos Padrão SIAKI
             let dtStart = document.getElementById('admin-filter-date-start')?.value;
             let dtEnd = document.getElementById('admin-filter-date-end')?.value;
 
@@ -1411,10 +1685,288 @@
             });
             document.getElementById('admin-launch-history').innerHTML = lHtml || '<tr><td colspan="6" class="p-4 text-center text-zinc-500">Nenhum lançamento encontrado no período selecionado.</td></tr>';
 
-            renderizarMapaAdmin();
+            renderizarPinsMapaLeaflet();
             renderizarHistoricoGeral();
             atualizarChatAdminLista();
             lucide.createIcons();
+        }
+
+        // --- MAPA EM TEMPO REAL COM ESRI DARK GRAY (GRATUITO, SEM API KEY) ---
+        function inicializarMapaLeaflet() {
+            let container = document.getElementById('map-leaflet-container');
+            if (!container) return;
+
+            if (!mapLeaflet) {
+                mapLeaflet = L.map('map-leaflet-container').setView([-9.6658, -35.7350], 13);
+                // Utilizando Esri Dark Gray Canvas gratuito (Sem exigir API Key)
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 16,
+                    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+                }).addTo(mapLeaflet);
+            }
+            mapLeaflet.invalidateSize();
+            renderizarPinsMapaLeaflet();
+        }
+
+        function criarIconeTecnicoLeaflet(tech) {
+            let isGpsOn = tech.gpsStatus === "ativado" || (tech.trackingOn && tech.gpsStatus !== "desativado");
+            let borderCol = isGpsOn ? '#10b981' : '#ef4444';
+            let pulseClass = isGpsOn ? 'animate-pulse' : '';
+            
+            let avatarContent = tech.avatar 
+                ? `<img src="${tech.avatar}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">`
+                : `<div style="width: 38px; height: 38px; border-radius: 50%; background: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">${tech.name.charAt(0)}</div>`;
+
+            let html = `
+                <div style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;">
+                    <div style="width: 44px; height: 44px; border-radius: 50%; border: 3px solid ${borderCol}; background: #09090b; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6);" class="${pulseClass}">
+                        ${avatarContent}
+                    </div>
+                    <div style="margin-top: 2px; background: rgba(9, 9, 11, 0.9); color: #ffffff; border: 1px solid #3f3f46; border-radius: 8px; padding: 1px 6px; font-size: 10px; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
+                        ${tech.name}
+                    </div>
+                </div>
+            `;
+
+            return L.divIcon({
+                html: html,
+                className: 'custom-tech-pin',
+                iconSize: [60, 65],
+                iconAnchor: [30, 32]
+            });
+        }
+
+        function renderizarPinsMapaLeaflet() {
+            if (!mapLeaflet) return;
+
+            Object.values(mapMarkers).forEach(m => mapLeaflet.removeLayer(m));
+            mapMarkers = {};
+
+            let filterTech = document.getElementById('map-select-tech')?.value || 'geral';
+
+            (db.tecnicos || []).forEach(t => {
+                if (filterTech !== 'geral' && t.login !== filterTech) return;
+
+                let lat = t.lat || -9.6658;
+                let lng = t.lng || -35.7350;
+
+                let marker = L.marker([lat, lng], { icon: criarIconeTecnicoLeaflet(t) }).addTo(mapLeaflet);
+                
+                let isGpsOn = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
+                let gpsStatusText = isGpsOn ? "<b style='color:#10b981;'>🟢 GPS ATIVO NO CELULAR</b>" : "<b style='color:#ef4444;'>🔴 GPS DESATIVADO</b>";
+
+                let popupContent = `
+                    <div style="font-family: sans-serif; font-size: 12px; color: #ffffff; padding: 4px;">
+                        <div style="font-weight: bold; font-size: 14px; border-bottom: 1px solid #3f3f46; padding-bottom: 4px; margin-bottom: 4px; color: #ef4444;">${t.name}</div>
+                        <div><b>Veículo:</b> ${t.car || 'N/A'}</div>
+                        <div><b>Status GPS:</b> ${gpsStatusText}</div>
+                        <div><b>Último Visto:</b> ${t.lastSeen || 'Agora'}</div>
+                        <div><b>Endereço:</b> ${t.rua || 'Localização em campo'}</div>
+                        <div><b>Km Rodado Hoje:</b> ${(t.autoKm || 0).toFixed(2)} KM</div>
+                    </div>
+                `;
+                marker.bindPopup(popupContent);
+                mapMarkers[t.login] = marker;
+            });
+
+            if (filterTech !== 'geral' && mapMarkers[filterTech]) {
+                let t = db.tecnicos.find(x => x.login === filterTech);
+                if (t && t.lat && t.lng) {
+                    mapLeaflet.setView([t.lat, t.lng], 16);
+                    mapMarkers[filterTech].openPopup();
+                }
+            }
+            renderizarCardsMapaTecnicosList();
+        }
+
+        function renderizarCardsMapaTecnicosList() {
+            let mapTechsHtml = '';
+            db.tecnicos.forEach(t => {
+                let badgeOn = t.online ? 'bg-emerald-500' : 'bg-zinc-600';
+                let avatar = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
+                
+                let isGpsAtivo = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
+                let gpsStatusStr = isGpsAtivo ? '<span class="text-emerald-400 font-bold">🟢 GPS Ativado</span>' : '<span class="text-red-400 font-bold">🔴 GPS Desativado</span>';
+
+                mapTechsHtml += `
+                    <div title="Endereço: ${t.rua || 'Localização em campo'}" onclick="selecionarEPlugarMapa('${t.login}')" class="bg-black border border-zinc-800 rounded-2xl p-4 flex items-center space-x-3 shadow-sm hover:border-red-600 transition cursor-pointer">
+                        ${avatar}
+                        <div class="flex-1">
+                            <h4 class="font-bold text-white text-sm">${t.name}</h4>
+                            <p class="text-[10px] text-red-400">${t.car}</p>
+                            <p class="text-[10px] text-zinc-400 truncate">📍 ${t.rua || 'Endereço não informado'}</p>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-[10px] font-bold text-zinc-300 flex items-center"><span class="w-2 h-2 rounded-full ${badgeOn} inline-block mr-1"></span>${t.online ? 'Online' : 'Offline'}</span>
+                                <span class="text-[10px]">${gpsStatusStr}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            let listEl = document.getElementById('admin-map-techs-list');
+            if(listEl) listEl.innerHTML = mapTechsHtml;
+        }
+
+        function selecionarEPlugarMapa(login) {
+            let sel = document.getElementById('map-select-tech');
+            if(sel) { sel.value = login; renderizarPinsMapaLeaflet(); }
+        }
+
+        // --- AUTONOMIA E RELATÓRIOS ---
+        function calcularAutonomiaSimulacao() {
+            let kmIni = Number(document.getElementById('auto-km-ini')?.value || 0);
+            let kmFim = Number(document.getElementById('auto-km-fim')?.value || 0);
+            let kmPorLitro = Number(document.getElementById('auto-km-por-litro')?.value || 10);
+            let precoGasolina = Number(document.getElementById('auto-preco-gasolina')?.value || 6.00);
+
+            let kmDiff = Math.max(0, kmFim - kmIni);
+            let litros = kmPorLitro > 0 ? (kmDiff / kmPorLitro) : 0;
+            let custoTotal = litros * precoGasolina;
+            let custoKm = kmDiff > 0 ? (custoTotal / kmDiff) : 0;
+
+            if(document.getElementById('prev-km')) document.getElementById('prev-km').innerText = kmDiff + " KM";
+            if(document.getElementById('prev-litros')) document.getElementById('prev-litros').innerText = litros.toFixed(2) + " L";
+            if(document.getElementById('prev-custo')) document.getElementById('prev-custo').innerText = "R$ " + custoTotal.toFixed(2);
+            if(document.getElementById('prev-custo-km')) document.getElementById('prev-custo-km').innerText = "R$ " + custoKm.toFixed(2) + " / KM";
+        }
+
+        function registrarPercursoAutonomia() {
+            if(isVisualizador) return;
+            let techLogin = document.getElementById('auto-tech-select').value;
+            let tech = db.tecnicos.find(t => t.login === techLogin);
+            let origem = document.getElementById('auto-origem').value.trim();
+            let destino = document.getElementById('auto-destino').value.trim();
+            let dataTrajeto = document.getElementById('auto-data').value || new Date().toISOString().split('T')[0];
+            
+            let kmIni = Number(document.getElementById('auto-km-ini').value);
+            let kmFim = Number(document.getElementById('auto-km-fim').value);
+            let kmPorLitro = Number(document.getElementById('auto-km-por-litro').value);
+            let precoGas = Number(document.getElementById('auto-preco-gasolina').value);
+
+            if(!tech || !origem || !destino) { alert("Preencha todos os campos do trajeto!"); return; }
+            if(kmFim <= kmIni) { alert("O KM Final deve ser maior que o KM Inicial!"); return; }
+
+            let kmPercorrido = kmFim - kmIni;
+            let litros = kmPorLitro > 0 ? (kmPercorrido / kmPorLitro) : 0;
+            let custoTotal = litros * precoGas;
+            let custoPorKm = custoTotal / kmPercorrido;
+
+            if(!db.trajetos) db.trajetos = [];
+            db.trajetos.push({
+                id: Date.now(),
+                data: dataTrajeto,
+                techLogin: tech.login,
+                techNome: tech.name,
+                veiculo: tech.car,
+                origem: origem,
+                destino: destino,
+                kmIni: kmIni,
+                kmFim: kmFim,
+                kmPercorrido: kmPercorrido,
+                kmPorLitro: kmPorLitro,
+                litros: litros,
+                precoGasolina: precoGas,
+                custoTotal: custoTotal,
+                custoPorKm: custoPorKm,
+                gpsAtivo: (tech.gpsStatus === 'ativado' || tech.trackingOn)
+            });
+
+            registrarMovimentacao("Registro Trajeto", tech.name, `Registrado percurso de ${kmPercorrido} KM (${origem} ➔ ${destino}) - Custo: R$ ${custoTotal.toFixed(2)}`);
+            salvarDb();
+            
+            document.getElementById('auto-origem').value = '';
+            document.getElementById('auto-destino').value = '';
+            document.getElementById('auto-km-ini').value = '';
+            document.getElementById('auto-km-fim').value = '';
+
+            alert("✅ Percurso e autonomia registrados com sucesso!");
+            atualizarPainelAdmin();
+        }
+
+        function renderizarResumoAutonomiaEHist() {
+            if(!db.trajetos) db.trajetos = [];
+
+            let totalKm = 0;
+            let totalLitros = 0;
+            let totalCusto = 0;
+
+            db.trajetos.forEach(t => {
+                totalKm += Number(t.kmPercorrido || 0);
+                totalLitros += Number(t.litros || 0);
+                totalCusto += Number(t.custoTotal || 0);
+            });
+
+            let custoMedioPorKm = totalKm > 0 ? (totalCusto / totalKm) : 0;
+
+            if(document.getElementById('stat-auto-km')) document.getElementById('stat-auto-km').innerText = totalKm.toFixed(1) + " KM";
+            if(document.getElementById('stat-auto-litros')) document.getElementById('stat-auto-litros').innerText = totalLitros.toFixed(1) + " L";
+            if(document.getElementById('stat-auto-custo')) document.getElementById('stat-auto-custo').innerText = "R$ " + totalCusto.toFixed(2);
+            if(document.getElementById('stat-auto-por-km')) document.getElementById('stat-auto-por-km').innerText = "R$ " + custoMedioPorKm.toFixed(2) + " / KM";
+
+            renderizarHistoricoAutonomia();
+        }
+
+        function renderizarHistoricoAutonomia() {
+            let tbody = document.getElementById('admin-autonomia-table');
+            if(!tbody) return;
+
+            let filterTech = (document.getElementById('filter-auto-tech')?.value || '').toLowerCase();
+            let filterDate = document.getElementById('filter-auto-date')?.value;
+
+            let lista = (db.trajetos || []).filter(t => {
+                if(filterTech && !t.techNome.toLowerCase().includes(filterTech) && !t.techLogin.toLowerCase().includes(filterTech)) return false;
+                if(filterDate && t.data !== filterDate) return false;
+                return true;
+            });
+
+            tbody.innerHTML = lista.map((t) => {
+                let gpsStatusTag = t.gpsAtivo 
+                    ? '<span class="text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded">🟢 Ativado</span>'
+                    : '<span class="text-red-400 font-bold bg-red-950/60 px-2 py-0.5 rounded">🔴 Desativado</span>';
+
+                return `
+                    <tr class="border-b border-zinc-800">
+                        <td class="p-3 text-zinc-400">${t.data}</td>
+                        <td class="p-3 font-bold text-white">${t.techNome} <br><span class="text-[10px] text-red-400 font-normal">${t.veiculo}</span></td>
+                        <td class="p-3 text-zinc-300"><b>${t.origem}</b> ➔ <b>${t.destino}</b></td>
+                        <td class="p-3 text-center font-bold text-amber-400 font-mono">${t.kmPercorrido} KM <br><span class="text-[9px] text-zinc-500">(${t.kmIni} - ${t.kmFim})</span></td>
+                        <td class="p-3 text-center font-bold text-blue-400 font-mono">${Number(t.litros).toFixed(2)} L</td>
+                        <td class="p-3 text-center font-bold text-emerald-400 font-mono">R$ ${Number(t.custoTotal).toFixed(2)}</td>
+                        <td class="p-3 text-center font-bold text-red-400 font-mono">R$ ${Number(t.custoPorKm).toFixed(2)}</td>
+                        <td class="p-3 text-center text-xs">${gpsStatusTag}</td>
+                        <td class="p-3 text-center"><button onclick="excluirTrajetoAutonomia(${t.id})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button></td>
+                    </tr>
+                `;
+            }).join('') || '<tr><td colspan="9" class="p-4 text-center text-zinc-500">Nenhum percurso registrado.</td></tr>';
+        }
+
+        function limparFiltroAutonomia() {
+            if(document.getElementById('filter-auto-tech')) document.getElementById('filter-auto-tech').value = '';
+            if(document.getElementById('filter-auto-date')) document.getElementById('filter-auto-date').value = '';
+            renderizarHistoricoAutonomia();
+        }
+
+        function excluirTrajetoAutonomia(trajetoId) {
+            if(isVisualizador) return;
+            if(confirm("Deseja excluir este registro de trajeto e autonomia?")) {
+                db.trajetos = db.trajetos.filter(t => t.id !== trajetoId);
+                salvarDb();
+                atualizarPainelAdmin();
+            }
+        }
+
+        function exportarExcelAutonomia() {
+            let csvContent = "data:text/csv;charset=utf-8,Data;Tecnico;Veiculo;Origem;Destino;KM Inicial;KM Final;KM Percorrido;Consumo KM/L;Litros Usados;Preco Gasolina R$;Custo Total R$;Custo R$/KM;GPS Ativo\n";
+            (db.trajetos || []).forEach(t => {
+                csvContent += `${t.data};"${t.techNome}";"${t.veiculo}";"${t.origem}";"${t.destino}";${t.kmIni};${t.kmFim};${t.kmPercorrido};${t.kmPorLitro};${Number(t.litros).toFixed(2)};${t.precoGasolina};${Number(t.custoTotal).toFixed(2)};${Number(t.custoPorKm).toFixed(2)};${t.gpsAtivo ? 'SIM' : 'NAO'}\n`;
+            });
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "relatorio_autonomia_combustivel.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function limparFiltroDatasLancamentos() {
@@ -1461,54 +2013,6 @@
                 salvarDb();
                 atualizarPainelAdmin();
             }
-        }
-
-        // --- MAPA ---
-        function renderizarMapaAdmin() {
-            let mapTechsHtml = '';
-            db.tecnicos.forEach(t => {
-                let badgeOn = t.online ? 'bg-emerald-500' : 'bg-zinc-600';
-                let avatar = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
-                let gpsStatusStr = t.trackingOn ? '<span class="text-emerald-400 font-bold">🟢 GPS Automático</span>' : '<span class="text-zinc-500 font-bold">🔴 GPS Inativo</span>';
-                mapTechsHtml += `
-                    <div title="Endereço: ${t.rua || 'Localização em campo'}" onclick="selecionarEPlugarMapa('${t.login}')" class="bg-black border border-zinc-800 rounded-2xl p-4 flex items-center space-x-3 shadow-sm hover:border-red-600 transition cursor-pointer">
-                        ${avatar}
-                        <div class="flex-1">
-                            <h4 class="font-bold text-white text-sm">${t.name}</h4>
-                            <p class="text-[10px] text-red-400">${t.car}</p>
-                            <p class="text-[10px] text-zinc-400 truncate">📍 ${t.rua || 'Endereço não informado'}</p>
-                            <div class="flex justify-between items-center mt-1">
-                                <span class="text-[10px] font-bold text-zinc-300 flex items-center"><span class="w-2 h-2 rounded-full ${badgeOn} inline-block mr-1"></span>${t.online ? 'Online' : 'Offline'}</span>
-                                <span class="text-[10px]">${gpsStatusStr}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            let listEl = document.getElementById('admin-map-techs-list');
-            if(listEl) listEl.innerHTML = mapTechsHtml;
-        }
-
-        function centralizarMapaTecnico() {
-            let val = document.getElementById('map-select-tech').value;
-            let iframe = document.getElementById('iframe-mapa-central');
-            if(!iframe) return;
-            if(val === 'geral') {
-                iframe.src = "https://maps.google.com/maps?q=-9.6658,-35.7350&z=13&output=embed";
-            } else {
-                let tech = db.tecnicos.find(t => t.login === val);
-                if(tech && tech.trackingOn && tech.lat && tech.lng) {
-                    iframe.src = `https://maps.google.com/maps?q=${tech.lat},${tech.lng}&z=16&output=embed`;
-                } else {
-                    alert(`O GPS do técnico ${tech ? tech.name : ''} está aguardando sinal no dispositivo.`);
-                    iframe.src = "https://maps.google.com/maps?q=-9.6658,-35.7350&z=12&output=embed";
-                }
-            }
-        }
-
-        function selecionarEPlugarMapa(login) {
-            let sel = document.getElementById('map-select-tech');
-            if(sel) { sel.value = login; centralizarMapaTecnico(); }
         }
 
         // --- ESTOQUE FÍSICO & PASSAGEM MULTIPLA ---
@@ -1619,6 +2123,7 @@
             `).join('');
         }
 
+        // --- SUBTRAÇÃO E ADIÇÃO AUTOMÁTICA DE MATERIAIS PARA O TÉCNICO ---
         function executarPassagemMultiplaTecnico() {
             if(isVisualizador) return;
             let techLogin = document.getElementById('pass-tech-select').value;
@@ -1630,8 +2135,11 @@
             for(let it of carrinhoPassagem) {
                 let fisico = db.estoqueFisico.find(e => e.sap === it.sap);
                 if(!fisico || fisico.qtd < it.qtd) { alert(`Quantidade insuficiente para o material ${it.desc}`); return; }
+                
+                // SUBTRAI DO ESTOQUE FÍSICO CENTRAL
                 fisico.qtd -= it.qtd;
 
+                // SOMA NA MALA DO TÉCNICO AUTOMATICAMENTE
                 if(!tech.mala) tech.mala = [];
                 let itemMala = tech.mala.find(m => m.sap === it.sap);
                 if(itemMala) {
@@ -1716,7 +2224,7 @@
                         <td class="p-3 font-mono text-red-400">${m.sap}</td>
                         <td class="p-3">${m.desc}</td>
                         <td class="p-3 text-center font-bold text-white">${m.qtd}</td>
-                        <td class="p-3 text-center text-amber-400">${m.lancado}</td>
+                        <td class="p-3 text-center text-amber-400">${m.lancado || 0}</td>
                         <td class="p-3 text-center space-x-2">
                             <input type="number" id="edit-mala-${idx}" value="${m.qtd}" class="w-16 px-2 py-1 bg-black border border-zinc-700 rounded text-center text-red-400 font-bold outline-none inline-block">
                             <button onclick="salvarEdicaoMalaAdmin('${tech.login}', ${idx})" class="action-btn-write px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">Salvar</button>
@@ -1938,7 +2446,7 @@
                 }
 
                 db.tecnicos.push({
-                    name, login, senha, car, avatar: "", lat: -9.6658, lng: -35.7350, rua: "Maceió - AL", trackingOn: false, online: false, lastSeen: "Nunca", amigos: [], pedidosAmizade: [], notificacoes: [],
+                    name, login, senha, car, avatar: "", lat: -9.6658, lng: -35.7350, rua: "Maceió - AL", trackingOn: false, gpsStatus: "desativado", autoKm: 0, autoLitros: 0, autoCusto: 0, online: false, lastSeen: "Nunca", amigos: [], pedidosAmizade: [], notificacoes: [],
                     mala: malaInicial
                 });
             }
@@ -1982,6 +2490,10 @@
                 lng: -35.7350,
                 rua: "Maceió - AL",
                 trackingOn: false,
+                gpsStatus: "desativado",
+                autoKm: 0,
+                autoLitros: 0,
+                autoCusto: 0,
                 online: false,
                 lastSeen: "Nunca",
                 amigos: [],
@@ -2057,6 +2569,8 @@
                 usuarioLogado.mala = db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 0, lancado: 0, abastecido: 0, seriais: []}));
             }
             atualizarTechNotificacoesBadge();
+            atualizarBadgeGpsCelularTech(usuarioLogado.gpsStatus === 'ativado' || usuarioLogado.trackingOn);
+            atualizarTelemetriaTecnicoLive();
             abrirCardTech('lancamento');
         }
 
@@ -2098,7 +2612,9 @@
                     let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
                     if(t) t.avatar = usuarioLogado.avatar;
                     registrarMovimentacao("Foto de Perfil", usuarioLogado.name, `Atualizou sua foto de perfil.`);
-                    salvarDb(); inicializarPainelTecnico();
+                    salvarDb(); 
+                    inicializarPainelTecnico();
+                    renderizarPinsMapaLeaflet();
                 };
                 r.readAsDataURL(file);
             }
@@ -2176,6 +2692,23 @@
                 `;
                 renderizarSelecaoTecnico();
                 renderizarCarrinhoTecnico();
+            } else if(tipo === 'historico') {
+                content.innerHTML = `
+                    <div class="space-y-3">
+                        <h4 class="font-bold text-red-400 text-xs sm:text-sm flex items-center space-x-2">
+                            <i data-lucide="history" class="w-4 h-4"></i>
+                            <span>Meu Histórico de Lançamentos</span>
+                        </h4>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input type="text" id="tech-hist-search" oninput="renderizarHistoricoLancesTecnico()" placeholder="Pesquisar por material, node ou projeto..." class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                            <input type="date" id="tech-hist-date" onchange="renderizarHistoricoLancesTecnico()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        </div>
+
+                        <div id="tech-hist-list" class="max-h-80 overflow-y-auto space-y-2 pt-1"></div>
+                    </div>
+                `;
+                renderizarHistoricoLancesTecnico();
             } else if(tipo === 'mala') {
                 content.innerHTML = `
                     <div class="space-y-4">
@@ -2183,7 +2716,7 @@
                         <div class="overflow-x-auto">
                             <table class="w-full text-xs text-left text-zinc-300">
                                 <thead class="bg-black border-b border-zinc-800 text-zinc-400">
-                                    <tr><th class="p-2.5">SAP</th><th class="p-2.5">Descrição</th><th class="p-2.5 text-center">Qtd</th><th class="p-2.5 text-center">Lançado</th><th class="p-2.5">Seriais</th></tr>
+                                    <tr><th class="p-2.5">SAP</th><th class="p-2.5">Descrição</th><th class="p-2.5 text-center">Qtd Atual</th><th class="p-2.5 text-center">Lançado</th><th class="p-2.5">Seriais</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-zinc-800">
                                     ${(usuarioLogado.mala || []).map(m => `
@@ -2225,7 +2758,7 @@
                     <div class="space-y-4 max-w-md mx-auto">
                         <h4 class="font-bold text-red-400 text-xs sm:text-sm">Solicitar Reposição de Material</h4>
                         <select id="t-rep-mat" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
-                            ${db.materiais.map(m => `<option value="${m.desc}">${m.sap} -${m.desc}</option>`).join('')}
+                            ${db.materiais.map(m => `<option value="${m.desc}">${m.sap} - ${m.desc}</option>`).join('')}
                         </select>
                         <input type="number" id="t-rep-qtd" min="1" value="10" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white" placeholder="Quantidade">
                         <button onclick="solicitarReposicaoTech()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition">Enviar Pedido de Reposição</button>
@@ -2258,7 +2791,49 @@
             lucide.createIcons();
         }
 
-        // --- EXCLUSÃO DE MENSAGEM CHAT DIRECT ---
+        // HISTÓRICO DE LANÇAMENTOS DO TÉCNICO
+        function renderizarHistoricoLancesTecnico() {
+            let container = document.getElementById('tech-hist-list');
+            if(!container || !usuarioLogado) return;
+
+            let termo = (document.getElementById('tech-hist-search')?.value || '').toLowerCase();
+            let dataFiltro = document.getElementById('tech-hist-date')?.value;
+
+            let meusLancamentos = (db.lancamentos || []).filter(l => l.tecnico === usuarioLogado.name || l.tecnico === usuarioLogado.login);
+
+            let filtrados = meusLancamentos.filter(l => {
+                if(dataFiltro && l.data !== dataFiltro) return false;
+                if(termo) {
+                    let bateuNode = l.node && l.node.toLowerCase().includes(termo);
+                    let bateuProj = l.projeto && l.projeto.toLowerCase().includes(termo);
+                    let bateuMat = l.items && l.items.some(i => (i.material && i.material.toLowerCase().includes(termo)) || (i.sap && i.sap.toLowerCase().includes(termo)));
+                    return bateuNode || bateuProj || bateuMat;
+                }
+                return true;
+            });
+
+            if(filtrados.length === 0) {
+                container.innerHTML = '<p class="text-zinc-500 text-center py-4 text-xs italic">Nenhum lançamento encontrado para os filtros informados.</p>';
+                return;
+            }
+
+            container.innerHTML = filtrados.slice().reverse().map(l => {
+                let itemsHtml = l.items.map(i => `<li class="flex justify-between"><span><b>${i.sap}</b> - ${i.material}</span> <b class="text-red-400 font-mono">${i.qtd} un</b></li>`).join('');
+                return `
+                    <div class="p-3 bg-black border border-zinc-800 rounded-xl space-y-1.5 text-xs">
+                        <div class="flex justify-between items-center border-b border-zinc-800 pb-1">
+                            <span class="text-zinc-400 font-mono">📅 ${l.data}</span>
+                            <span class="text-red-400 font-bold">${l.projeto} (Node: ${l.node})</span>
+                        </div>
+                        <ul class="space-y-1 pl-1 text-[11px] text-zinc-300">
+                            ${itemsHtml}
+                        </ul>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // CHAT MENSAGENS E ÁUDIO
         function apagarMensagemChat(msgId) {
             if(isVisualizador) return;
             if(confirm("Deseja apagar esta mensagem do chat?")) {
@@ -2272,7 +2847,6 @@
             }
         }
 
-        // --- GRAVAÇÃO DE ÁUDIO NO CHAT ---
         async function toggleGravarAudio(isTech = true) {
             const btnId = isTech ? 'btn-rec-audio-tech' : 'btn-rec-audio-admin';
             const btn = document.getElementById(btnId);
@@ -2486,29 +3060,37 @@
             `).join('');
         }
 
+        // --- SUBTRAÇÃO AUTOMÁTICA DA MALA DO TÉCNICO AO LANÇAR MATERIAL ---
         function salvarLoteTecnico() {
             let projeto = document.getElementById('t-projeto').value;
             let node = document.getElementById('t-node').value.trim();
             if(!node) { alert("Informe o Node!"); return; }
             if(carrinhoAtual.length === 0) { alert("Adicione itens!"); return; }
 
+            let techNoDb = db.tecnicos.find(t => t.login === usuarioLogado.login);
+            if (!techNoDb) techNoDb = usuarioLogado;
+
             for(let it of carrinhoAtual) {
-                if(!usuarioLogado.mala) usuarioLogado.mala = [];
-                let malaItem = usuarioLogado.mala.find(m => m.sap === it.sap || m.desc === it.material);
+                if(!techNoDb.mala) techNoDb.mala = [];
+                let malaItem = techNoDb.mala.find(m => m.sap === it.sap || m.desc === it.material);
+                
                 if(malaItem) {
-                    malaItem.qtd = Math.max(0, malaItem.qtd - it.qtd);
-                    malaItem.lancado = (malaItem.lancado || 0) + it.qtd;
+                    // Subtrai da mala no automático
+                    malaItem.qtd = Math.max(0, Number(malaItem.qtd) - Number(it.qtd));
+                    malaItem.lancado = Number(malaItem.lancado || 0) + Number(it.qtd);
                 } else {
-                    usuarioLogado.mala.push({
+                    techNoDb.mala.push({
                         sap: it.sap,
                         desc: it.material,
                         qtd: 0,
-                        lancado: it.qtd,
+                        lancado: Number(it.qtd),
                         abastecido: 0,
                         seriais: []
                     });
                 }
             }
+
+            usuarioLogado.mala = techNoDb.mala;
 
             db.lancamentos.push({
                 id: Date.now(),
@@ -2520,11 +3102,12 @@
                 items: [...carrinhoAtual]
             });
 
-            registrarMovimentacao("Lançamento Campo", usuarioLogado.name, `Lançou no Node ${node} (${projeto})`);
+            registrarMovimentacao("Lançamento Campo", usuarioLogado.name, `Lançou no Node ${node} (${projeto}) - Estoque descontado.`);
             db.notificacoes.push({ text: `${usuarioLogado.name} lançou no Node ${node} (${projeto})`, time: new Date().toLocaleDateString(), tipo: "info" });
+            
             carrinhoAtual = [];
             salvarDb();
-            alert("✅ Lançamento efetuado e mala atualizada!");
+            alert("✅ Lançamento efetuado! Material descontado automaticamente da sua mala.");
             abrirCardTech('lancamento');
         }
 
