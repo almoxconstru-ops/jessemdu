@@ -638,7 +638,7 @@
                                 <i data-lucide="upload" class="w-4 h-4"></i><span>Restaurar JSON</span>
                                 <input type="file" id="import-json-file" accept=".json" class="hidden" onchange="restaurarBackupJson(event)">
                             </label>
-                            <button onclick="zerarSistemaFirebase()" class="px-3 py-2 bg-red-700 hover:bg-red-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow action-btn-write" title="Zerar e apagar tudo do Firebase">
+                            <button onclick="zerarSistemaFirebase()" class="px-3 py-2 bg-red-700 hover:bg-red-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow action-btn-write" title="Zerar estoques e relatórios, mantendo técnicos">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i><span>Zerar Tudo (Firebase)</span>
                             </button>
                         </div>
@@ -661,9 +661,9 @@
         </main>
     </div>
 
-    <!-- ================= PAINEL DO TÉCNICO (CELULAR CENTRALIZADO) ================= -->
+    <!-- ================= PAINEL DO TÉCNICO (CELULAR CENTRALIZADO COM ABAS ABAIXO ESTILO APP) ================= -->
     <div id="tech-screen" class="hidden min-h-screen flex flex-col bg-black text-white items-center justify-between w-full">
-        <div class="w-full max-w-md mx-auto flex flex-col min-h-screen">
+        <div class="w-full max-w-md mx-auto flex flex-col min-h-screen pb-16">
             <header class="bg-zinc-900 text-white p-3.5 shadow-xl border-b border-red-900/40 flex justify-between items-center w-full sticky top-0 z-30">
                 <div class="flex items-center space-x-2.5">
                     <div class="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center font-bold text-base overflow-hidden border-2 border-red-500 shadow-lg flex-shrink-0" id="tech-avatar-box">
@@ -736,31 +736,31 @@
                     </div>
                 </div>
 
-                <!-- ABAS ABAIXO PARA PERFEITA ORGANIZAÇÃO E VISUALIZAÇÃO DO TÉCNICO -->
-                <div class="flex overflow-x-auto space-x-1 bg-zinc-900/90 p-1.5 rounded-2xl border border-zinc-800 text-xs font-bold scrollbar-none">
-                    <button onclick="abrirCardTech('lancamento')" id="ttab-lancamento" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
-                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i><span>Lançar</span>
-                    </button>
-                    <button onclick="abrirCardTech('historico')" id="ttab-historico" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
-                        <i data-lucide="history" class="w-3.5 h-3.5"></i><span>Histórico</span>
-                    </button>
-                    <button onclick="abrirCardTech('mala')" id="ttab-mala" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
-                        <i data-lucide="backpack" class="w-3.5 h-3.5"></i><span>Mala</span>
-                    </button>
-                    <button onclick="abrirCardTech('chat')" id="ttab-chat" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 relative">
-                        <i data-lucide="message-square" class="w-3.5 h-3.5"></i><span>Chat</span>
-                        <span id="badge-tech-chat-tab" class="hidden absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold px-1 py-0.2 rounded-full">0</span>
-                    </button>
-                    <button onclick="abrirCardTech('reposicao')" id="ttab-reposicao" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
-                        <i data-lucide="package-plus" class="w-3.5 h-3.5"></i><span>Reposição</span>
-                    </button>
-                    <button onclick="abrirCardTech('colega')" id="ttab-colega" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
-                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i><span>Colega</span>
-                    </button>
-                </div>
-
-                <div id="tech-section-content" class="bg-zinc-900/90 p-4 sm:p-5 rounded-3xl border border-red-900/40 shadow-2xl"></div>
+                <div id="tech-section-content" class="bg-zinc-900/90 p-4 sm:p-5 rounded-3xl border border-red-900/40 shadow-2xl mb-4"></div>
             </main>
+
+            <!-- BARRA DE NAVEGAÇÃO INFERIOR ESTILO APP (FIXA ABAIXO) -->
+            <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 p-2 flex justify-around items-center z-30 shadow-2xl">
+                <button onclick="abrirCardTech('lancamento')" id="ttab-lancamento" class="flex-1 py-2 px-1 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5 font-bold text-[10px]">
+                    <i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Lançar</span>
+                </button>
+                <button onclick="abrirCardTech('historico')" id="ttab-historico" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
+                    <i data-lucide="history" class="w-4 h-4"></i><span>Histórico</span>
+                </button>
+                <button onclick="abrirCardTech('mala')" id="ttab-mala" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
+                    <i data-lucide="backpack" class="w-4 h-4"></i><span>Mala</span>
+                </button>
+                <button onclick="abrirCardTech('chat')" id="ttab-chat" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px] relative">
+                    <i data-lucide="message-square" class="w-4 h-4"></i><span>Chat</span>
+                    <span id="badge-tech-chat-tab" class="hidden absolute top-1 right-2 bg-red-600 text-white text-[8px] font-bold px-1 py-0.2 rounded-full">0</span>
+                </button>
+                <button onclick="abrirCardTech('reposicao')" id="ttab-reposicao" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
+                    <i data-lucide="package-plus" class="w-4 h-4"></i><span>Reposição</span>
+                </button>
+                <button onclick="abrirCardTech('colega')" id="ttab-colega" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i><span>Colega</span>
+                </button>
+            </nav>
         </div>
     </div>
 
@@ -888,7 +888,7 @@
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
-        const dbRef = firebase.database().ref('mala_estoque_db_v7_paradas');
+        const dbRef = firebase.database().ref('mala_estoque_db_v8_app');
 
         // --- BANCO DE DADOS EM NUVEM ---
         let db = {
@@ -925,8 +925,8 @@
             ],
             reposicoes: [],
             mensagens: [],
-            movimentacoes: [{ data: "12/09/2026 09:00", tipo: "Sistema", responsavel: "Admin", detalhes: "Sistema Red & Black v7 (Firebase Online) inicializado." }],
-            notificacoes: [{ text: "Sistema Red & Black v7 inicializado na nuvem.", time: "12/09/2026", tipo: "info" }],
+            movimentacoes: [{ data: "12/09/2026 09:00", tipo: "Sistema", responsavel: "Admin", detalhes: "Sistema Red & Black v8 inicializado." }],
+            notificacoes: [{ text: "Sistema Red & Black v8 inicializado na nuvem.", time: "12/09/2026", tipo: "info" }],
             sosAtivo: null
         };
 
@@ -948,6 +948,15 @@
 
         let mapLeaflet = null;
         let mapMarkers = {};
+
+        let usuarioLogado = null;
+        let carrinhoPassagem = [];
+        let carrinhoAtual = [];
+        let chatDestinatarioAtual = "Base";
+        let subMalaAtual = "miscelaneas";
+        let cardTechAtivo = "lancamento";
+        let isMobileLayout = false;
+        let isInitialLoadDone = false;
 
         function salvarDb() {
             dbRef.set(db);
@@ -983,6 +992,7 @@
             applyTheme();
         }
 
+        // --- SINCRONIZAÇÃO EM TEMPO REAL FIREBASE ---
         dbRef.on('value', (snapshot) => {
             const serverData = snapshot.val();
             if (serverData) {
@@ -1000,6 +1010,11 @@
                 if(!db.movimentacoes) db.movimentacoes = [];
                 if(!db.notificacoes) db.notificacoes = [];
                 if(db.adminPass) ADMIN_PASS = db.adminPass;
+
+                if (!isInitialLoadDone) {
+                    isInitialLoadDone = true;
+                    verificarSessaoSalva();
+                }
 
                 const activeEl = document.activeElement;
                 const isUserTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
@@ -1030,14 +1045,6 @@
             }
         });
 
-        let usuarioLogado = null;
-        let carrinhoPassagem = [];
-        let carrinhoAtual = [];
-        let chatDestinatarioAtual = "Base";
-        let subMalaAtual = "miscelaneas";
-        let cardTechAtivo = "lancamento";
-        let isMobileLayout = false;
-
         function inicializarPWA() {
             applyTheme();
             const manifest = {
@@ -1062,7 +1069,7 @@
 
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE_NAME = 'mala-estoque-v7';
+                    const CACHE_NAME = 'mala-estoque-v8';
                     const urlsToCache = ['./', 'https://cdn.tailwindcss.com', 'https://unpkg.com/lucide@latest', 'https://cdn.jsdelivr.net/npm/chart.js'];
                     self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache)).then(() => self.skipWaiting())); });
                     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
@@ -1095,6 +1102,47 @@
             }
         }
 
+        // --- PERSISTÊNCIA DE SESSÃO (PERMANECER LOGADO) ---
+        function verificarSessaoSalva() {
+            let saved = localStorage.getItem('boxfield_session');
+            if (saved) {
+                try {
+                    let sessao = JSON.parse(saved);
+                    if (sessao.type === 'admin') {
+                        isVisualizador = false;
+                        document.getElementById('app-body-container').classList.remove('mode-visualizador');
+                        document.getElementById('visualizador-banner').classList.add('hidden');
+                        document.getElementById('painel-role-title').innerText = "Painel ADM Oficial";
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('admin-screen').classList.remove('hidden');
+                        atualizarPainelAdmin();
+                    } else if (sessao.type === 'operador') {
+                        isVisualizador = true;
+                        document.getElementById('app-body-container').classList.add('mode-visualizador');
+                        document.getElementById('visualizador-banner').classList.remove('hidden');
+                        document.getElementById('painel-role-title').innerText = `Operador: ${sessao.nome} (Leitura)`;
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('admin-screen').classList.remove('hidden');
+                        atualizarPainelAdmin();
+                    } else if (sessao.type === 'tech') {
+                        let tech = db.tecnicos.find(t => t.login === sessao.login);
+                        if (tech) {
+                            usuarioLogado = tech;
+                            tech.online = true;
+                            tech.lastSeen = "Agora (Online)";
+                            iniciarGpsAutomaticoTecnico();
+                            salvarDb();
+                            document.getElementById('login-screen').classList.add('hidden');
+                            document.getElementById('tech-screen').classList.remove('hidden');
+                            inicializarPainelTecnico();
+                        }
+                    }
+                } catch(e) {
+                    console.error("Erro ao restaurar sessão:", e);
+                }
+            }
+        }
+
         function toggleLayoutMode() {
             isMobileLayout = !isMobileLayout;
             let container = document.getElementById('app-body-container');
@@ -1116,6 +1164,7 @@
 
             if (userInput.toLowerCase() === 'admin' && passInput === currentAdminPass) {
                 isVisualizador = false;
+                localStorage.setItem('boxfield_session', JSON.stringify({ type: 'admin' }));
                 document.getElementById('app-body-container').classList.remove('mode-visualizador');
                 document.getElementById('visualizador-banner').classList.add('hidden');
                 document.getElementById('painel-role-title').innerText = "Painel ADM Oficial";
@@ -1130,6 +1179,7 @@
             let operador = (db.operadores || []).find(o => o.login.toLowerCase() === userInput.toLowerCase() && o.senha === passInput);
             if (operador) {
                 isVisualizador = true;
+                localStorage.setItem('boxfield_session', JSON.stringify({ type: 'operador', nome: operador.nome }));
                 document.getElementById('app-body-container').classList.add('mode-visualizador');
                 document.getElementById('visualizador-banner').classList.remove('hidden');
                 document.getElementById('painel-role-title').innerText = `Operador: ${operador.nome} (Leitura)`;
@@ -1146,6 +1196,7 @@
                 tech.online = true;
                 tech.lastSeen = "Agora (Online)";
                 
+                localStorage.setItem('boxfield_session', JSON.stringify({ type: 'tech', login: tech.login }));
                 iniciarGpsAutomaticoTecnico();
 
                 registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema com rastreamento GPS e permanência online ativa.`);
@@ -1159,7 +1210,7 @@
             alert("Acesso negado! Usuário ou senha incorretos.");
         }
 
-        // --- BACKUP E RESTAURAÇÃO JSON & ZERAR SISTEMA ---
+        // --- BACKUP E RESTAURAÇÃO JSON & ZERAR ESTOQUES INTELIGENTE ---
         function baixarBackupGeral() {
             let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
             let dlAnchor = document.createElement('a');
@@ -1194,46 +1245,36 @@
 
         function zerarSistemaFirebase() {
             if(isVisualizador) return;
-            let senhaDigitada = prompt("⚠️ ATENÇÃO EXTREMA: Esta ação apagará TODOS os dados, técnicos, lançamentos e resetará o sistema do zero no Firebase!\n\nDigite a senha do Administrador para confirmar:");
+            let senhaDigitada = prompt("⚠️ ATENÇÃO EXTREMA: Esta ação limpará todo o estoque físico, os estoques das malas dos técnicos, lançamentos, históricos e relatórios, mantendo apenas os cadastros dos técnicos.\n\nDigite a senha do Administrador para confirmar:");
             let currentAdminPass = db.adminPass || ADMIN_PASS;
             if(senhaDigitada === currentAdminPass) {
-                if(confirm("Tem certeza absoluta? Esta operação é irreversível.")) {
-                    dbRef.remove().then(() => {
-                        db = {
-                            adminPass: ADMIN_PASS,
-                            operadores: [],
-                            estoquePadrao: [
-                                { sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtdInicial: 500 },
-                                { sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtdInicial: 100 }
-                            ],
-                            tecnicos: [],
-                            materiais: [
-                                { sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA" },
-                                { sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW" }
-                            ],
-                            estoqueFisico: [],
-                            favoritos: [],
-                            lancamentos: [],
-                            trajetos: [],
-                            reposicoes: [],
-                            mensagens: [],
-                            movimentacoes: [{ data: new Date().toLocaleString(), tipo: "Sistema", responsavel: "Admin", detalhes: "Sistema resetado do zero." }],
-                            notificacoes: [{ text: "Sistema resetado do zero.", time: new Date().toLocaleDateString(), tipo: "warning" }],
-                            sosAtivo: null
-                        };
-                        salvarDb();
-                        atualizarPainelAdmin();
-                        alert("✅ Sistema limpo e resetado do zero com sucesso no Firebase!");
-                    }).catch(err => {
-                        alert("Erro ao limpar Firebase: " + err.message);
+                if(confirm("Tem certeza absoluta? O Excel gerado virá totalmente limpo do zero.")) {
+                    // Limpa estoques e lançamentos, mas mantém a lista de técnicos cadastrados
+                    db.tecnicos.forEach(t => {
+                        t.mala = [];
+                        t.autoKm = 0;
+                        t.autoLitros = 0;
+                        t.autoCusto = 0;
                     });
+                    db.estoqueFisico = [];
+                    db.lancamentos = [];
+                    db.trajetos = [];
+                    db.reposicoes = [];
+                    db.mensagens = [];
+                    db.movimentacoes = [{ data: new Date().toLocaleString(), tipo: "Sistema", responsavel: "Admin", detalhes: "Estoques e relatórios limpos do zero, mantendo cadastros de técnicos." }];
+                    db.notificacoes = [{ text: "Estoques e relatórios limpos do zero.", time: new Date().toLocaleDateString(), tipo: "warning" }];
+                    db.sosAtivo = null;
+
+                    salvarDb();
+                    atualizarPainelAdmin();
+                    alert("✅ Estoques, malas e relatórios limpos com sucesso! Cadastros de técnicos preservados.");
                 }
             } else if(senhaDigitada !== null) {
                 alert("Senha incorreta! Operação cancelada.");
             }
         }
 
-        // --- FUNÇÕES DE REINICIAR KM (INDIVIDUAL E GERAL) ---
+        // --- REINICIAR KM ---
         function reiniciarKmTecnico(login) {
             if(isVisualizador) return;
             let tech = db.tecnicos.find(t => t.login === login);
@@ -1263,7 +1304,7 @@
             }
         }
 
-        // --- GPS EM SEGUNDO PLANO E DETECÇÃO INTELIGENTE DE PARADAS ---
+        // --- GPS E SINCRONIZAÇÃO DE KM ---
         function iniciarGpsAutomaticoTecnico() {
             if(!usuarioLogado) return;
             let techNoDb = db.tecnicos.find(x => x.login === usuarioLogado.login);
@@ -1341,7 +1382,7 @@
                         salvarDb();
                     },
                     (err) => {
-                        console.warn("Aviso/Erro GPS em segundo plano: " + err.message);
+                        console.warn("Aviso/Erro GPS: " + err.message);
                         if(usuarioLogado) { usuarioLogado.trackingOn = false; usuarioLogado.gpsStatus = "desativado"; }
                         if(techNoDb) { techNoDb.trackingOn = false; techNoDb.gpsStatus = "desativado"; }
                         atualizarBadgeGpsCelularTech(false);
@@ -1411,6 +1452,7 @@
                 navigator.geolocation.clearWatch(gpsWatchId);
                 gpsWatchId = null;
             }
+            localStorage.removeItem('boxfield_session');
             isVisualizador = false;
             document.getElementById('app-body-container').classList.remove('mode-visualizador');
             document.getElementById('visualizador-banner').classList.add('hidden');
@@ -1775,7 +1817,7 @@
             lucide.createIcons();
         }
 
-        // --- MAPA LEAFLET COM ROTA, PARADAS E TEMPO PARADO ---
+        // --- MAPA LEAFLET ---
         function inicializarMapaLeaflet() {
             let container = document.getElementById('map-leaflet-container');
             if (!container) return;
@@ -1895,7 +1937,7 @@
             if(sel) { sel.value = login; renderizarPinsMapaLeaflet(); }
         }
 
-        // --- RELATÓRIOS, AUTONOMIA E LOGÍSTICA PARA O PATRÃO ACOMPANHAR O CONSUMO ---
+        // --- AUTONOMIA & LOGÍSTICA ---
         function renderizarResumoAutonomiaEHist() {
             if(!db.trajetos) db.trajetos = [];
 
@@ -2712,9 +2754,9 @@
                 let btn = document.getElementById('ttab-' + t);
                 if(btn) {
                     if(t === tipo) {
-                        btn.className = "flex-1 min-w-[70px] py-2 px-2 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5 font-bold shadow";
+                        btn.className = "flex-1 py-2 px-1 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5 font-bold text-[10px] shadow";
                     } else {
-                        btn.className = "flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5";
+                        btn.className = "flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]";
                     }
                 }
             });
