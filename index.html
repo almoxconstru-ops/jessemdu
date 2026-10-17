@@ -32,9 +32,9 @@
         /* ESTILO MODO VISUALIZADOR (SOMENTE LEITURA) */
         .mode-visualizador .action-btn-write { display: none !important; }
 
-        /* MODO CLARO (BRANCO) DEDICADO */
+        /* MODO CLARO (BRANCO) OTIMIZADO E AJUSTADO */
         body.theme-light {
-            background-color: #f1f5f9 !important;
+            background-color: #f8fafc !important;
             color: #0f172a !important;
         }
         body.theme-light .bg-black,
@@ -45,7 +45,7 @@
             border-color: #cbd5e1 !important;
         }
         body.theme-light aside {
-            background-color: #f8fafc !important;
+            background-color: #f1f5f9 !important;
             border-color: #cbd5e1 !important;
         }
         body.theme-light .text-white {
@@ -53,12 +53,12 @@
         }
         body.theme-light .text-zinc-300,
         body.theme-light .text-zinc-400 {
-            color: #475569 !important;
+            color: #334155 !important;
         }
         body.theme-light input,
         body.theme-light select,
         body.theme-light textarea {
-            background-color: #ffffff !important;
+            background-color: #f8fafc !important;
             color: #0f172a !important;
             border-color: #cbd5e1 !important;
         }
@@ -138,7 +138,7 @@
                     <i data-lucide="users" class="w-4 h-4"></i><span>Gestão de Técnicos</span>
                 </button>
                 <button onclick="switchAdminTab('autonomia')" id="atab-autonomia" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
-                    <i data-lucide="gauge" class="w-4 h-4"></i><span>Autonomia & Paradas</span>
+                    <i data-lucide="gauge" class="w-4 h-4"></i><span>Autonomia & Logística</span>
                 </button>
                 <button onclick="switchAdminTab('estoque-padrao')" id="atab-estoque-padrao" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
                     <i data-lucide="layers" class="w-4 h-4"></i><span>Estoque Padrão</span>
@@ -311,7 +311,7 @@
                 </div>
             </div>
 
-            <!-- AUTONOMIA & PARADAS (COM EXPORTAÇÃO EXCEL DETALHADA POR DATA) -->
+            <!-- AUTONOMIA & LOGÍSTICA PARA O PATRÃO ACOMPANHAR O CONSUMO -->
             <div id="acontent-autonomia" class="admin-tab hidden space-y-6">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm text-center">
@@ -332,26 +332,34 @@
                     </div>
                 </div>
 
-                <!-- PAINEL DE EXPORTAÇÃO EXCEL DETALHADA POR DATA ESPECÍFICA -->
+                <!-- PAINEL LOGÍSTICO EXCLUSIVO PARA O PATRÃO ACOMPANHAR CADA TÉCNICO -->
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-800 pb-3 gap-3">
                         <div>
                             <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-                                <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-400"></i>
-                                <span>Exportar Relatório Detalhado por Data Específica (Excel / CSV)</span>
+                                <i data-lucide="gauge" class="w-5 h-5 text-red-500"></i>
+                                <span>Painel Logístico do Patrão - Consumo por Técnico</span>
                             </h2>
-                            <p class="text-xs text-zinc-400">Extraia informações detalhadas de cada técnico, onde parou, tempo parado em cada canto e autonomia.</p>
+                            <p class="text-xs text-zinc-400">Acompanhamento gerencial do consumo de combustível, quilometragem e custos operacionais de cada técnico em campo.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="reiniciarKmTodosTecnicos()" class="px-3 py-2 bg-red-700 hover:bg-red-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow action-btn-write">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i><span>Reiniciar KM de Todos</span>
+                            </button>
                             <label class="text-xs text-zinc-300">Data:</label>
                             <input type="date" id="export-excel-date" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
                             <select id="export-excel-tech" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
                                 <option value="todos">👥 Todos os Técnicos</option>
                             </select>
                             <button onclick="baixarExcelDetalhadoPorData()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
-                                <i data-lucide="download" class="w-4 h-4"></i><span>Baixar Excel Detalhado</span>
+                                <i data-lucide="download" class="w-4 h-4"></i><span>Baixar Excel Logística</span>
                             </button>
                         </div>
+                    </div>
+                    
+                    <!-- Resumo Individual por Técnico para o Patrão -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2" id="patrao-tech-consumption-cards">
+                        <!-- Preenchido via JS -->
                     </div>
                 </div>
 
@@ -621,12 +629,24 @@
             <div id="acontent-historico-geral" class="admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
                     <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <h2 class="text-xl font-bold text-white">Histórico Geral de Movimentações</h2>
-                        <div class="flex space-x-2">
-                            <input type="date" id="filtro-hist-data" onchange="renderizarHistoricoGeral()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
-                            <button onclick="document.getElementById('filtro-hist-data').value='';" class="px-3 py-2 bg-zinc-800 text-white rounded-xl text-xs font-bold">Limpar</button>
-                            <button onclick="limparHistoricoGeral()" class="action-btn-write px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Excluir/Limpar Histórico</button>
+                        <h2 class="text-xl font-bold text-white">Histórico Geral de Movimentações & Backup JSON</h2>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button onclick="baixarBackupGeral()" class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
+                                <i data-lucide="download" class="w-4 h-4"></i><span>Baixar Backup JSON</span>
+                            </button>
+                            <label class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow cursor-pointer action-btn-write">
+                                <i data-lucide="upload" class="w-4 h-4"></i><span>Restaurar JSON</span>
+                                <input type="file" id="import-json-file" accept=".json" class="hidden" onchange="restaurarBackupJson(event)">
+                            </label>
+                            <button onclick="zerarSistemaFirebase()" class="px-3 py-2 bg-red-700 hover:bg-red-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow action-btn-write" title="Zerar e apagar tudo do Firebase">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i><span>Zerar Tudo (Firebase)</span>
+                            </button>
                         </div>
+                    </div>
+                    <div class="flex space-x-2 pt-2 border-t border-zinc-800">
+                        <input type="date" id="filtro-hist-data" onchange="renderizarHistoricoGeral()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                        <button onclick="document.getElementById('filtro-hist-data').value='';" class="px-3 py-2 bg-zinc-800 text-white rounded-xl text-xs font-bold">Limpar Filtro</button>
+                        <button onclick="limparHistoricoGeral()" class="action-btn-write px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Limpar Histórico</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs text-left text-zinc-300">
@@ -704,49 +724,39 @@
                         </span>
                         <span id="tech-auto-km-live" class="text-xs font-mono font-bold text-white">0.00 KM</span>
                     </div>
-                    <div class="grid grid-cols-3 gap-1.5 text-[11px]">
-                        <div class="bg-black/60 p-2 rounded-xl border border-zinc-800">
-                            <span class="text-zinc-400 block text-[9px]">Combustível</span>
-                            <b id="tech-auto-litros-live" class="text-blue-400 font-mono">0.00 L</b>
-                        </div>
-                        <div class="bg-black/60 p-2 rounded-xl border border-zinc-800">
-                            <span class="text-zinc-400 block text-[9px]">Custo (R$ 6,10)</span>
-                            <b id="tech-auto-custo-live" class="text-emerald-400 font-mono">R$ 0,00</b>
-                        </div>
+                    <div class="grid grid-cols-2 gap-1.5 text-[11px]">
                         <div class="bg-black/60 p-2 rounded-xl border border-zinc-800">
                             <span class="text-zinc-400 block text-[9px]">Status Parada</span>
                             <b id="tech-status-parada-live" class="text-amber-400 font-mono text-[10px]">Em movimento</b>
                         </div>
+                        <div class="bg-black/60 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400 block text-[9px]">Localização GPS</span>
+                            <b class="text-emerald-400 font-mono text-[10px]">Ativa</b>
+                        </div>
                     </div>
                 </div>
 
-                <!-- BOTÕES DE MENU TÉCNICO -->
-                <div class="grid grid-cols-3 gap-2 justify-center items-center">
-                    <div onclick="abrirCardTech('lancamento')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="clipboard-list" class="w-4 h-4"></i></div>
-                        <h4 class="font-bold text-[10px]">Lançar</h4>
-                    </div>
-                    <div onclick="abrirCardTech('historico')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="history" class="w-4 h-4"></i></div>
-                        <h4 class="font-bold text-[10px]">Histórico</h4>
-                    </div>
-                    <div onclick="abrirCardTech('mala')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="backpack" class="w-4 h-4"></i></div>
-                        <h4 class="font-bold text-[10px]">Mala</h4>
-                    </div>
-                    <div onclick="abrirCardTech('chat')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center relative">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="message-square" class="w-4 h-4"></i></div>
-                        <h4 class="font-bold text-[10px]">Chat</h4>
-                        <span id="badge-tech-chat-card" class="hidden absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">0</span>
-                    </div>
-                    <div onclick="abrirCardTech('reposicao')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="package-plus" class="w-4 h-4"></i></div>
-                        <h4 class="font-bold text-[10px]">Reposição</h4>
-                    </div>
-                    <div onclick="abrirCardTech('colega')" class="bg-zinc-900/90 border border-red-900/40 p-3 rounded-2xl cursor-pointer card-hover text-center space-y-1 shadow-xl flex flex-col items-center justify-center">
-                        <div class="w-8 h-8 bg-red-600/20 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="user-plus" class="w-4 h-4"></i></div>
-                        <h4 class="font-bold text-[10px]">Colega</h4>
-                    </div>
+                <!-- ABAS ABAIXO PARA PERFEITA ORGANIZAÇÃO E VISUALIZAÇÃO DO TÉCNICO -->
+                <div class="flex overflow-x-auto space-x-1 bg-zinc-900/90 p-1.5 rounded-2xl border border-zinc-800 text-xs font-bold scrollbar-none">
+                    <button onclick="abrirCardTech('lancamento')" id="ttab-lancamento" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
+                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i><span>Lançar</span>
+                    </button>
+                    <button onclick="abrirCardTech('historico')" id="ttab-historico" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
+                        <i data-lucide="history" class="w-3.5 h-3.5"></i><span>Histórico</span>
+                    </button>
+                    <button onclick="abrirCardTech('mala')" id="ttab-mala" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
+                        <i data-lucide="backpack" class="w-3.5 h-3.5"></i><span>Mala</span>
+                    </button>
+                    <button onclick="abrirCardTech('chat')" id="ttab-chat" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 relative">
+                        <i data-lucide="message-square" class="w-3.5 h-3.5"></i><span>Chat</span>
+                        <span id="badge-tech-chat-tab" class="hidden absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold px-1 py-0.2 rounded-full">0</span>
+                    </button>
+                    <button onclick="abrirCardTech('reposicao')" id="ttab-reposicao" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
+                        <i data-lucide="package-plus" class="w-3.5 h-3.5"></i><span>Reposição</span>
+                    </button>
+                    <button onclick="abrirCardTech('colega')" id="ttab-colega" class="flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i><span>Colega</span>
+                    </button>
                 </div>
 
                 <div id="tech-section-content" class="bg-zinc-900/90 p-4 sm:p-5 rounded-3xl border border-red-900/40 shadow-2xl"></div>
@@ -860,8 +870,8 @@
 
         // --- CONSTANTES & SEGURANÇA ---
         let ADMIN_PASS = "Constru007"; 
-        const PRECO_GASOLINA_ATUAL = 6.10; // Preço atual do litro da gasolina
-        const AUTONOMIA_KM_LITRO = 10;     // 10 km com 1 litro
+        const PRECO_GASOLINA_ATUAL = 6.10; 
+        const AUTONOMIA_KM_LITRO = 10;     
 
         // --- FIREBASE CONFIGURATION & INITIALIZATION ---
         const firebaseConfig = {
@@ -926,19 +936,16 @@
         let gpsWatchId = null;
         let themeMode = localStorage.getItem('boxfield_theme') || 'dark';
 
-        // Variáveis de Controle de Parada em Segundo Plano
         let lastPositionTime = Date.now();
         let lastLat = null;
         let lastLng = null;
         let paradaInicioTime = null;
         let statusParadaAtual = "Em movimento";
 
-        // Variáveis de Gravação de Áudio Chat
         let mediaRecorder = null;
         let audioChunks = [];
         let isRecordingAudio = false;
 
-        // Variáveis do Mapa Leaflet
         let mapLeaflet = null;
         let mapMarkers = {};
 
@@ -1030,14 +1037,6 @@
         let subMalaAtual = "miscelaneas";
         let cardTechAtivo = "lancamento";
         let isMobileLayout = false;
-
-        window.addEventListener('beforeunload', () => {
-            if(usuarioLogado && !isVisualizador) {
-                let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
-                if(t) { t.online = false; t.lastSeen = new Date().toLocaleTimeString(); }
-                salvarDb();
-            }
-        });
 
         function inicializarPWA() {
             applyTheme();
@@ -1145,11 +1144,11 @@
                 isVisualizador = false;
                 usuarioLogado = tech;
                 tech.online = true;
-                tech.lastSeen = "Agora";
+                tech.lastSeen = "Agora (Online)";
                 
                 iniciarGpsAutomaticoTecnico();
 
-                registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema com rastreamento em segundo plano e detecção de paradas.`);
+                registrarMovimentacao("Login Técnico", tech.name, `Técnico entrou no sistema com rastreamento GPS e permanência online ativa.`);
                 salvarDb();
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('tech-screen').classList.remove('hidden');
@@ -1158,6 +1157,110 @@
             }
 
             alert("Acesso negado! Usuário ou senha incorretos.");
+        }
+
+        // --- BACKUP E RESTAURAÇÃO JSON & ZERAR SISTEMA ---
+        function baixarBackupGeral() {
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            let dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `mala_estoque_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function restaurarBackupJson(event) {
+            if(isVisualizador) return;
+            let file = event.target.files[0];
+            if(!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let parsedData = JSON.parse(e.target.result);
+                    if(confirm("Tem certeza que deseja substituir todos os dados atuais pelo arquivo JSON importado?")) {
+                        db = parsedData;
+                        salvarDb();
+                        atualizarPainelAdmin();
+                        alert("✅ Dados restaurados com sucesso do arquivo JSON!");
+                    }
+                } catch(err) {
+                    alert("Erro ao ler o arquivo JSON: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function zerarSistemaFirebase() {
+            if(isVisualizador) return;
+            let senhaDigitada = prompt("⚠️ ATENÇÃO EXTREMA: Esta ação apagará TODOS os dados, técnicos, lançamentos e resetará o sistema do zero no Firebase!\n\nDigite a senha do Administrador para confirmar:");
+            let currentAdminPass = db.adminPass || ADMIN_PASS;
+            if(senhaDigitada === currentAdminPass) {
+                if(confirm("Tem certeza absoluta? Esta operação é irreversível.")) {
+                    dbRef.remove().then(() => {
+                        db = {
+                            adminPass: ADMIN_PASS,
+                            operadores: [],
+                            estoquePadrao: [
+                                { sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA", qtdInicial: 500 },
+                                { sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW", qtdInicial: 100 }
+                            ],
+                            tecnicos: [],
+                            materiais: [
+                                { sap: "22026267", desc: "CABO DROP LOW F FIG8 1FO CINZA" },
+                                { sap: "22065512", desc: "CONECTOR FO CAMPO CPO SC APC FRKW" }
+                            ],
+                            estoqueFisico: [],
+                            favoritos: [],
+                            lancamentos: [],
+                            trajetos: [],
+                            reposicoes: [],
+                            mensagens: [],
+                            movimentacoes: [{ data: new Date().toLocaleString(), tipo: "Sistema", responsavel: "Admin", detalhes: "Sistema resetado do zero." }],
+                            notificacoes: [{ text: "Sistema resetado do zero.", time: new Date().toLocaleDateString(), tipo: "warning" }],
+                            sosAtivo: null
+                        };
+                        salvarDb();
+                        atualizarPainelAdmin();
+                        alert("✅ Sistema limpo e resetado do zero com sucesso no Firebase!");
+                    }).catch(err => {
+                        alert("Erro ao limpar Firebase: " + err.message);
+                    });
+                }
+            } else if(senhaDigitada !== null) {
+                alert("Senha incorreta! Operação cancelada.");
+            }
+        }
+
+        // --- FUNÇÕES DE REINICIAR KM (INDIVIDUAL E GERAL) ---
+        function reiniciarKmTecnico(login) {
+            if(isVisualizador) return;
+            let tech = db.tecnicos.find(t => t.login === login);
+            if(tech) {
+                tech.autoKm = 0;
+                tech.autoLitros = 0;
+                tech.autoCusto = 0;
+                registrarMovimentacao("Reset KM", "Admin", `Reiniciou a quilometragem do técnico ${tech.name}`);
+                salvarDb();
+                atualizarPainelAdmin();
+                alert(`✅ KM do técnico ${tech.name} reiniciado com sucesso!`);
+            }
+        }
+
+        function reiniciarKmTodosTecnicos() {
+            if(isVisualizador) return;
+            if(confirm("Deseja reiniciar a quilometragem de TODOS os técnicos?")) {
+                db.tecnicos.forEach(t => {
+                    t.autoKm = 0;
+                    t.autoLitros = 0;
+                    t.autoCusto = 0;
+                });
+                registrarMovimentacao("Reset KM Geral", "Admin", `Reiniciou a quilometragem de todos os técnicos.`);
+                salvarDb();
+                atualizarPainelAdmin();
+                alert("✅ Quilometragem de todos os técnicos reiniciada com sucesso!");
+            }
         }
 
         // --- GPS EM SEGUNDO PLANO E DETECÇÃO INTELIGENTE DE PARADAS ---
@@ -1179,8 +1282,7 @@
 
                         let distKm = calcularDistanciaKM(oldLat, oldLng, lat, lng);
                         
-                        // Lógica de Detecção de Parada / Parada Final vs Movimento
-                        if (distKm < 0.01) { // Menos de 10 metros de deslocamento = Parado
+                        if (distKm < 0.01) { 
                             if (!paradaInicioTime) {
                                 paradaInicioTime = Date.now();
                                 statusParadaAtual = "Em Parada";
@@ -1191,7 +1293,6 @@
                                 }
                             }
                         } else {
-                            // Movimentou! Se estava parado há mais de 2 min, registra no histórico de trajetos/paradas
                             if (paradaInicioTime) {
                                 let minutosParado = Math.floor((Date.now() - paradaInicioTime) / 60000);
                                 if (minutosParado >= 1) {
@@ -1203,8 +1304,8 @@
 
                             let kmAtual = (techNoDb ? techNoDb.autoKm : usuarioLogado.autoKm) || 0;
                             let novoKm = kmAtual + distKm;
-                            let litrosConsumidos = novoKm / AUTONOMIA_KM_LITRO; // 10 km por 1 litro
-                            let custoConsumido = litrosConsumidos * PRECO_GASOLINA_ATUAL; // R$ 6,10 / L
+                            let litrosConsumidos = novoKm / AUTONOMIA_KM_LITRO; 
+                            let custoConsumido = litrosConsumidos * PRECO_GASOLINA_ATUAL; 
 
                             if(usuarioLogado) {
                                 usuarioLogado.autoKm = novoKm;
@@ -1224,6 +1325,7 @@
                             usuarioLogado.rua = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
                             usuarioLogado.trackingOn = true;
                             usuarioLogado.gpsStatus = "ativado";
+                            usuarioLogado.online = true;
                         }
                         if(techNoDb) {
                             techNoDb.lat = lat;
@@ -1231,6 +1333,7 @@
                             techNoDb.rua = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
                             techNoDb.trackingOn = true;
                             techNoDb.gpsStatus = "ativado";
+                            techNoDb.online = true;
                         }
                         
                         atualizarBadgeGpsCelularTech(true);
@@ -1278,17 +1381,10 @@
         function atualizarTelemetriaTecnicoLive() {
             if (!usuarioLogado) return;
             let km = usuarioLogado.autoKm || 0;
-            let litros = usuarioLogado.autoLitros || 0;
-            let custo = usuarioLogado.autoCusto || 0;
-
             let kmEl = document.getElementById('tech-auto-km-live');
-            let litrosEl = document.getElementById('tech-auto-litros-live');
-            let custoEl = document.getElementById('tech-auto-custo-live');
             let statusParadaEl = document.getElementById('tech-status-parada-live');
 
             if (kmEl) kmEl.innerText = km.toFixed(2) + " KM";
-            if (litrosEl) litrosEl.innerText = litros.toFixed(2) + " L";
-            if (custoEl) custoEl.innerText = "R$ " + custo.toFixed(2);
             if (statusParadaEl) statusParadaEl.innerText = statusParadaAtual;
         }
 
@@ -1308,7 +1404,7 @@
             if(usuarioLogado && !isVisualizador) {
                 let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
                 if(t) { t.online = false; t.lastSeen = new Date().toLocaleTimeString(); }
-                registrarMovimentacao("Logout", usuarioLogado.name, `Técnico encerrou sessão.`);
+                registrarMovimentacao("Logout", usuarioLogado.name, `Técnico encerrou sessão pelo botão.`);
                 salvarDb();
             }
             if(gpsWatchId !== null) {
@@ -1571,7 +1667,8 @@
                         <td class="p-4 text-zinc-300 font-mono">${t.senha}</td>
                         <td class="p-4 text-zinc-300">${t.car}</td>
                         <td class="p-4 text-center space-x-2">
-                            <button onclick="editarTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-amber-500/20 text-amber-400 rounded-lg font-bold">Editar</button>
+                            <button onclick="reiniciarKmTecnico('${t.login}')" class="action-btn-write px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold" title="Reiniciar KM deste técnico">Resetar KM</button>
+                            <button onclick="editarTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-bold">Editar</button>
                             <button onclick="excluirTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-red-500/20 text-red-400 rounded-lg font-bold">Excluir</button>
                         </td>
                     </tr>
@@ -1748,7 +1845,7 @@
                         <div><b>Status GPS:</b> ${gpsStatusText}</div>
                         <div><b>Status Parada:</b> <span style="color:#f59e0b;">${statusParadaAtual}</span></div>
                         <div><b>Km Rodado:</b> ${(t.autoKm || 0).toFixed(2)} KM</div>
-                        <div><b>Consumo (10km/L):</b> ${(t.autoLitros || 0).toFixed(2)} L (R$ ${(t.autoCusto || 0).toFixed(2)})</div>
+                        <div><b>Consumo Registrado:</b> ${(t.autoLitros || 0).toFixed(2)} L (R$ ${(t.autoCusto || 0).toFixed(2)})</div>
                     </div>
                 `;
                 marker.bindPopup(popupContent);
@@ -1798,7 +1895,7 @@
             if(sel) { sel.value = login; renderizarPinsMapaLeaflet(); }
         }
 
-        // --- RELATÓRIOS, AUTONOMIA E EXPORTAÇÃO EXCEL DETALHADA POR DATA ESPECÍFICA ---
+        // --- RELATÓRIOS, AUTONOMIA E LOGÍSTICA PARA O PATRÃO ACOMPANHAR O CONSUMO ---
         function renderizarResumoAutonomiaEHist() {
             if(!db.trajetos) db.trajetos = [];
 
@@ -1812,6 +1909,12 @@
                 totalCusto += Number(t.custoTotal || 0);
             });
 
+            db.tecnicos.forEach(t => {
+                totalKm += Number(t.autoKm || 0);
+                totalLitros += Number(t.autoLitros || 0);
+                totalCusto += Number(t.autoCusto || 0);
+            });
+
             let custoMedioPorKm = totalKm > 0 ? (totalCusto / totalKm) : 0;
 
             if(document.getElementById('stat-auto-km')) document.getElementById('stat-auto-km').innerText = totalKm.toFixed(1) + " KM";
@@ -1819,7 +1922,53 @@
             if(document.getElementById('stat-auto-custo')) document.getElementById('stat-auto-custo').innerText = "R$ " + totalCusto.toFixed(2);
             if(document.getElementById('stat-auto-por-km')) document.getElementById('stat-auto-por-km').innerText = "R$ " + custoMedioPorKm.toFixed(2) + " / KM";
 
+            renderizarCardsConsumoPatrao();
             renderizarHistoricoAutonomia();
+        }
+
+        function renderizarCardsConsumoPatrao() {
+            let container = document.getElementById('patrao-tech-consumption-cards');
+            if(!container) return;
+
+            let html = "";
+            db.tecnicos.forEach(t => {
+                let kmTech = Number(t.autoKm || 0);
+                let litrosTech = Number(t.autoLitros || 0);
+                let custoTech = Number(t.autoCusto || 0);
+                let avatar = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
+                let statusOn = t.online ? '<span class="text-emerald-400 font-bold">Online</span>' : '<span class="text-zinc-500">Offline</span>';
+
+                html += `
+                    <div class="bg-black border border-zinc-800 rounded-2xl p-4 space-y-3 shadow-md">
+                        <div class="flex items-center space-x-3 border-b border-zinc-800 pb-2">
+                            ${avatar}
+                            <div class="flex-1">
+                                <h4 class="font-bold text-white text-sm">${t.name}</h4>
+                                <p class="text-[10px] text-red-400">${t.car || 'Sem veículo'} • ${statusOn}</p>
+                            </div>
+                            <button onclick="reiniciarKmTecnico('${t.login}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold action-btn-write" title="Zerar KM">Zerar KM</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                            <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
+                                <span class="text-zinc-400 text-[9px] block">KM Rodados</span>
+                                <b class="text-amber-400 font-mono">${kmTech.toFixed(1)} KM</b>
+                            </div>
+                            <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
+                                <span class="text-zinc-400 text-[9px] block">Litros (10km/L)</span>
+                                <b class="text-blue-400 font-mono">${litrosTech.toFixed(1)} L</b>
+                            </div>
+                            <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
+                                <span class="text-zinc-400 text-[9px] block">Custo R$</span>
+                                <b class="text-emerald-400 font-mono">R$ ${custoTech.toFixed(2)}</b>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-zinc-400 truncate">
+                            📍 <b>Última Posição:</b> ${t.rua || 'Aguardando sinal GPS'}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html || '<p class="text-zinc-500 italic text-center col-span-3">Nenhum técnico cadastrado para logísticas.</p>';
         }
 
         function renderizarHistoricoAutonomia() {
@@ -1874,40 +2023,37 @@
             }
         }
 
-        // FUNÇÃO DE EXPORTAÇÃO EXCEL ORGANIZADA POR DATA ESPECÍFICA COM DETALHES DE PARADAS
         function baixarExcelDetalhadoPorData() {
             let dataSelecionada = document.getElementById('export-excel-date').value;
             let techSelecionado = document.getElementById('export-excel-tech').value;
 
-            if(!dataSelecionada) {
-                alert("Por favor, selecione uma Data Específica para extrair o relatório no Excel!");
-                return;
-            }
-
             let filtrados = (db.trajetos || []).filter(t => {
-                if (t.data !== dataSelecionada) return false;
+                if (dataSelecionada && t.data !== dataSelecionada) return false;
                 if (techSelecionado !== 'todos' && t.techLogin !== techSelecionado) return false;
                 return true;
             });
-
-            if (filtrados.length === 0) {
-                alert("Nenhum registro encontrado para esta data e técnico selecionados.");
-                return;
-            }
 
             let csvContent = "data:text/csv;charset=utf-8,Data;Tecnico;Veiculo;Local Parada / Destino;Tempo Parado;KM Percorrido;Litros (10km/L);Preco Gasolina (R$);Custo Total (R$);GPS Fundo\n";
             filtrados.forEach(t => {
                 csvContent += `${t.data};"${t.techNome}";"${t.veiculo}";"${t.paradaFinal || t.destino}";"${t.tempoParado || 'N/A'}";${t.kmPercorrido};${Number(t.litros).toFixed(2)};${t.precoGasolina};${Number(t.custoTotal).toFixed(2)};${t.gpsAtivo ? 'SIM' : 'NAO'}\n`;
             });
 
+            if (filtrados.length === 0) {
+                db.tecnicos.forEach(t => {
+                    if (techSelecionado === 'todos' || t.login === techSelecionado) {
+                        csvContent += `${new Date().toISOString().split('T')[0]};"${t.name}";"${t.car || 'N/A'}";"Posição Atual GPS";"N/A";${(t.autoKm||0).toFixed(2)};${(t.autoLitros||0).toFixed(2)};${PRECO_GASOLINA_ATUAL};${(t.autoCusto||0).toFixed(2)};SIM\n`;
+                    }
+                });
+            }
+
             let encodedUri = encodeURI(csvContent);
             let link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `relatorio_detalhado_${dataSelecionada}.csv`);
+            link.setAttribute("download", `relatorio_logistica_patrao_${dataSelecionada || 'geral'}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            alert("✅ Relatório Excel detalhado exportado com sucesso!");
+            alert("✅ Relatório Logístico Excel exportado com sucesso para o patrão!");
         }
 
         function limparFiltroDatasLancamentos() {
@@ -2286,16 +2432,6 @@
             document.body.removeChild(link);
         }
 
-        function baixarBackupGeral() {
-            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
-            let dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", "mala_estoque_backup_oficial.json");
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
-        }
-
         function exportarExcelSIAKI() {
             let csvContent = "data:text/csv;charset=utf-8,COD SAP;Material;PROJETOS;CIDADE;LOCAL DE DESCARGA;Node/Site/Cód Imóvel;QTD. CONSUMO;QTD. DESCARTE\n";
             db.lancamentos.forEach(l => {
@@ -2571,8 +2707,22 @@
             }
         }
 
+        function atualizarEstiloAbasTech(tipo) {
+            ['lancamento', 'historico', 'mala', 'chat', 'reposicao', 'colega'].forEach(t => {
+                let btn = document.getElementById('ttab-' + t);
+                if(btn) {
+                    if(t === tipo) {
+                        btn.className = "flex-1 min-w-[70px] py-2 px-2 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5 font-bold shadow";
+                    } else {
+                        btn.className = "flex-1 min-w-[70px] py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5";
+                    }
+                }
+            });
+        }
+
         function abrirCardTech(tipo) {
             cardTechAtivo = tipo;
+            atualizarEstiloAbasTech(tipo);
             let content = document.getElementById('tech-section-content');
             if(!content || !usuarioLogado) return;
 
@@ -3135,10 +3285,10 @@
             }
 
             let totalNaoLidasGeral = db.mensagens.filter(m => (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login) && !m.lido).length;
-            let badgeCard = document.getElementById('badge-tech-chat-card');
-            if(badgeCard) {
-                if(totalNaoLidasGeral > 0) { badgeCard.classList.remove('hidden'); badgeCard.innerText = totalNaoLidasGeral; }
-                else badgeCard.classList.add('hidden');
+            let badgeTab = document.getElementById('badge-tech-chat-tab');
+            if(badgeTab) {
+                if(totalNaoLidasGeral > 0) { badgeTab.classList.remove('hidden'); badgeTab.innerText = totalNaoLidasGeral; }
+                else badgeTab.classList.add('hidden');
             }
         }
 
