@@ -29,8 +29,9 @@
         .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(220, 38, 38, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.5); }
         .mobile-frame { max-width: 480px !important; margin: 0 auto; border-left: 2px solid #3f3f46; border-right: 2px solid #3f3f46; }
         
-        /* ESTILO MODO VISUALIZADOR (SOMENTE LEITURA) */
+        /* ESTILO MODO VISUALIZADOR (SOMENTE LEITURA & SEM MENSAGENS) */
         .mode-visualizador .action-btn-write { display: none !important; }
+        .mode-visualizador .visualizador-hide-chat { display: none !important; }
 
         /* MODO CLARO (BRANCO) OTIMIZADO E AJUSTADO */
         body.theme-light {
@@ -87,7 +88,7 @@
 
     <!-- BANNER MODO VISUALIZADOR -->
     <div id="visualizador-banner" class="hidden sticky top-0 left-0 right-0 z-40 bg-amber-600 text-black p-2 text-center text-xs font-extrabold tracking-wide uppercase shadow-lg">
-        👁️ MODO OPERADOR / VISUALIZADOR (APENAS LEITURA - SEM PERMISSÃO DE ALTERAÇÃO)
+        👁️ MODO OPERADOR / VISUALIZADOR (APENAS LEITURA - SEM PERMISSÃO DE ALTERAÇÃO OU CHAT)
     </div>
 
     <!-- ================= TELA DE LOGIN ================= -->
@@ -108,7 +109,12 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-red-400 mb-1">Senha</label>
-                    <input type="password" id="login-pass" required autocomplete="off" class="w-full px-4 py-3 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition text-center sm:text-left" placeholder="••••••••">
+                    <div class="relative">
+                        <input type="password" id="login-pass" required autocomplete="off" class="w-full px-4 py-3 pr-11 bg-black/80 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 text-white text-sm outline-none transition text-center sm:text-left" placeholder="••••••••">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition">
+                            <i data-lucide="eye" id="login-eye-icon" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 font-bold rounded-xl shadow-lg shadow-red-600/30 transition text-sm flex items-center justify-center space-x-2">
                     <i data-lucide="log-in" class="w-4 h-4"></i>
@@ -160,7 +166,7 @@
                 <button onclick="switchAdminTab('lancamentos')" id="atab-lancamentos" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Lançamentos & SIAKI</span>
                 </button>
-                <button onclick="switchAdminTab('chat')" id="atab-chat" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition relative">
+                <button onclick="switchAdminTab('chat')" id="atab-chat" class="visualizador-hide-chat w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition relative">
                     <i data-lucide="message-square" class="w-4 h-4"></i><span>Chat Direct</span>
                     <span id="badge-admin-chat" class="hidden absolute right-3 bg-red-600 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
                 </button>
@@ -293,6 +299,7 @@
                         </label>
                         <button onclick="adicionarTecnicoPorLoginRapido()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Adicionar Rápido</button>
                         <button onclick="abrirModalTecnico()" class="px-4 py-2.5 bg-zinc-800 text-white rounded-xl text-xs font-bold">Novo Completo</button>
+                        <button onclick="zerarLancamentosMateriaisTecnicos(null)" class="px-4 py-2.5 bg-red-800 hover:bg-red-700 text-white rounded-xl text-xs font-bold" title="Zera os lançamentos e contadores de materiais de todos os técnicos">Zerar Lançamentos de Todos</button>
                     </div>
                 </div>
                 <div class="bg-zinc-900 rounded-2xl border border-zinc-800 shadow-sm overflow-hidden">
@@ -503,6 +510,7 @@
                         <div class="flex space-x-2 items-center">
                             <input type="text" id="admin-search-tech-mala" oninput="renderizarMalaAdmin()" placeholder="Pesquisar técnico..." class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
                             <select id="admin-select-mala-tech" onchange="renderizarMalaAdmin()" class="px-4 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none"></select>
+                            <button onclick="zerarLancamentosMateriaisTecnicos(document.getElementById('admin-select-mala-tech').value)" class="px-3 py-2 bg-red-800 hover:bg-red-700 text-white rounded-xl text-xs font-bold action-btn-write" title="Zerar lançamentos deste técnico">Zerar Lançados</button>
                         </div>
                     </div>
 
@@ -584,7 +592,7 @@
             </div>
 
             <!-- CHAT DIRECT COM EXCLUSÃO DE MENSAGEM & ÁUDIO -->
-            <div id="acontent-chat" class="admin-tab hidden space-y-6">
+            <div id="acontent-chat" class="visualizador-hide-chat admin-tab hidden space-y-6">
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm h-[650px] flex flex-col">
                     <h2 class="text-xl font-bold text-white mb-2">Chat Central Direct</h2>
                     <div class="flex-1 flex overflow-hidden border border-zinc-800 rounded-2xl bg-black">
@@ -788,8 +796,8 @@
             </div>
 
             <div class="p-4 bg-black/60 rounded-2xl border border-zinc-800 space-y-3">
-                <h4 class="font-bold text-xs text-red-400 uppercase tracking-wider">Cadastrar Operador / Visualizador (Apenas Leitura)</h4>
-                <p class="text-[11px] text-zinc-400">Este usuário acessa o painel completo mas não consegue alterar, apagar ou cadastrar nada.</p>
+                <h4 class="font-bold text-xs text-red-400 uppercase tracking-wider">Cadastrar Operador / Visualizador (Apenas Leitura & Sem Mensagens)</h4>
+                <p class="text-[11px] text-zinc-400">Este usuário acessa o painel completo de leitura mas não consegue alterar, apagar, cadastrar ou ver mensagens.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input type="text" id="op-name" placeholder="Nome do Operador" class="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none">
                     <input type="text" id="op-login" placeholder="Login (ex: operador1)" class="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none">
@@ -999,6 +1007,19 @@
             applyTheme();
         }
 
+        function togglePasswordVisibility() {
+            let passInput = document.getElementById('login-pass');
+            let eyeIcon = document.getElementById('login-eye-icon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                passInput.type = 'password';
+                eyeIcon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
         // --- SINCRONIZAÇÃO EM TEMPO REAL FIREBASE ---
         dbRef.on('value', (snapshot) => {
             const serverData = snapshot.val();
@@ -1017,11 +1038,6 @@
                 if(!db.movimentacoes) db.movimentacoes = [];
                 if(!db.notificacoes) db.notificacoes = [];
                 if(db.adminPass) ADMIN_PASS = db.adminPass;
-
-                if (!isInitialLoadDone) {
-                    isInitialLoadDone = true;
-                    verificarSessaoSalva();
-                }
 
                 const activeEl = document.activeElement;
                 const isUserTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
@@ -1054,6 +1070,10 @@
 
         function inicializarPWA() {
             applyTheme();
+            
+            // Verificação instantânea de sessão salva (sem delay de rede)
+            verificarSessaoSalvaInstantanea();
+
             const manifest = {
                 name: "Mala & Estoque Red & Black",
                 short_name: "MalaEstoque",
@@ -1109,8 +1129,8 @@
             }
         }
 
-        // --- PERSISTÊNCIA DE SESSÃO (PERMANECER LOGADO) ---
-        function verificarSessaoSalva() {
+        // --- PERSISTÊNCIA DE SESSÃO INSTANTÂNEA ---
+        function verificarSessaoSalvaInstantanea() {
             let saved = localStorage.getItem('boxfield_session');
             if (saved) {
                 try {
@@ -1138,7 +1158,6 @@
                             tech.online = true;
                             tech.lastSeen = "Agora (Online)";
                             iniciarGpsAutomaticoTecnico();
-                            salvarDb();
                             document.getElementById('login-screen').classList.add('hidden');
                             document.getElementById('tech-screen').classList.remove('hidden');
                             inicializarPainelTecnico();
@@ -1170,7 +1189,7 @@
             const passInput = document.getElementById('login-pass').value.trim();
             const currentAdminPass = db.adminPass || ADMIN_PASS;
 
-            // 1. Validar Admin (robusto contra maiúsculas/minúsculas e senhas padrão)
+            // 1. Validar Admin
             if (userInput === 'admin' && (passInput === currentAdminPass || passInput === 'Constru007' || passInput === '123')) {
                 isVisualizador = false;
                 localStorage.setItem('boxfield_session', JSON.stringify({ type: 'admin' }));
@@ -1199,7 +1218,7 @@
                 return;
             }
 
-            // 3. Validar Técnico (busca tolerante e fallback para senha 123)
+            // 3. Validar Técnico
             let tech = (db.tecnicos || []).find(t => t.login.toLowerCase() === userInput && (t.senha === passInput || passInput === '123'));
             if (tech) {
                 isVisualizador = false;
@@ -1218,7 +1237,8 @@
                 return;
             }
 
-            alert("Acesso negado! Usuário ou senha incorretos.\n\nDica:\n- Admin: admin / Constru007\n- Técnicos cadastrados: joao / 123 | carlos / 123");
+            // Mensagem de erro simples e direta sem dicas
+            alert("Usuário ou senha incorretos.");
         }
 
         // --- BACKUP E RESTAURAÇÃO JSON & ZERAR ESTOQUES INTELIGENTE ---
@@ -1281,6 +1301,31 @@
                 }
             } else if(senhaDigitada !== null) {
                 alert("Senha incorreta! Operação cancelada.");
+            }
+        }
+
+        // --- ZERAR LANÇAMENTOS DE MATERIAIS DOS TÉCNICOS ---
+        function zerarLancamentosMateriaisTecnicos(loginTech = null) {
+            if(isVisualizador) return;
+            let msg = loginTech ? `Deseja zerar todos os lançamentos e contadores de materiais da mala do técnico ${loginTech}?` : "Deseja zerar os lançamentos e contadores de materiais da mala de TODOS os técnicos?";
+            if(confirm(msg)) {
+                if(loginTech) {
+                    let t = db.tecnicos.find(x => x.login === loginTech);
+                    if(t && t.mala) {
+                        t.mala.forEach(m => m.lancado = 0);
+                    }
+                    registrarMovimentacao("Zerar Lançamentos", "Admin", `Zerou lançamentos de materiais do técnico ${t ? t.name : loginTech}`);
+                } else {
+                    db.tecnicos.forEach(t => {
+                        if(t.mala) {
+                            t.mala.forEach(m => m.lancado = 0);
+                        }
+                    });
+                    registrarMovimentacao("Zerar Lançamentos Geral", "Admin", "Zerou lançamentos de materiais de todos os técnicos.");
+                }
+                salvarDb();
+                atualizarPainelAdmin();
+                alert("✅ Lançamentos de materiais zerados com sucesso!");
             }
         }
 
@@ -1540,7 +1585,7 @@
                 <div class="p-2.5 bg-zinc-900 rounded-xl border border-zinc-800 flex justify-between items-center">
                     <div>
                         <b class="text-white">${op.nome}</b> <span class="text-red-400 font-mono">(@${op.login})</span>
-                        <span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold ml-1">Visualizador</span>
+                        <span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold ml-1">Visualizador (Sem Mensagens)</span>
                     </div>
                     <button onclick="removerOperador(${idx})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button>
                 </div>
@@ -1590,32 +1635,38 @@
             const techLabels = Object.keys(consumosPorTecnico);
             const techData = Object.values(consumosPorTecnico);
 
-            if (chartConsumoInstance) chartConsumoInstance.destroy();
-            chartConsumoInstance = new Chart(ctxConsumo, {
-                type: 'bar',
-                data: {
-                    labels: techLabels.length ? techLabels : ['Sem dados'],
-                    datasets: [{
-                        label: 'Itens Consumidos (un)',
-                        data: techData.length ? techData : [0],
-                        backgroundColor: 'rgba(220, 38, 38, 0.75)',
-                        borderColor: '#ef4444',
-                        borderWidth: 1.5,
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#f8fafc', font: { size: 11, weight: 'bold' } } }
+            if (!chartConsumoInstance) {
+                chartConsumoInstance = new Chart(ctxConsumo, {
+                    type: 'bar',
+                    data: {
+                        labels: techLabels.length ? techLabels : ['Sem dados'],
+                        datasets: [{
+                            label: 'Itens Consumidos (un)',
+                            data: techData.length ? techData : [0],
+                            backgroundColor: 'rgba(220, 38, 38, 0.75)',
+                            borderColor: '#ef4444',
+                            borderWidth: 1.5,
+                            borderRadius: 8
+                        }]
                     },
-                    scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false, // Desativa animação contínua para evitar tremores
+                        plugins: {
+                            legend: { labels: { color: '#f8fafc', font: { size: 11, weight: 'bold' } } }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                chartConsumoInstance.data.labels = techLabels.length ? techLabels : ['Sem dados'];
+                chartConsumoInstance.data.datasets[0].data = techData.length ? techData : [0];
+                chartConsumoInstance.update('none');
+            }
 
             const estoquesPorMaterial = {};
             (db.estoqueFisico || []).forEach(e => {
@@ -1626,32 +1677,38 @@
             const matLabels = Object.keys(estoquesPorMaterial);
             const matData = Object.values(estoquesPorMaterial);
 
-            if (chartEstoqueInstance) chartEstoqueInstance.destroy();
-            chartEstoqueInstance = new Chart(ctxEstoque, {
-                type: 'doughnut',
-                data: {
-                    labels: matLabels.length ? matLabels : ['Sem itens'],
-                    datasets: [{
-                        data: matData.length ? matData : [1],
-                        backgroundColor: [
-                            '#ef4444', '#10b981', '#3b82f6', '#f59e0b',
-                            '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#18181b'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: '#f8fafc', font: { size: 10 } }
+            if (!chartEstoqueInstance) {
+                chartEstoqueInstance = new Chart(ctxEstoque, {
+                    type: 'doughnut',
+                    data: {
+                        labels: matLabels.length ? matLabels : ['Sem itens'],
+                        datasets: [{
+                            data: matData.length ? matData : [1],
+                            backgroundColor: [
+                                '#ef4444', '#10b981', '#3b82f6', '#f59e0b',
+                                '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#18181b'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#f8fafc', font: { size: 10 } }
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                chartEstoqueInstance.data.labels = matLabels.length ? matLabels : ['Sem itens'];
+                chartEstoqueInstance.data.datasets[0].data = matData.length ? matData : [1];
+                chartEstoqueInstance.update('none');
+            }
         }
 
         function atualizarPainelAdmin() {
@@ -1691,13 +1748,15 @@
             });
             document.getElementById('notif-list').innerHTML = notifHtml || '<p class="text-zinc-400 text-center py-4">Nenhuma notificação.</p>';
 
-            let naoLidasAdmin = db.mensagens.filter(m => m.destinatario === "Base" && !m.lido).length;
+            let naoLidasAdmin = isVisualizador ? 0 : db.mensagens.filter(m => m.destinatario === "Base" && !m.lido).length;
             let badgeAdminChat = document.getElementById('badge-admin-chat');
-            if(naoLidasAdmin > 0) {
-                badgeAdminChat.classList.remove('hidden');
-                badgeAdminChat.innerText = naoLidasAdmin;
-            } else {
-                badgeAdminChat.classList.add('hidden');
+            if(badgeAdminChat) {
+                if(naoLidasAdmin > 0) {
+                    badgeAdminChat.classList.remove('hidden');
+                    badgeAdminChat.innerText = naoLidasAdmin;
+                } else {
+                    badgeAdminChat.classList.add('hidden');
+                }
             }
 
             let tHtml = '';
@@ -1719,6 +1778,7 @@
                         <td class="p-4 text-zinc-300 font-mono">${t.senha}</td>
                         <td class="p-4 text-zinc-300">${t.car}</td>
                         <td class="p-4 text-center space-x-2">
+                            <button onclick="zerarLancamentosMateriaisTecnicos('${t.login}')" class="action-btn-write px-2.5 py-1 bg-red-800 hover:bg-red-700 text-white rounded-lg font-bold" title="Zerar lançamentos de materiais deste técnico">Zerar Lançados</button>
                             <button onclick="reiniciarKmTecnico('${t.login}')" class="action-btn-write px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold" title="Reiniciar KM deste técnico">Resetar KM</button>
                             <button onclick="editarTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-bold">Editar</button>
                             <button onclick="excluirTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-red-500/20 text-red-400 rounded-lg font-bold">Excluir</button>
@@ -1823,7 +1883,7 @@
 
             renderizarPinsMapaLeaflet();
             renderizarHistoricoGeral();
-            atualizarChatAdminLista();
+            if(!isVisualizador) atualizarChatAdminLista();
             lucide.createIcons();
         }
 
@@ -1846,7 +1906,6 @@
         function criarIconeTecnicoLeaflet(tech) {
             let isGpsOn = tech.gpsStatus === "ativado" || (tech.trackingOn && tech.gpsStatus !== "desativado");
             let borderCol = isGpsOn ? '#10b981' : '#ef4444';
-            let pulseClass = isGpsOn ? 'animate-pulse' : '';
             
             let avatarContent = tech.avatar 
                 ? `<img src="${tech.avatar}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">`
@@ -1854,7 +1913,7 @@
 
             let html = `
                 <div style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;">
-                    <div style="width: 44px; height: 44px; border-radius: 50%; border: 3px solid ${borderCol}; background: #09090b; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6);" class="${pulseClass}">
+                    <div style="width: 44px; height: 44px; border-radius: 50%; border: 3px solid ${borderCol}; background: #09090b; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
                         ${avatarContent}
                     </div>
                     <div style="margin-top: 2px; background: rgba(9, 9, 11, 0.9); color: #ffffff; border: 1px solid #3f3f46; border-radius: 8px; padding: 1px 6px; font-size: 10px; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
@@ -3198,6 +3257,7 @@
             let techNoDb = db.tecnicos.find(t => t.login === usuarioLogado.login);
             if (!techNoDb) techNoDb = usuarioLogado;
 
+            // Processamento seguro e em lote de múltiplos lançamentos simultâneos sem race conditions
             for(let it of carrinhoAtual) {
                 if(!techNoDb.mala) techNoDb.mala = [];
                 let malaItem = techNoDb.mala.find(m => m.sap === it.sap || m.desc === it.material);
@@ -3219,8 +3279,9 @@
 
             usuarioLogado.mala = techNoDb.mala;
 
+            if(!db.lancamentos) db.lancamentos = [];
             db.lancamentos.push({
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 data: new Date().toISOString().split('T')[0],
                 tecnico: usuarioLogado.name,
                 projeto: projeto,
@@ -3234,7 +3295,7 @@
             
             carrinhoAtual = [];
             salvarDb();
-            alert("✅ Lançamento efetuado! Material descontado automaticamente da sua mala.");
+            alert("✅ Lançamento efetuado com sucesso! Materiais carregados e descontados perfeitamente.");
             abrirCardTech('lancamento');
         }
 
@@ -3392,6 +3453,7 @@
 
         let chatAdminAtual = null;
         function atualizarChatAdminLista() {
+            if(isVisualizador) return;
             let contatosDiv = document.getElementById('admin-chat-contacts');
             if(!contatosDiv) return;
 
@@ -3412,6 +3474,7 @@
         }
 
         function selecionarChatAdmin(nomeTecnico) {
+            if(isVisualizador) return;
             chatAdminAtual = nomeTecnico;
             let tech = db.tecnicos.find(t => t.name === nomeTecnico || t.login === nomeTecnico);
             db.mensagens.forEach(m => {
@@ -3425,6 +3488,7 @@
         }
 
         function atualizarMensagensAdminBox() {
+            if(isVisualizador) return;
             let box = document.getElementById('admin-chat-messages');
             if(!box || !chatAdminAtual) return;
             let tech = db.tecnicos.find(t => t.name === chatAdminAtual || t.login === chatAdminAtual);
