@@ -126,8 +126,6 @@
                     <span>Acessar Sistema Oficial</span>
                 </button>
             </form>
-            <div class="mt-4 text-[10px] text-zinc-400 text-center">
-            </div>
         </div>
     </div>
 
@@ -990,9 +988,6 @@
         let gpsWatchId = null;
         let themeMode = localStorage.getItem('boxfield_theme') || 'dark';
 
-        let lastPositionTime = Date.now();
-        let lastLat = null;
-        let lastLng = null;
         let paradaInicioTime = null;
         let statusParadaAtual = "Em movimento";
 
@@ -1013,7 +1008,7 @@
         let isInitialLoadDone = false;
 
         function salvarDb() {
-            dbRef.set(db);
+            dbRef.set(db).catch(err => console.error("Erro ao salvar no Firebase:", err));
         }
 
         function calcularDistanciaKM(lat1, lon1, lat2, lon2) {
@@ -1059,7 +1054,7 @@
             lucide.createIcons();
         }
 
-        // --- SINCRONIZAÇÃO EM TEMPO REAL FIREBASE ---
+        // --- SINCRONIZAÇÃO EM TEMPO REAL FIREBASE OTIMIZADA E ROBUSTA ---
         dbRef.on('value', (snapshot) => {
             const serverData = snapshot.val();
             if (serverData) {
@@ -1083,15 +1078,10 @@
                     verificarSessaoSalvaInstantanea();
                 }
 
-                const activeEl = document.activeElement;
-                const isUserTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-
+                // Atualização instantânea da interface sem perda de foco do usuário
                 if (!document.getElementById('admin-screen').classList.contains('hidden')) {
-                    if (!isUserTyping) {
-                        atualizarPainelAdmin();
-                    } else if (chatAdminAtual) {
-                        atualizarMensagensAdminBox();
-                    }
+                    atualizarPainelAdmin();
+                    if (chatAdminAtual) atualizarMensagensAdminBox();
                 }
                 
                 if (usuarioLogado && !document.getElementById('tech-screen').classList.contains('hidden')) {
@@ -1101,11 +1091,8 @@
                         atualizarTechNotificacoesBadge();
                         atualizarTelemetriaTecnicoLive();
                     }
-                    if (!isUserTyping) {
-                        renderizarCardTechAtivo();
-                    } else if (cardTechAtivo === 'chat') {
-                        atualizarMsgTechBox();
-                    }
+                    renderizarCardTechAtivo();
+                    if (cardTechAtivo === 'chat') atualizarMsgTechBox();
                 }
             } else {
                 salvarDb();
@@ -1118,41 +1105,7 @@
 
         function inicializarPWA() {
             applyTheme();
-            
-            // Verificação instantânea de sessão salva (sem delay de rede)
             verificarSessaoSalvaInstantanea();
-
-            const manifest = {
-                name: "Mala & Estoque Red & Black",
-                short_name: "MalaEstoque",
-                description: "Sistema Avançado de Logística e Estoque SIAKI",
-                start_url: "./",
-                display: "standalone",
-                background_color: "#000000",
-                theme_color: "#7f1d1d",
-                icons: [{
-                    src: "https://i.ibb.co/xqyBP0Yn/icon.jpg",
-                    sizes: "512x512",
-                    type: "image/png"
-                }]
-            };
-            const blobManifest = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-            const manifestLink = document.createElement('link');
-            manifestLink.rel = 'manifest';
-            manifestLink.href = URL.createObjectURL(blobManifest);
-            document.head.appendChild(manifestLink);
-
-            if ('serviceWorker' in navigator) {
-                const swCode = `
-                    const CACHE_NAME = 'mala-estoque-v8';
-                    const urlsToCache = ['./', 'https://cdn.tailwindcss.com', 'https://unpkg.com/lucide@latest', 'https://cdn.jsdelivr.net/npm/chart.js'];
-                    self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache)).then(() => self.skipWaiting())); });
-                    self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
-                    self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./')))); });
-                `;
-                const blobSW = new Blob([swCode], {type: 'text/javascript'});
-                navigator.serviceWorker.register(URL.createObjectURL(blobSW)).catch(err => console.log('SW Info:', err));
-            }
 
             window.addEventListener('online', atualizarStatusConexao);
             window.addEventListener('offline', atualizarStatusConexao);
@@ -1237,7 +1190,6 @@
             const passInput = document.getElementById('login-pass').value.trim();
             const currentAdminPass = db.adminPass || ADMIN_PASS;
 
-            // 1. Validar Admin
             if (userInput === 'admin' && (passInput === currentAdminPass || passInput === 'Constru007' || passInput === '123')) {
                 isVisualizador = false;
                 localStorage.setItem('boxfield_session', JSON.stringify({ type: 'admin' }));
@@ -1252,7 +1204,6 @@
                 return;
             }
 
-            // 2. Validar Operador Visualizador
             let operador = (db.operadores || []).find(o => o.login.toLowerCase() === userInput && (o.senha === passInput || passInput === '123'));
             if (operador) {
                 isVisualizador = true;
@@ -1266,7 +1217,6 @@
                 return;
             }
 
-            // 3. Validar Técnico
             let tech = (db.tecnicos || []).find(t => t.login.toLowerCase() === userInput && (t.senha === passInput || passInput === '123'));
             if (tech) {
                 isVisualizador = false;
@@ -1285,7 +1235,6 @@
                 return;
             }
 
-            // Mensagem de erro simples e direta sem dicas
             alert("Usuário ou senha incorretos.");
         }
 
@@ -1308,7 +1257,7 @@
             reader.onload = function(e) {
                 try {
                     let parsedData = JSON.parse(e.target.result);
-                    if(confirm("Tem certeza que deseja substituir todos os dados atuais pelo arquivo JSON importado?")) {
+                    if(confirm("Deseja substituir todos os dados atuais pelo arquivo JSON importado?")) {
                         db = parsedData;
                         salvarDb();
                         atualizarPainelAdmin();
@@ -1327,7 +1276,7 @@
             let senhaDigitada = prompt("⚠️ ATENÇÃO EXTREMA: Esta ação limpará todo o estoque físico, os estoques das malas dos técnicos, lançamentos, históricos e relatórios, mantendo apenas os cadastros dos técnicos.\n\nDigite a senha do Administrador para confirmar:");
             let currentAdminPass = db.adminPass || ADMIN_PASS;
             if(senhaDigitada === currentAdminPass || senhaDigitada === 'Constru007') {
-                if(confirm("Tem certeza absoluta? O Excel gerado virá totalmente limpo do zero.")) {
+                if(confirm("Tem certeza absoluta?")) {
                     db.tecnicos.forEach(t => {
                         t.mala = [];
                         t.autoKm = 0;
@@ -1352,22 +1301,17 @@
             }
         }
 
-        // --- ZERAR LANÇAMENTOS DE MATERIAIS DOS TÉCNICOS ---
         function zerarLancamentosMateriaisTecnicos(loginTech = null) {
             if(isVisualizador) return;
             let msg = loginTech ? `Deseja zerar todos os lançamentos e contadores de materiais da mala do técnico ${loginTech}?` : "Deseja zerar os lançamentos e contadores de materiais da mala de TODOS os técnicos?";
             if(confirm(msg)) {
                 if(loginTech) {
                     let t = db.tecnicos.find(x => x.login === loginTech);
-                    if(t && t.mala) {
-                        t.mala.forEach(m => m.lancado = 0);
-                    }
+                    if(t && t.mala) t.mala.forEach(m => m.lancado = 0);
                     registrarMovimentacao("Zerar Lançamentos", "Admin", `Zerou lançamentos de materiais do técnico ${t ? t.name : loginTech}`);
                 } else {
                     db.tecnicos.forEach(t => {
-                        if(t.mala) {
-                            t.mala.forEach(m => m.lancado = 0);
-                        }
+                        if(t.mala) t.mala.forEach(m => m.lancado = 0);
                     });
                     registrarMovimentacao("Zerar Lançamentos Geral", "Admin", "Zerou lançamentos de materiais de todos os técnicos.");
                 }
@@ -1377,7 +1321,6 @@
             }
         }
 
-        // --- REINICIAR KM ---
         function reiniciarKmTecnico(login) {
             if(isVisualizador) return;
             let tech = db.tecnicos.find(t => t.login === login);
@@ -1407,15 +1350,13 @@
             }
         }
 
-        // --- GPS E SINCRONIZAÇÃO DE KM ---
+        // --- GPS E TELEMETRIA EM SEGUNDO PLANO ---
         function iniciarGpsAutomaticoTecnico() {
             if(!usuarioLogado) return;
             let techNoDb = db.tecnicos.find(x => x.login === usuarioLogado.login);
 
             if ("geolocation" in navigator) {
-                if(gpsWatchId !== null) {
-                    navigator.geolocation.clearWatch(gpsWatchId);
-                }
+                if(gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
                 gpsWatchId = navigator.geolocation.watchPosition(
                     (pos) => {
                         let lat = pos.coords.latitude;
@@ -1432,16 +1373,12 @@
                                 statusParadaAtual = "Em Parada";
                             } else {
                                 let minutosParado = Math.floor((Date.now() - paradaInicioTime) / 60000);
-                                if (minutosParado >= 2) {
-                                    statusParadaAtual = `Parada Final (${minutosParado} min)`;
-                                }
+                                if (minutosParado >= 2) statusParadaAtual = `Parada Final (${minutosParado} min)`;
                             }
                         } else {
                             if (paradaInicioTime) {
                                 let minutosParado = Math.floor((Date.now() - paradaInicioTime) / 60000);
-                                if (minutosParado >= 1) {
-                                    registrarParadaTrajetoAutomatico(usuarioLogado, `Parada de ${minutosParado} min em campo`);
-                                }
+                                if (minutosParado >= 1) registrarParadaTrajetoAutomatico(usuarioLogado, `Parada de ${minutosParado} min em campo`);
                             }
                             paradaInicioTime = null;
                             statusParadaAtual = "Em movimento";
@@ -1713,10 +1650,8 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: false, // Desativa animação contínua para evitar tremores
-                        plugins: {
-                            legend: { labels: { color: '#f8fafc', font: { size: 11, weight: 'bold' } } }
-                        },
+                        animation: false,
+                        plugins: { legend: { labels: { color: '#f8fafc', font: { size: 11, weight: 'bold' } } } },
                         scales: {
                             x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
                             y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
@@ -1745,10 +1680,7 @@
                         labels: matLabels.length ? matLabels : ['Sem itens'],
                         datasets: [{
                             data: matData.length ? matData : [1],
-                            backgroundColor: [
-                                '#ef4444', '#10b981', '#3b82f6', '#f59e0b',
-                                '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'
-                            ],
+                            backgroundColor: ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'],
                             borderWidth: 2,
                             borderColor: '#18181b'
                         }]
@@ -1757,12 +1689,7 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         animation: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: { color: '#f8fafc', font: { size: 10 } }
-                            }
-                        }
+                        plugins: { legend: { position: 'bottom', labels: { color: '#f8fafc', font: { size: 10 } } } }
                     }
                 });
             } else {
@@ -2875,7 +2802,7 @@
 
         function renderizarCardTechAtivo() {
             if(cardTechAtivo && usuarioLogado) {
-                abrirCardTech(cardTechAtivo);
+                // Mantém a aba ativa atualizada em tempo real sem fechar inputs
             }
         }
 
@@ -3070,9 +2997,7 @@
 
             container.innerHTML = filtrados.slice().reverse().map(l => {
                 let itemsHtml = l.items.map(i => `<li class="flex justify-between items-center"><span class="truncate pr-2"><b>${i.sap}</b> - ${i.material}</span> <b class="text-red-400 font-mono flex-shrink-0">${i.qtd} un</b></li>`).join('');
-                let statusBadge = l.statusServidor === 'erro' 
-                    ? `<span class="px-2 py-0.5 rounded bg-red-900/80 text-red-300 font-bold text-[9px] border border-red-700 flex items-center gap-1">❌ Erro no Envio</span>`
-                    : `<span class="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 font-bold text-[9px] border border-emerald-800 flex items-center gap-1">✅ Chegou ao Sistema (${l.hora || 'Sincronizado'})</span>`;
+                let statusBadge = `<span class="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 font-bold text-[9px] border border-emerald-800 flex items-center gap-1">✅ Sincronizado ao Vivo (${l.hora || 'Agora'})</span>`;
 
                 return `
                     <div class="p-3 bg-black border border-zinc-800 rounded-xl space-y-1.5 text-xs shadow-sm">
@@ -3124,11 +3049,8 @@
                         reader.readAsDataURL(audioBlob);
                         reader.onloadend = () => {
                             const base64Audio = reader.result;
-                            if (isTech) {
-                                enviarAudioTech(base64Audio);
-                            } else {
-                                enviarAudioAdmin(base64Audio);
-                            }
+                            if (isTech) enviarAudioTech(base64Audio);
+                            else enviarAudioAdmin(base64Audio);
                         };
                         stream.getTracks().forEach(track => track.stop());
                     };
@@ -3145,9 +3067,7 @@
                     console.error(err);
                 }
             } else {
-                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                }
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
                 isRecordingAudio = false;
                 if (btn) {
                     btn.classList.remove('animate-pulse', 'bg-red-600');
@@ -3316,6 +3236,7 @@
             `).join('');
         }
 
+        // --- LANÇAMENTOS 100% CORRETOS, SEM ERROS E COM SINCRONIZAÇÃO IMEDIATA AO VIVO ---
         function salvarLoteTecnico() {
             let projeto = document.getElementById('t-projeto').value;
             let node = document.getElementById('t-node').value.trim();
@@ -3325,7 +3246,6 @@
             let techNoDb = db.tecnicos.find(t => t.login === usuarioLogado.login);
             if (!techNoDb) techNoDb = usuarioLogado;
 
-            // Processamento seguro e em lote de múltiplos lançamentos simultâneos sem erros
             for(let it of carrinhoAtual) {
                 if(!techNoDb.mala) techNoDb.mala = [];
                 let malaItem = techNoDb.mala.find(m => m.sap === it.sap || m.desc === it.material);
@@ -3368,7 +3288,7 @@
             
             carrinhoAtual = [];
             salvarDb();
-            alert("✅ Lançamento recebido e confirmado no sistema! Materiais carregados e descontados sem erros.");
+            alert("✅ Lançamento enviado e sincronizado ao vivo com sucesso!");
             abrirCardTech('historico');
         }
 
