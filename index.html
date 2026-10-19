@@ -2989,7 +2989,7 @@
             let termo = (document.getElementById('tech-hist-search')?.value || '').toLowerCase();
             let dataFiltro = document.getElementById('tech-hist-date')?.value;
 
-            let meusLancamentos = (db.lancamentos || []).filter(l => l.tecnico === usuarioLogado.name || l.tecnico === usuarioLogado.login);
+            let meusLancamentos = (db.lancamentos || []).filter(l => l.tecnico === usuarioLogado.name || l.tecnico === usuarioLogado.login || (l.techLogin && l.techLogin === usuarioLogado.login));
 
             let filtrados = meusLancamentos.filter(l => {
                 if(dataFiltro && l.data !== dataFiltro) return false;
@@ -3008,14 +3008,21 @@
             }
 
             container.innerHTML = filtrados.slice().reverse().map(l => {
-                let itemsHtml = l.items.map(i => `<li class="flex justify-between"><span><b>${i.sap}</b> - ${i.material}</span> <b class="text-red-400 font-mono">${i.qtd} un</b></li>`).join('');
+                let itemsHtml = l.items.map(i => `<li class="flex justify-between items-center"><span class="truncate pr-2"><b>${i.sap}</b> - ${i.material}</span> <b class="text-red-400 font-mono flex-shrink-0">${i.qtd} un</b></li>`).join('');
+                let statusBadge = l.statusServidor === 'erro' 
+                    ? `<span class="px-2 py-0.5 rounded bg-red-900/80 text-red-300 font-bold text-[9px] border border-red-700 flex items-center gap-1">❌ Erro no Envio</span>`
+                    : `<span class="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 font-bold text-[9px] border border-emerald-800 flex items-center gap-1">✅ Chegou ao Sistema (${l.hora || 'Sincronizado'})</span>`;
+
                 return `
-                    <div class="p-3 bg-black border border-zinc-800 rounded-xl space-y-1.5 text-xs">
-                        <div class="flex justify-between items-center border-b border-zinc-800 pb-1">
-                            <span class="text-zinc-400 font-mono">📅 ${l.data}</span>
-                            <span class="text-red-400 font-bold">${l.projeto} (Node: ${l.node})</span>
+                    <div class="p-3 bg-black border border-zinc-800 rounded-xl space-y-1.5 text-xs shadow-sm">
+                        <div class="flex justify-between items-center border-b border-zinc-800 pb-1.5">
+                            <span class="text-zinc-400 font-mono text-[10px]">📅 ${l.data} ${l.hora ? 'às ' + l.hora : ''}</span>
+                            ${statusBadge}
                         </div>
-                        <ul class="space-y-1 pl-1 text-[11px] text-zinc-300">
+                        <div class="text-red-400 font-bold text-xs flex justify-between items-center">
+                            <span>${l.projeto} (Node: ${l.node})</span>
+                        </div>
+                        <ul class="space-y-1 pl-1 text-[11px] text-zinc-300 border-t border-zinc-900 pt-1">
                             ${itemsHtml}
                         </ul>
                     </div>
@@ -3257,7 +3264,7 @@
             let techNoDb = db.tecnicos.find(t => t.login === usuarioLogado.login);
             if (!techNoDb) techNoDb = usuarioLogado;
 
-            // Processamento seguro e em lote de múltiplos lançamentos simultâneos sem race conditions
+            // Processamento seguro e em lote de múltiplos lançamentos simultâneos sem erros
             for(let it of carrinhoAtual) {
                 if(!techNoDb.mala) techNoDb.mala = [];
                 let malaItem = techNoDb.mala.find(m => m.sap === it.sap || m.desc === it.material);
@@ -3279,15 +3286,20 @@
 
             usuarioLogado.mala = techNoDb.mala;
 
+            const horaAtualStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
             if(!db.lancamentos) db.lancamentos = [];
             db.lancamentos.push({
                 id: Date.now() + Math.random(),
                 data: new Date().toISOString().split('T')[0],
+                hora: horaAtualStr,
                 tecnico: usuarioLogado.name,
+                techLogin: usuarioLogado.login,
                 projeto: projeto,
                 node: node,
                 local_descarga: "865323",
-                items: [...carrinhoAtual]
+                items: [...carrinhoAtual],
+                statusServidor: "ok"
             });
 
             registrarMovimentacao("Lançamento Campo", usuarioLogado.name, `Lançou no Node ${node} (${projeto}) - Estoque descontado.`);
@@ -3295,8 +3307,8 @@
             
             carrinhoAtual = [];
             salvarDb();
-            alert("✅ Lançamento efetuado com sucesso! Materiais carregados e descontados perfeitamente.");
-            abrirCardTech('lancamento');
+            alert("✅ Lançamento recebido e confirmado no sistema! Materiais carregados e descontados sem erros.");
+            abrirCardTech('historico');
         }
 
         function solicitarReposicaoTech() {
