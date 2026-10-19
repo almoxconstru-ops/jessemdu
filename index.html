@@ -29,6 +29,11 @@
         .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(220, 38, 38, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.5); }
         .mobile-frame { max-width: 480px !important; margin: 0 auto; border-left: 2px solid #3f3f46; border-right: 2px solid #3f3f46; }
         
+        /* MODO MOBILE CONTAINER PARA ADMIN */
+        .mobile-admin-active #admin-screen { flex-direction: column !important; min-height: 100vh; padding-bottom: 70px; }
+        .mobile-admin-active aside { display: none !important; }
+        .mobile-admin-active #admin-mobile-nav { display: flex !important; }
+
         /* ESTILO MODO VISUALIZADOR (SOMENTE LEITURA & SEM MENSAGENS) */
         .mode-visualizador .action-btn-write { display: none !important; }
         .mode-visualizador .visualizador-hide-chat { display: none !important; }
@@ -191,20 +196,23 @@
         </aside>
 
         <!-- Main Content Admin -->
-        <main class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
             <!-- Topbar com Alternador de Tema Preto / Branco -->
-            <div class="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl border border-zinc-800 shadow-sm">
+            <div class="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl border border-zinc-800 shadow-sm flex-wrap gap-2">
                 <span class="font-bold text-white text-sm">Painel de Controle Central Oficial</span>
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-2 sm:space-x-3 flex-wrap gap-1">
                     <button onclick="toggleTheme()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow">
                         <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
                         <span id="theme-toggle-text">Modo Claro (Branco)</span>
                     </button>
                     <button onclick="baixarExcelGeral()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
-                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Baixar Excel Geral</span>
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Excel</span>
                     </button>
                     <button onclick="baixarBackupGeral()" class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow">
-                        <i data-lucide="download" class="w-4 h-4"></i><span>Backup Geral</span>
+                        <i data-lucide="download" class="w-4 h-4"></i><span>Backup</span>
+                    </button>
+                    <button onclick="toggleLayoutMode()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow sm:hidden">
+                        <i data-lucide="smartphone" class="w-4 h-4"></i>
                     </button>
                     <div class="relative">
                         <button onclick="toggleNotifDropdown()" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl relative transition">
@@ -219,6 +227,9 @@
                             <div id="notif-list" class="max-h-64 overflow-y-auto space-y-2 text-xs"></div>
                         </div>
                     </div>
+                    <button onclick="logout()" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition flex items-center justify-center sm:hidden" title="Sair">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
                 </div>
             </div>
 
@@ -302,7 +313,7 @@
                         <button onclick="zerarLancamentosMateriaisTecnicos(null)" class="px-4 py-2.5 bg-red-800 hover:bg-red-700 text-white rounded-xl text-xs font-bold" title="Zera os lançamentos e contadores de materiais de todos os técnicos">Zerar Lançamentos de Todos</button>
                     </div>
                 </div>
-                <div class="bg-zinc-900 rounded-2xl border border-zinc-800 shadow-sm overflow-hidden">
+                <div class="bg-zinc-900 rounded-2xl border border-zinc-800 shadow-sm overflow-x-auto">
                     <table class="w-full text-xs text-left text-zinc-300">
                         <thead class="bg-zinc-950 border-b border-zinc-800 text-zinc-400">
                             <tr>
@@ -669,6 +680,34 @@
                 </div>
             </div>
         </main>
+
+        <!-- BARRA DE NAVEGAÇÃO INFERIOR DO ADMIN QUANDO EM MODO MOBILE -->
+        <nav id="admin-mobile-nav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 p-2 justify-around items-center z-40 shadow-2xl overflow-x-auto space-x-1">
+            <button onclick="switchAdminTab('dash')" id="atab-m-dash" class="py-2 px-2 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5 font-bold text-[9px] min-w-[55px]">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dash</span>
+            </button>
+            <button onclick="switchAdminTab('tecnicos')" id="atab-m-tecnicos" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+                <i data-lucide="users" class="w-4 h-4"></i><span>Técnicos</span>
+            </button>
+            <button onclick="switchAdminTab('autonomia')" id="atab-m-autonomia" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+                <i data-lucide="gauge" class="w-4 h-4"></i><span>KM/Log</span>
+            </button>
+            <button onclick="switchAdminTab('estoque-fisico')" id="atab-m-estoque-fisico" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+                <i data-lucide="warehouse" class="w-4 h-4"></i><span>Físico</span>
+            </button>
+            <button onclick="switchAdminTab('passar-tecnicos')" id="atab-m-passar-tecnicos" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+                <i data-lucide="truck" class="w-4 h-4"></i><span>Passar</span>
+            </button>
+            <button onclick="switchAdminTab('malas')" id="atab-m-malas" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+                <i data-lucide="backpack" class="w-4 h-4"></i><span>Malas</span>
+            </button>
+            <button onclick="switchAdminTab('chat')" id="atab-m-chat" class="visualizador-hide-chat py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+                <i data-lucide="message-square" class="w-4 h-4"></i><span>Chat</span>
+            </button>
+            <button onclick="switchAdminTab('mapa')" id="atab-m-mapa" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+                <i data-lucide="map" class="w-4 h-4"></i><span>Mapa</span>
+            </button>
+        </nav>
     </div>
 
     <!-- ================= PAINEL DO TÉCNICO (CELULAR CENTRALIZADO COM ABAS ABAIXO ESTILO APP) ================= -->
@@ -1039,6 +1078,11 @@
                 if(!db.notificacoes) db.notificacoes = [];
                 if(db.adminPass) ADMIN_PASS = db.adminPass;
 
+                if (!isInitialLoadDone) {
+                    isInitialLoadDone = true;
+                    verificarSessaoSalvaInstantanea();
+                }
+
                 const activeEl = document.activeElement;
                 const isUserTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
 
@@ -1065,6 +1109,10 @@
                 }
             } else {
                 salvarDb();
+                if (!isInitialLoadDone) {
+                    isInitialLoadDone = true;
+                    verificarSessaoSalvaInstantanea();
+                }
             }
         });
 
@@ -1129,7 +1177,7 @@
             }
         }
 
-        // --- PERSISTÊNCIA DE SESSÃO INSTANTÂNEA ---
+        // --- PERSISTÊNCIA DE SESSÃO INSTANTÂNEA & ININTERRUPTA ---
         function verificarSessaoSalvaInstantanea() {
             let saved = localStorage.getItem('boxfield_session');
             if (saved) {
@@ -1152,7 +1200,7 @@
                         document.getElementById('admin-screen').classList.remove('hidden');
                         atualizarPainelAdmin();
                     } else if (sessao.type === 'tech') {
-                        let tech = db.tecnicos.find(t => t.login === sessao.login);
+                        let tech = db.tecnicos ? db.tecnicos.find(t => t.login === sessao.login) : null;
                         if (tech) {
                             usuarioLogado = tech;
                             tech.online = true;
@@ -1165,7 +1213,6 @@
                     }
                 } catch(e) {
                     console.error("Erro ao restaurar sessão:", e);
-                    localStorage.removeItem('boxfield_session');
                 }
             }
         }
@@ -1175,12 +1222,13 @@
             let container = document.getElementById('app-body-container');
             let btnText = document.getElementById('layout-toggle-text');
             if(isMobileLayout) {
-                container.classList.add('mobile-frame');
-                btnText.innerText = "Layout PC (Expandido)";
+                container.classList.add('mobile-frame', 'mobile-admin-active');
+                if(btnText) btnText.innerText = "Layout PC (Expandido)";
             } else {
-                container.classList.remove('mobile-frame');
-                btnText.innerText = "Alternar Layout PC/Mobile";
+                container.classList.remove('mobile-frame', 'mobile-admin-active');
+                if(btnText) btnText.innerText = "Alternar Layout PC/Mobile";
             }
+            lucide.createIcons();
         }
 
         function handleLogin(event) {
@@ -1509,7 +1557,7 @@
             }
             localStorage.removeItem('boxfield_session');
             isVisualizador = false;
-            document.getElementById('app-body-container').classList.remove('mode-visualizador');
+            document.getElementById('app-body-container').classList.remove('mode-visualizador', 'mobile-frame', 'mobile-admin-active');
             document.getElementById('visualizador-banner').classList.add('hidden');
             usuarioLogado = null;
             carrinhoAtual = [];
@@ -1607,12 +1655,25 @@
                 el.classList.remove('bg-red-600', 'text-white');
                 el.classList.add('text-zinc-400');
             });
+            document.querySelectorAll('#admin-mobile-nav button').forEach(el => {
+                el.classList.remove('bg-red-600', 'text-white');
+                el.classList.add('text-zinc-400');
+            });
+
             document.getElementById('acontent-' + tabId).classList.remove('hidden');
-            let btn = document.getElementById('atab-' + tabId);
-            if(btn) {
-                btn.classList.add('bg-red-600', 'text-white');
-                btn.classList.remove('text-zinc-400');
+            
+            let btnDesktop = document.getElementById('atab-' + tabId);
+            if(btnDesktop) {
+                btnDesktop.classList.add('bg-red-600', 'text-white');
+                btnDesktop.classList.remove('text-zinc-400');
             }
+
+            let btnMobile = document.getElementById('atab-m-' + tabId);
+            if(btnMobile) {
+                btnMobile.classList.add('bg-red-600', 'text-white');
+                btnMobile.classList.remove('text-zinc-400');
+            }
+
             if (tabId === 'mapa') {
                 setTimeout(inicializarMapaLeaflet, 200);
             }
