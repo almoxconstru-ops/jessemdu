@@ -30,7 +30,7 @@
         .mobile-frame { max-width: 480px !important; margin: 0 auto; border-left: 2px solid #3f3f46; border-right: 2px solid #3f3f46; }
         
         /* MODO MOBILE CONTAINER PARA ADMIN */
-        .mobile-admin-active #admin-screen { flex-direction: column !important; min-height: 100vh; padding-bottom: 70px; }
+        .mobile-admin-active #admin-screen { flex-direction: column !important; min-height: 100vh; padding-bottom: 75px; }
         .mobile-admin-active aside { display: none !important; }
         .mobile-admin-active #admin-mobile-nav { display: flex !important; }
 
@@ -126,8 +126,7 @@
                     <span>Acessar Sistema Oficial</span>
                 </button>
             </form>
-            <div class="mt-4 text-[10px] text-zinc-400 text-center">
-            </div>
+            <div class="mt-4 text-[10px] text-zinc-400 text-center"></div>
         </div>
     </div>
 
@@ -310,7 +309,7 @@
                         </label>
                         <button onclick="adicionarTecnicoPorLoginRapido()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Adicionar Rápido</button>
                         <button onclick="abrirModalTecnico()" class="px-4 py-2.5 bg-zinc-800 text-white rounded-xl text-xs font-bold">Novo Completo</button>
-                        <button onclick="zerarLancamentosMateriaisTecnicos(null)" class="px-4 py-2.5 bg-red-800 hover:bg-red-700 text-white rounded-xl text-xs font-bold" title="Zera os lançamentos e contadores de materiais de todos os técnicos">Zerar Lançamentos de Todos</button>
+                        <button onclick="zerarLancamentosMateriaisTecnicos(null)" class="px-4 py-2.5 bg-red-800 hover:bg-red-700 text-white rounded-xl text-xs font-bold" title="Zerar os lançamentos e contadores de materiais de todos os técnicos">Zerar Lançamentos de Todos</button>
                     </div>
                 </div>
                 <div class="bg-zinc-900 rounded-2xl border border-zinc-800 shadow-sm overflow-x-auto">
@@ -378,9 +377,7 @@
                     </div>
                     
                     <!-- Resumo Individual por Técnico para o Patrão -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2" id="patrao-tech-consumption-cards">
-                        <!-- Preenchido via JS -->
-                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2" id="patrao-tech-consumption-cards"></div>
                 </div>
 
                 <!-- HISTÓRICO DE PARADAS & PERCURSOS AUTOMÁTICOS -->
@@ -681,30 +678,30 @@
             </div>
         </main>
 
-        <!-- BARRA DE NAVEGAÇÃO INFERIOR DO ADMIN QUANDO EM MODO MOBILE -->
-        <nav id="admin-mobile-nav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 p-2 justify-around items-center z-40 shadow-2xl overflow-x-auto space-x-1">
-            <button onclick="switchAdminTab('dash')" id="atab-m-dash" class="py-2 px-2 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5 font-bold text-[9px] min-w-[55px]">
+        <!-- BARRA DE NAVEGAÇÃO INFERIOR DO ADMIN (PADRÃO IDÊNTICO AO DOS TÉCNICOS) -->
+        <nav id="admin-mobile-nav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 p-2 flex justify-around items-center z-40 shadow-2xl">
+            <button onclick="switchAdminTab('dash')" id="atab-m-dash" class="flex-1 py-2 px-1 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5 font-bold text-[10px] shadow">
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dash</span>
             </button>
-            <button onclick="switchAdminTab('tecnicos')" id="atab-m-tecnicos" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+            <button onclick="switchAdminTab('tecnicos')" id="atab-m-tecnicos" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
                 <i data-lucide="users" class="w-4 h-4"></i><span>Técnicos</span>
             </button>
-            <button onclick="switchAdminTab('autonomia')" id="atab-m-autonomia" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+            <button onclick="switchAdminTab('autonomia')" id="atab-m-autonomia" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
                 <i data-lucide="gauge" class="w-4 h-4"></i><span>KM/Log</span>
             </button>
-            <button onclick="switchAdminTab('estoque-fisico')" id="atab-m-estoque-fisico" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+            <button onclick="switchAdminTab('estoque-fisico')" id="atab-m-estoque-fisico" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
                 <i data-lucide="warehouse" class="w-4 h-4"></i><span>Físico</span>
             </button>
-            <button onclick="switchAdminTab('passar-tecnicos')" id="atab-m-passar-tecnicos" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+            <button onclick="switchAdminTab('passar-tecnicos')" id="atab-m-passar-tecnicos" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
                 <i data-lucide="truck" class="w-4 h-4"></i><span>Passar</span>
             </button>
-            <button onclick="switchAdminTab('malas')" id="atab-m-malas" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+            <button onclick="switchAdminTab('malas')" id="atab-m-malas" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
                 <i data-lucide="backpack" class="w-4 h-4"></i><span>Malas</span>
             </button>
-            <button onclick="switchAdminTab('chat')" id="atab-m-chat" class="visualizador-hide-chat py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+            <button onclick="switchAdminTab('chat')" id="atab-m-chat" class="visualizador-hide-chat flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px] relative">
                 <i data-lucide="message-square" class="w-4 h-4"></i><span>Chat</span>
             </button>
-            <button onclick="switchAdminTab('mapa')" id="atab-m-mapa" class="py-2 px-2 rounded-xl text-zinc-400 hover:bg-zinc-800 transition text-center flex flex-col items-center justify-center space-y-0.5 text-[9px] min-w-[55px]">
+            <button onclick="switchAdminTab('mapa')" id="atab-m-mapa" class="flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]">
                 <i data-lucide="map" class="w-4 h-4"></i><span>Mapa</span>
             </button>
         </nav>
@@ -1011,15 +1008,9 @@
         let cardTechAtivo = "lancamento";
         let isMobileLayout = false;
         let isInitialLoadDone = false;
-        let localActionInProgress = false;
 
         function salvarDb() {
-            localActionInProgress = true;
-            dbRef.set(db).then(() => {
-                setTimeout(() => { localActionInProgress = false; }, 400);
-            }).catch(() => {
-                localActionInProgress = false;
-            });
+            dbRef.set(db);
         }
 
         function calcularDistanciaKM(lat1, lon1, lat2, lon2) {
@@ -1065,9 +1056,8 @@
             lucide.createIcons();
         }
 
-        // --- SINCRONIZAÇÃO EM TEMPO REAL FIREBASE COM FLUXO OTIMIZADO ---
+        // --- SINCRONIZAÇÃO EM TEMPO REAL FIREBASE ---
         dbRef.on('value', (snapshot) => {
-            if (localActionInProgress) return;
             const serverData = snapshot.val();
             if (serverData) {
                 db = serverData;
@@ -1182,7 +1172,7 @@
             }
         }
 
-        // --- PERSISTÊNCIA DE SESSÃO INSTANTÂNEA & ININTERRUPTA ---
+        // --- PERSISTÊNCIA DE SESSÃO ININTERRUPTA ---
         function verificarSessaoSalvaInstantanea() {
             let saved = localStorage.getItem('boxfield_session');
             if (saved) {
@@ -1356,7 +1346,6 @@
             }
         }
 
-        // --- ZERAR LANÇAMENTOS DE MATERIAIS DOS TÉCNICOS ---
         function zerarLancamentosMateriaisTecnicos(loginTech = null) {
             if(isVisualizador) return;
             let msg = loginTech ? `Deseja zerar todos os lançamentos e contadores de materiais da mala do técnico ${loginTech}?` : "Deseja zerar os lançamentos e contadores de materiais da mala de TODOS os técnicos?";
@@ -1381,7 +1370,6 @@
             }
         }
 
-        // --- REINICIAR KM ---
         function reiniciarKmTecnico(login) {
             if(isVisualizador) return;
             let tech = db.tecnicos.find(t => t.login === login);
@@ -1411,7 +1399,6 @@
             }
         }
 
-        // --- GPS E SINCRONIZAÇÃO DE KM ---
         function iniciarGpsAutomaticoTecnico() {
             if(!usuarioLogado) return;
             let techNoDb = db.tecnicos.find(x => x.login === usuarioLogado.login);
@@ -1660,7 +1647,7 @@
                 el.classList.add('text-zinc-400');
             });
             document.querySelectorAll('#admin-mobile-nav button').forEach(el => {
-                el.classList.remove('bg-red-600', 'text-white');
+                el.classList.remove('bg-red-600', 'text-white', 'shadow');
                 el.classList.add('text-zinc-400');
             });
 
@@ -1674,7 +1661,7 @@
 
             let btnMobile = document.getElementById('atab-m-' + tabId);
             if(btnMobile) {
-                btnMobile.classList.add('bg-red-600', 'text-white');
+                btnMobile.classList.add('bg-red-600', 'text-white', 'shadow');
                 btnMobile.classList.remove('text-zinc-400');
             }
 
@@ -1908,9 +1895,11 @@
             }
 
             if(malaSelect) {
+                let currentMalaVal = malaSelect.value;
                 let termoBusca = (document.getElementById('admin-search-tech-mala')?.value || '').toLowerCase();
                 let techFiltrados = db.tecnicos.filter(t => t.name.toLowerCase().includes(termoBusca) || t.login.toLowerCase().includes(termoBusca));
                 malaSelect.innerHTML = techFiltrados.map(t => `<option value="${t.login}">${t.name} (${t.car})</option>`).join('');
+                if (currentMalaVal) malaSelect.value = currentMalaVal;
                 renderizarMalaAdmin();
             }
 
@@ -2469,9 +2458,15 @@
         }
 
         function renderizarMalaAdmin() {
-            let login = document.getElementById('admin-select-mala-tech').value;
+            let loginSelect = document.getElementById('admin-select-mala-tech');
+            if(!loginSelect) return;
+            let login = loginSelect.value;
             let tech = db.tecnicos.find(t => t.login === login);
-            if(!tech) return;
+            if(!tech) {
+                let tbody = document.getElementById('admin-mala-table');
+                if(tbody) tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">Nenhum técnico selecionado ou mala vazia.</td></tr>';
+                return;
+            }
             if(!tech.mala) tech.mala = [];
 
             let tbody = document.getElementById('admin-mala-table');
