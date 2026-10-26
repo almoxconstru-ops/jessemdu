@@ -1904,10 +1904,11 @@
             }
 
             let matHtml = '';
-            db.materiais.forEach((m, i) => {
+            (db.materiais || []).forEach((m, i) => {
                 matHtml += `<div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs"><div><b class="text-red-400">${m.sap}</b> - ${m.desc}</div><button onclick="removerMaterialAdmin(${i})" class="action-btn-write text-red-500 font-bold hover:underline">Remover</button></div>`;
             });
-            document.getElementById('admin-materiais-list').innerHTML = matHtml;
+            let adminMatList = document.getElementById('admin-materiais-list');
+            if(adminMatList) adminMatList.innerHTML = matHtml || '<p class="text-zinc-500 text-xs italic">Nenhum material cadastrado.</p>';
 
             let dtStart = document.getElementById('admin-filter-date-start')?.value;
             let dtEnd = document.getElementById('admin-filter-date-end')?.value;
@@ -1921,7 +1922,7 @@
 
             let lHtml = '';
             lancamentosFiltrados.forEach((l, index) => {
-                let itensStr = l.items.map(it => `${it.material} (${it.qtd})`).join(' | ');
+                let itensStr = (l.items || []).map(it => `${it.material} (${it.qtd})`).join(' | ');
                 lHtml += `
                     <tr class="border-b border-zinc-800">
                         <td class="p-3 text-zinc-400">${l.data}</td>
@@ -2227,6 +2228,7 @@
             atualizarPainelAdmin();
         }
 
+        // --- FUNÇÃO AJUSTADA: CATÁLOGO SAP + DESC (ESTOQUE PADRÃO) ---
         function adicionarItemEstoquePadrao() {
             if(isVisualizador) return;
             let sap = document.getElementById('padrao-sap').value.trim();
@@ -2244,6 +2246,7 @@
                 db.estoquePadrao.push({ sap, desc, qtdInicial: qtd });
             }
 
+            if (!db.materiais) db.materiais = [];
             if (!db.materiais.some(m => m.sap === sap)) {
                 db.materiais.push({ sap, desc });
             }
@@ -2253,7 +2256,7 @@
             document.getElementById('padrao-sap').value = '';
             document.getElementById('padrao-desc').value = '';
             document.getElementById('padrao-qtd').value = '100';
-            alert("✅ Material adicionado ao Estoque Padrão!");
+            alert("✅ Material adicionado ao Estoque Padrão com sucesso!");
             atualizarPainelAdmin();
         }
 
@@ -2283,6 +2286,7 @@
                 db.estoqueFisico.push({ id: Date.now(), sap, desc, qtd, seriais: seriaisArr, data: new Date().toISOString().split('T')[0] });
             }
             
+            if (!db.materiais) db.materiais = [];
             if (!db.materiais.some(m => m.sap === sap)) {
                 db.materiais.push({ sap, desc });
             }
@@ -2314,6 +2318,7 @@
                     } else {
                         db.estoqueFisico.push({ id: Date.now() + Math.random(), sap, desc, qtd, seriais: seriaisArr, data: new Date().toISOString().split('T')[0] });
                     }
+                    if (!db.materiais) db.materiais = [];
                     if (!db.materiais.some(m => m.sap === sap)) {
                         db.materiais.push({ sap, desc });
                     }
@@ -2512,15 +2517,17 @@
             }
         }
 
+        // --- FUNÇÃO AJUSTADA: CONTROLE DE MALAS (SALVAR & EXCLUIR SEM ERROS) ---
         function salvarEdicaoMalaAdmin(techLogin, itemIdx) {
             if(isVisualizador) return;
             let tech = db.tecnicos.find(t => t.login === techLogin);
-            let novaQtd = Number(document.getElementById(`edit-mala-${itemIdx}`).value);
-            if(tech && tech.mala[itemIdx]) {
+            let inputEl = document.getElementById(`edit-mala-${itemIdx}`);
+            let novaQtd = inputEl ? Number(inputEl.value) : 0;
+            if(tech && tech.mala && tech.mala[itemIdx]) {
                 tech.mala[itemIdx].qtd = novaQtd;
                 registrarMovimentacao("Edição Mala", "Admin", `Editada quantidade do item ${tech.mala[itemIdx].desc} para ${novaQtd} na mala de ${tech.name}`);
                 salvarDb();
-                alert("✅ Quantidade atualizada com sucesso!");
+                alert("✅ Quantidade da mala atualizada e sincronizada com sucesso!");
                 renderizarMalaAdmin();
             }
         }
@@ -2528,14 +2535,14 @@
         function excluirMaterialMalaAdmin(techLogin, itemIdx) {
             if(isVisualizador) return;
             let tech = db.tecnicos.find(t => t.login === techLogin);
-            if(tech && tech.mala[itemIdx]) {
+            if(tech && tech.mala && tech.mala[itemIdx]) {
                 let itemNome = tech.mala[itemIdx].desc;
                 if(confirm(`Tem certeza que deseja excluir o material "${itemNome}" da mala do técnico ${tech.name}?`)) {
                     tech.mala.splice(itemIdx, 1);
                     registrarMovimentacao("Exclusão Material Mala", "Admin", `Removeu ${itemNome} da mala de ${tech.name}`);
                     salvarDb();
                     renderizarMalaAdmin();
-                    alert("✅ Material removido da mala com sucesso!");
+                    alert("✅ Material removido da mala sem erros!");
                 }
             }
         }
@@ -2544,6 +2551,7 @@
             if(isVisualizador) return;
             let tech = db.tecnicos.find(t => t.login === techLogin);
             if(tech) {
+                if(!tech.mala) tech.mala = [];
                 let malaItem = tech.mala.find(m => m.desc === materialDesc);
                 if(malaItem) malaItem.qtd += qtd;
                 else tech.mala.push({ sap: "REP-99", desc: materialDesc, qtd: qtd, lancado: 0, abastecido: qtd, seriais: [] });
@@ -2605,8 +2613,8 @@
 
         function exportarExcelSIAKI() {
             let csvContent = "data:text/csv;charset=utf-8,COD SAP;Material;PROJETOS;CIDADE;LOCAL DE DESCARGA;Node/Site/Cód Imóvel;QTD. CONSUMO;QTD. DESCARTE\n";
-            db.lancamentos.forEach(l => {
-                l.items.forEach(it => {
+            (db.lancamentos || []).forEach(l => {
+                (l.items || []).forEach(it => {
                     csvContent += `${it.sap};"${it.material}";${l.projeto};MACEIO;865323;${l.node};${it.qtd};${it.descarte || 0}\n`;
                 });
             });
@@ -2621,13 +2629,25 @@
 
         function copiarDadosSIAKI() {
             let texto = "COD SAP\tMaterial\tPROJETOS\tCIDADE\tLOCAL DE DESCARGA\tNode/Site/Cód Imóvel\tQTD. CONSUMO\tQTD. DESCARTE\n";
-            db.lancamentos.forEach(l => {
-                l.items.forEach(it => {
+            (db.lancamentos || []).forEach(l => {
+                (l.items || []).forEach(it => {
                     texto += `${it.sap}\t${it.material}\t${l.projeto}\tMACEIO\t865323\t${l.node}\t${it.qtd}\t${it.descarte || 0}\n`;
                 });
             });
             navigator.clipboard.writeText(texto);
             alert("📋 Dados copiados no padrão SIAKI!");
+        }
+
+        // --- FUNÇÃO AJUSTADA: EXCLUSÃO DE LANÇAMENTO SIAKI SEM ERROS ---
+        function excluirLancamento(i) { 
+            if(isVisualizador) return; 
+            if(confirm("Deseja excluir este lançamento SIAKI de forma sincronizada?")) {
+                db.lancamentos.splice(i, 1); 
+                registrarMovimentacao("Exclusão Lançamento SIAKI", "Admin", `Excluiu lançamento do histórico SIAKI.`);
+                salvarDb(); 
+                atualizarPainelAdmin(); 
+                alert("✅ Lançamento excluído com sucesso e sincronizado!");
+            }
         }
 
         function abrirModalTecnico(index = -1) {
@@ -2681,7 +2701,7 @@
                         seriais: []
                     }));
                 } else {
-                    malaInicial = db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}));
+                    malaInicial = (db.materiais || []).map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}));
                 }
 
                 db.tecnicos.push({
@@ -2716,7 +2736,7 @@
                     seriais: []
                 }));
             } else {
-                malaInicial = db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}));
+                malaInicial = (db.materiais || []).map(m => ({sap: m.sap, desc: m.desc, qtd: 100, lancado: 0, abastecido: 100, seriais: []}));
             }
 
             db.tecnicos.push({
@@ -2746,24 +2766,39 @@
             atualizarPainelAdmin();
         }
 
+        // --- FUNÇÃO AJUSTADA: CATÁLOGO SAP + DESC (CADASTRAR MATERIAL) ---
         function adicionarMaterialAdmin() {
             if(isVisualizador) return;
             let sap = document.getElementById('mat-sap').value.trim();
             let desc = document.getElementById('mat-desc').value.trim();
             if(!sap || !desc) { alert("Preencha SAP e Descrição!"); return; }
-            db.materiais.push({ sap, desc });
+            
+            if(!db.materiais) db.materiais = [];
+            if(!db.materiais.some(m => m.sap === sap)) {
+                db.materiais.push({ sap, desc });
+            }
+
             db.tecnicos.forEach(t => {
                 if(!t.mala) t.mala = [];
                 if (!t.mala.some(m => m.sap === sap)) {
                     t.mala.push({sap, desc, qtd: 0, lancado: 0, abastecido: 0, seriais: []});
                 }
             });
-            document.getElementById('mat-sap').value = ''; document.getElementById('mat-desc').value = '';
+
+            document.getElementById('mat-sap').value = ''; 
+            document.getElementById('mat-desc').value = '';
+            registrarMovimentacao("Catálogo SAP+Desc", "Admin", `Cadastrou material ${desc} (${sap})`);
             salvarDb();
             atualizarPainelAdmin();
+            alert("✅ Material cadastrado no Catálogo SAP+Desc e sincronizado sem erros!");
         }
-        function removerMaterialAdmin(i) { if(isVisualizador) return; db.materiais.splice(i, 1); salvarDb(); atualizarPainelAdmin(); }
-        function excluirLancamento(i) { if(isVisualizador) return; db.lancamentos.splice(i, 1); salvarDb(); atualizarPainelAdmin(); }
+
+        function removerMaterialAdmin(i) { 
+            if(isVisualizador) return; 
+            db.materiais.splice(i, 1); 
+            salvarDb(); 
+            atualizarPainelAdmin(); 
+        }
 
         function acionarSOS() {
             if(confirm("ATENÇÃO: Deseja acionar o alerta SOS de emergência para a Base?")) {
@@ -2803,7 +2838,7 @@
             else document.getElementById('tech-avatar-text').innerText = usuarioLogado.name.charAt(0);
             
             if(!usuarioLogado.mala) {
-                usuarioLogado.mala = db.materiais.map(m => ({sap: m.sap, desc: m.desc, qtd: 0, lancado: 0, abastecido: 0, seriais: []}));
+                usuarioLogado.mala = (db.materiais || []).map(m => ({sap: m.sap, desc: m.desc, qtd: 0, lancado: 0, abastecido: 0, seriais: []}));
             }
             atualizarTechNotificacoesBadge();
             atualizarBadgeGpsCelularTech(usuarioLogado.gpsStatus === 'ativado' || usuarioLogado.trackingOn);
@@ -3009,7 +3044,7 @@
                     <div class="space-y-4 max-w-md mx-auto">
                         <h4 class="font-bold text-red-400 text-xs sm:text-sm">Solicitar Reposição de Material</h4>
                         <select id="t-rep-mat" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
-                            ${db.materiais.map(m => `<option value="${m.desc}">${m.sap} - ${m.desc}</option>`).join('')}
+                            ${(db.materiais || []).map(m => `<option value="${m.desc}">${m.sap} - ${m.desc}</option>`).join('')}
                         </select>
                         <input type="number" id="t-rep-qtd" min="1" value="10" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white" placeholder="Quantidade">
                         <button onclick="solicitarReposicaoTech()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition">Enviar Pedido de Reposição</button>
@@ -3315,6 +3350,7 @@
             `).join('');
         }
 
+        // --- FUNÇÃO AJUSTADA: LANÇAMENTO DO TÉCNICO (SINCRONIZADO E SEM ERROS) ---
         function salvarLoteTecnico() {
             let projeto = document.getElementById('t-projeto').value;
             let node = document.getElementById('t-node').value.trim();
@@ -3366,7 +3402,7 @@
             
             carrinhoAtual = [];
             salvarDb();
-            alert("✅ Lançamento recebido e confirmado no sistema! Materiais carregados e descontados sem erros.");
+            alert("✅ Lançamento realizado e sincronizado perfeitamente sem erros!");
             abrirCardTech('historico');
         }
 
