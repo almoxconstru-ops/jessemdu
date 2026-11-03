@@ -560,6 +560,7 @@
                     </div>
                 </div>
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm">
+                    <h3 class="font-bold text-white text-sm mb-3">Materiais Cadastrados no Catálogo</h3>
                     <div id="admin-materiais-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
                 </div>
             </div>
@@ -1903,9 +1904,17 @@
                 renderizarMalaAdmin();
             }
 
+            // --- CATÁLOGO SAP + DESC (RENDERIZAÇÃO COM BOTÃO EDITAR) ---
             let matHtml = '';
             (db.materiais || []).forEach((m, i) => {
-                matHtml += `<div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs"><div><b class="text-red-400">${m.sap}</b> - ${m.desc}</div><button onclick="removerMaterialAdmin(${i})" class="action-btn-write text-red-500 font-bold hover:underline">Remover</button></div>`;
+                matHtml += `
+                    <div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs gap-2">
+                        <div class="truncate"><b class="text-red-400">${m.sap}</b> - <span class="text-zinc-200">${m.desc}</span></div>
+                        <div class="flex items-center space-x-1 flex-shrink-0">
+                            <button onclick="editarMaterialAdmin(${i})" class="action-btn-write px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-bold">Editar</button>
+                            <button onclick="removerMaterialAdmin(${i})" class="action-btn-write px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded font-bold">Excluir</button>
+                        </div>
+                    </div>`;
             });
             let adminMatList = document.getElementById('admin-materiais-list');
             if(adminMatList) adminMatList.innerHTML = matHtml || '<p class="text-zinc-500 text-xs italic">Nenhum material cadastrado.</p>';
@@ -2228,7 +2237,7 @@
             atualizarPainelAdmin();
         }
 
-        // --- FUNÇÃO AJUSTADA: CATÁLOGO SAP + DESC (ESTOQUE PADRÃO) ---
+        // --- CATÁLOGO SAP + DESC (ESTOQUE PADRÃO) ---
         function adicionarItemEstoquePadrao() {
             if(isVisualizador) return;
             let sap = document.getElementById('padrao-sap').value.trim();
@@ -2517,7 +2526,6 @@
             }
         }
 
-        // --- FUNÇÃO AJUSTADA: CONTROLE DE MALAS (SALVAR & EXCLUIR SEM ERROS) ---
         function salvarEdicaoMalaAdmin(techLogin, itemIdx) {
             if(isVisualizador) return;
             let tech = db.tecnicos.find(t => t.login === techLogin);
@@ -2638,7 +2646,6 @@
             alert("📋 Dados copiados no padrão SIAKI!");
         }
 
-        // --- FUNÇÃO AJUSTADA: EXCLUSÃO DE LANÇAMENTO SIAKI SEM ERROS ---
         function excluirLancamento(i) { 
             if(isVisualizador) return; 
             if(confirm("Deseja excluir este lançamento SIAKI de forma sincronizada?")) {
@@ -2766,7 +2773,7 @@
             atualizarPainelAdmin();
         }
 
-        // --- FUNÇÃO AJUSTADA: CATÁLOGO SAP + DESC (CADASTRAR MATERIAL) ---
+        // --- CATÁLOGO SAP + DESC (CADASTRAR, EDITAR E EXCLUIR COM SINCRONIZAÇÃO TOTAL) ---
         function adicionarMaterialAdmin() {
             if(isVisualizador) return;
             let sap = document.getElementById('mat-sap').value.trim();
@@ -2793,11 +2800,71 @@
             alert("✅ Material cadastrado no Catálogo SAP+Desc e sincronizado sem erros!");
         }
 
+        function editarMaterialAdmin(i) {
+            if(isVisualizador) return;
+            let mat = db.materiais[i];
+            if(!mat) return;
+            let novoSap = prompt("Novo código SAP:", mat.sap);
+            if(novoSap === null) return;
+            let novaDesc = prompt("Nova descrição do material:", mat.desc);
+            if(novaDesc === null) return;
+            
+            novoSap = novoSap.trim();
+            novaDesc = novaDesc.trim();
+            if(!novoSap || !novaDesc) { alert("SAP e Descrição não podem ser vazios!"); return; }
+
+            let sapAntigo = mat.sap;
+            mat.sap = novoSap;
+            mat.desc = novaDesc;
+
+            // Sincroniza a alteração nas malas dos técnicos e estoque padrão
+            db.tecnicos.forEach(t => {
+                if(t.mala) {
+                    t.mala.forEach(m => {
+                        if(m.sap === sapAntigo || m.desc === mat.desc) {
+                            m.sap = novoSap;
+                            m.desc = novaDesc;
+                        }
+                    });
+                }
+            });
+
+            if(db.estoquePadrao) {
+                db.estoquePadrao.forEach(ep => {
+                    if(ep.sap === sapAntigo) {
+                        ep.sap = novoSap;
+                        ep.desc = novaDesc;
+                    }
+                });
+            }
+
+            registrarMovimentacao("Edição Catálogo", "Admin", `Editou material SAP: ${sapAntigo} ➔ ${novoSap} (${novaDesc})`);
+            salvarDb();
+            atualizarPainelAdmin();
+            alert("✅ Material editado e sincronizado com sucesso para todos os técnicos!");
+        }
+
         function removerMaterialAdmin(i) { 
             if(isVisualizador) return; 
-            db.materiais.splice(i, 1); 
-            salvarDb(); 
-            atualizarPainelAdmin(); 
+            let mat = db.materiais[i];
+            if(mat && confirm(`Tem certeza que deseja excluir "${mat.desc}" (${mat.sap}) do catálogo? Isso irá removê-lo automaticamente das abas e malas de todos os técnicos.`)) {
+                db.materiais.splice(i, 1);
+                
+                // Remove automaticamente das malas de todos os técnicos e estoque padrão
+                db.tecnicos.forEach(t => {
+                    if(t.mala) {
+                        t.mala = t.mala.filter(m => m.sap !== mat.sap && m.desc !== mat.desc);
+                    }
+                });
+                if(db.estoquePadrao) {
+                    db.estoquePadrao = db.estoquePadrao.filter(ep => ep.sap !== mat.sap);
+                }
+
+                registrarMovimentacao("Exclusão Catálogo", "Admin", `Removeu material ${mat.desc} (${mat.sap}) do catálogo e malas.`);
+                salvarDb(); 
+                atualizarPainelAdmin(); 
+                alert("✅ Material excluído do catálogo e removido das malas dos técnicos com sucesso!");
+            }
         }
 
         function acionarSOS() {
@@ -3350,7 +3417,7 @@
             `).join('');
         }
 
-        // --- FUNÇÃO AJUSTADA: LANÇAMENTO DO TÉCNICO (SINCRONIZADO E SEM ERROS) ---
+        // --- LANÇAMENTO DO TÉCNICO (SINCRONIZADO E IMEDIATO) ---
         function salvarLoteTecnico() {
             let projeto = document.getElementById('t-projeto').value;
             let node = document.getElementById('t-node').value.trim();
