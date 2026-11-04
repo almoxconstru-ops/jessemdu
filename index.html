@@ -560,7 +560,6 @@
                     </div>
                 </div>
                 <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-sm">
-                    <h3 class="font-bold text-white text-sm mb-3">Materiais Cadastrados no Catálogo</h3>
                     <div id="admin-materiais-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
                 </div>
             </div>
@@ -708,7 +707,7 @@
         </nav>
     </div>
 
-    <!-- ================= PAINEL DO TÉCNICO (CELULAR CENTRALIZADO COM ABAS ABAIXO ESTILO APP) ================= -->
+    <!-- ================= PAINEL DO TÉCNICO ================= -->
     <div id="tech-screen" class="hidden min-h-screen flex flex-col bg-black text-white items-center justify-between w-full overflow-x-hidden">
         <div class="w-full max-w-md mx-auto flex flex-col min-h-screen pb-16">
             
@@ -791,7 +790,7 @@
                 <div id="tech-section-content" class="bg-zinc-900/90 p-4 sm:p-5 rounded-3xl border border-red-900/40 shadow-2xl mb-4"></div>
             </main>
 
-            <!-- BARRA DE NAVEGAÇÃO INFERIOR ESTILO APP (FIXA ABAIXO) -->
+            <!-- BARRA DE NAVEGAÇÃO INFERIOR ESTILO APP -->
             <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 p-2 flex justify-around items-center z-30 shadow-2xl">
                 <button onclick="abrirCardTech('lancamento')" id="ttab-lancamento" class="flex-1 py-2 px-1 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5 font-bold text-[10px]">
                     <i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Lançar</span>
@@ -833,7 +832,7 @@
             </div>
 
             <div class="p-4 bg-black/60 rounded-2xl border border-zinc-800 space-y-3">
-                <h4 class="font-bold text-xs text-red-400 uppercase tracking-wider">Cadastrar Operador / Visualizador (Apenas Leitura & Sem Mensagens)</h4>
+                <h4 class="font-bold text-xs text-red-400 uppercase tracking-wider">Cadastrar Operador / Visualizador</h4>
                 <p class="text-[11px] text-zinc-400">Este usuário acessa o painel completo de leitura mas não consegue alterar, apagar, cadastrar ou ver mensagens.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input type="text" id="op-name" placeholder="Nome do Operador" class="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white outline-none">
@@ -850,7 +849,7 @@
         </div>
     </div>
 
-    <!-- MODAL ADM: CADASTRAR TÉCNICO -->
+    <!-- MODAL ADM: CADASTRAR/EDITAR TÉCNICO -->
     <div id="modal-tecnico" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 p-6 rounded-3xl w-full max-w-md space-y-4 shadow-2xl border border-red-950 text-white">
             <h3 id="modal-tech-title" class="text-lg font-bold">Cadastrar Técnico</h3>
@@ -878,6 +877,26 @@
             <div class="flex justify-end space-x-2 pt-2">
                 <button onclick="fecharModalTecnico()" class="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-xl text-xs font-bold">Cancelar</button>
                 <button onclick="salvarTecnicoForm()" class="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR MATERIAL CATÁLOGO -->
+    <div id="modal-editar-material" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 p-6 rounded-3xl w-full max-w-md space-y-4 shadow-2xl border border-red-950 text-white">
+            <h3 class="text-lg font-bold">Editar Material no Catálogo</h3>
+            <input type="hidden" id="edit-mat-index" value="-1">
+            <div>
+                <label class="block text-xs font-bold text-red-400 mb-1">Código SAP</label>
+                <input type="text" id="edit-mat-sap" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-red-400 mb-1">Descrição do Material</label>
+                <input type="text" id="edit-mat-desc" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="fecharModalEditarMaterial()" class="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-xl text-xs font-bold">Cancelar</button>
+                <button onclick="salvarEdicaoMaterialAdmin()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Salvar Alterações</button>
             </div>
         </div>
     </div>
@@ -1904,15 +1923,15 @@
                 renderizarMalaAdmin();
             }
 
-            // --- CATÁLOGO SAP + DESC (RENDERIZAÇÃO COM BOTÃO EDITAR) ---
+            // LISTA DO CATÁLOGO DE MATERIAIS COM EDITAR & REMOVER
             let matHtml = '';
             (db.materiais || []).forEach((m, i) => {
                 matHtml += `
-                    <div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs gap-2">
-                        <div class="truncate"><b class="text-red-400">${m.sap}</b> - <span class="text-zinc-200">${m.desc}</span></div>
-                        <div class="flex items-center space-x-1 flex-shrink-0">
-                            <button onclick="editarMaterialAdmin(${i})" class="action-btn-write px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-bold">Editar</button>
-                            <button onclick="removerMaterialAdmin(${i})" class="action-btn-write px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded font-bold">Excluir</button>
+                    <div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs">
+                        <div class="truncate mr-2"><b class="text-red-400 font-mono">${m.sap}</b> - <span class="text-white">${m.desc}</span></div>
+                        <div class="flex space-x-2 flex-shrink-0 action-btn-write">
+                            <button onclick="abrirModalEditarMaterial(${i})" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-[10px]">Editar</button>
+                            <button onclick="removerMaterialAdmin(${i})" class="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px]">Excluir</button>
                         </div>
                     </div>`;
             });
@@ -2237,7 +2256,6 @@
             atualizarPainelAdmin();
         }
 
-        // --- CATÁLOGO SAP + DESC (ESTOQUE PADRÃO) ---
         function adicionarItemEstoquePadrao() {
             if(isVisualizador) return;
             let sap = document.getElementById('padrao-sap').value.trim();
@@ -2773,7 +2791,7 @@
             atualizarPainelAdmin();
         }
 
-        // --- CATÁLOGO SAP + DESC (CADASTRAR, EDITAR E EXCLUIR COM SINCRONIZAÇÃO TOTAL) ---
+        // --- CADASTRAR, EDITAR E REMOVER MATERIAL DO CATÁLOGO COM EXCLUSÃO/EDIÇÃO EM TEMPO REAL ---
         function adicionarMaterialAdmin() {
             if(isVisualizador) return;
             let sap = document.getElementById('mat-sap').value.trim();
@@ -2785,13 +2803,6 @@
                 db.materiais.push({ sap, desc });
             }
 
-            db.tecnicos.forEach(t => {
-                if(!t.mala) t.mala = [];
-                if (!t.mala.some(m => m.sap === sap)) {
-                    t.mala.push({sap, desc, qtd: 0, lancado: 0, abastecido: 0, seriais: []});
-                }
-            });
-
             document.getElementById('mat-sap').value = ''; 
             document.getElementById('mat-desc').value = '';
             registrarMovimentacao("Catálogo SAP+Desc", "Admin", `Cadastrou material ${desc} (${sap})`);
@@ -2800,70 +2811,77 @@
             alert("✅ Material cadastrado no Catálogo SAP+Desc e sincronizado sem erros!");
         }
 
-        function editarMaterialAdmin(i) {
+        function abrirModalEditarMaterial(i) {
             if(isVisualizador) return;
             let mat = db.materiais[i];
             if(!mat) return;
-            let novoSap = prompt("Novo código SAP:", mat.sap);
-            if(novoSap === null) return;
-            let novaDesc = prompt("Nova descrição do material:", mat.desc);
-            if(novaDesc === null) return;
-            
-            novoSap = novoSap.trim();
-            novaDesc = novaDesc.trim();
-            if(!novoSap || !novaDesc) { alert("SAP e Descrição não podem ser vazios!"); return; }
+            document.getElementById('edit-mat-index').value = i;
+            document.getElementById('edit-mat-sap').value = mat.sap;
+            document.getElementById('edit-mat-desc').value = mat.desc;
+            document.getElementById('modal-editar-material').classList.remove('hidden');
+        }
 
-            let sapAntigo = mat.sap;
-            mat.sap = novoSap;
-            mat.desc = novaDesc;
+        function fecharModalEditarMaterial() {
+            document.getElementById('modal-editar-material').classList.add('hidden');
+        }
 
-            // Sincroniza a alteração nas malas dos técnicos e estoque padrão
-            db.tecnicos.forEach(t => {
-                if(t.mala) {
-                    t.mala.forEach(m => {
-                        if(m.sap === sapAntigo || m.desc === mat.desc) {
-                            m.sap = novoSap;
-                            m.desc = novaDesc;
-                        }
-                    });
-                }
-            });
+        function salvarEdicaoMaterialAdmin() {
+            if(isVisualizador) return;
+            let idx = parseInt(document.getElementById('edit-mat-index').value);
+            let novoSap = document.getElementById('edit-mat-sap').value.trim();
+            let novaDesc = document.getElementById('edit-mat-desc').value.trim();
 
-            if(db.estoquePadrao) {
-                db.estoquePadrao.forEach(ep => {
-                    if(ep.sap === sapAntigo) {
-                        ep.sap = novoSap;
-                        ep.desc = novaDesc;
+            if(!novoSap || !novaDesc) { alert("Preencha o Código SAP e a Descrição!"); return; }
+
+            if(db.materiais && db.materiais[idx]) {
+                let sapAntigo = db.materiais[idx].sap;
+                let descAntiga = db.materiais[idx].desc;
+
+                db.materiais[idx].sap = novoSap;
+                db.materiais[idx].desc = novaDesc;
+
+                // Atualizar na mala de todos os técnicos automaticamente
+                db.tecnicos.forEach(t => {
+                    if(t.mala) {
+                        t.mala.forEach(m => {
+                            if(m.sap === sapAntigo || m.desc === descAntiga) {
+                                m.sap = novoSap;
+                                m.desc = novaDesc;
+                            }
+                        });
                     }
                 });
-            }
 
-            registrarMovimentacao("Edição Catálogo", "Admin", `Editou material SAP: ${sapAntigo} ➔ ${novoSap} (${novaDesc})`);
-            salvarDb();
-            atualizarPainelAdmin();
-            alert("✅ Material editado e sincronizado com sucesso para todos os técnicos!");
+                registrarMovimentacao("Edição Catálogo", "Admin", `Alterou material (${sapAntigo}) para ${novaDesc} (${novoSap})`);
+                salvarDb();
+                fecharModalEditarMaterial();
+                atualizarPainelAdmin();
+                alert("✅ Material editado e atualizado em todo o sistema ao vivo!");
+            }
         }
 
         function removerMaterialAdmin(i) { 
             if(isVisualizador) return; 
             let mat = db.materiais[i];
-            if(mat && confirm(`Tem certeza que deseja excluir "${mat.desc}" (${mat.sap}) do catálogo? Isso irá removê-lo automaticamente das abas e malas de todos os técnicos.`)) {
-                db.materiais.splice(i, 1);
-                
-                // Remove automaticamente das malas de todos os técnicos e estoque padrão
+            if(!mat) return;
+
+            if(confirm(`Tem certeza que deseja excluir o material "${mat.desc}" (${mat.sap})?\nIsso irá removê-lo do catálogo e das malas dos técnicos ao vivo.`)) {
+                let sapExcluido = mat.sap;
+                let descExcluida = mat.desc;
+
+                db.materiais.splice(i, 1); 
+
+                // Remover automaticamente da mala de todos os técnicos
                 db.tecnicos.forEach(t => {
                     if(t.mala) {
-                        t.mala = t.mala.filter(m => m.sap !== mat.sap && m.desc !== mat.desc);
+                        t.mala = t.mala.filter(m => m.sap !== sapExcluido && m.desc !== descExcluida);
                     }
                 });
-                if(db.estoquePadrao) {
-                    db.estoquePadrao = db.estoquePadrao.filter(ep => ep.sap !== mat.sap);
-                }
 
-                registrarMovimentacao("Exclusão Catálogo", "Admin", `Removeu material ${mat.desc} (${mat.sap}) do catálogo e malas.`);
+                registrarMovimentacao("Exclusão Catálogo", "Admin", `Excluiu material ${descExcluida} (${sapExcluido}) do sistema`);
                 salvarDb(); 
                 atualizarPainelAdmin(); 
-                alert("✅ Material excluído do catálogo e removido das malas dos técnicos com sucesso!");
+                alert("✅ Material removido do catálogo e das malas dos técnicos de forma sincronizada!");
             }
         }
 
@@ -3417,7 +3435,7 @@
             `).join('');
         }
 
-        // --- LANÇAMENTO DO TÉCNICO (SINCRONIZADO E IMEDIATO) ---
+        // --- LANÇAMENTO DO TÉCNICO (IMEDIATO, SINCRONIZADO E SEM ERROS) ---
         function salvarLoteTecnico() {
             let projeto = document.getElementById('t-projeto').value;
             let node = document.getElementById('t-node').value.trim();
