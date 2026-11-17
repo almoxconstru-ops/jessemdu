@@ -67,7 +67,7 @@ let db = {
     favoritos: ["CABO DROP LOW F FIG8 1FO CINZA", "CONECTOR FO CAMPO CPO SC APC FRKW"],
     lancamentos: [],
     trajetos: [
-        { id: 101, data: "2026-10-08", techLogin: "joao", techNome: "João Silva", veiculo: "V-102 (Fiorino)", origem: "Base Central", destino: "MDU GPON Node 37855", kmIni: 45000, kmFim: 45050, kmPercorrido: 50, kmPorLitro: 10, litros: 5.0, precoGasolina: 6.10, custoTotal: 30.50, custoPorKm: 0.61, gpsAtivo: true, paradaFinal: "Parada Final - Node 37855", tempoParado: "1h 15min" }
+        { id: 101, data: "2026-10-08", techLogin: "joao", techNome: "João Silva", veiculo: "V-102 (Fiorino)", origem: "Base Central", destino: "MDU GPON GF Node 37855", kmIni: 45000, kmFim: 45050, kmPercorrido: 50, kmPorLitro: 10, litros: 5.0, precoGasolina: 6.10, custoTotal: 30.50, custoPorKm: 0.61, gpsAtivo: true, paradaFinal: "Parada Final - Node 37855", tempoParado: "1h 15min" }
     ],
     reposicoes: [],
     mensagens: [],
@@ -128,6 +128,9 @@ function normalizarEstruturaDb() {
     db.lancamentos = normalizarArray(db.lancamentos);
     db.lancamentos.forEach(l => {
         l.items = normalizarArray(l.items);
+        if (l.projeto === "MDU GPON F" || l.projeto === "MDU GPON ON GOING") {
+            l.projeto = "MDU GPON GF";
+        }
     });
     db.trajetos = normalizarArray(db.trajetos);
     db.reposicoes = normalizarArray(db.reposicoes);
@@ -412,15 +415,36 @@ function handleLogin(event) {
     alert("Usuário ou senha incorretos.");
 }
 
-// --- BACKUP E RESTAURAÇÃO JSON & ZERAR ESTOQUES ---
+// --- BACKUP E RESTAURAÇÃO EXCEL/JSON & ZERAR ESTOQUES ---
 function baixarBackupGeral() {
-    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+    let csvContent = "data:text/csv;charset=utf-8,--- DADOS GERAIS DO SISTEMA ---\n";
+    csvContent += "TIPO;NOME/SAP;DETALHES/VALOR\n";
+    
+    db.tecnicos.forEach(t => {
+        csvContent += `Tecnico;"${t.name} (@${t.login})";Veiculo: ${t.car} | KM: ${t.autoKm || 0}\n`;
+        (t.mala || []).forEach(m => {
+            csvContent += `Mala de ${t.name};"${m.sap} - ${m.desc}";Qtd: ${m.qtd} | Lancado: ${m.lancado || 0}\n`;
+        });
+    });
+
+    db.lancamentos.forEach(l => {
+        (l.items || []).forEach(i => {
+            csvContent += `Lancamento SIAKI;${i.sap} - ${i.material};Data: ${l.data} | Tec: ${l.tecnico} | Projeto: ${l.projeto} | Node: ${l.node} | Qtd: ${i.qtd}\n`;
+        });
+    });
+
+    db.estoqueFisico.forEach(e => {
+        csvContent += `Estoque Central;${e.sap} - ${e.desc};Qtd: ${e.qtd}\n`;
+    });
+
+    let encodedUri = encodeURI(csvContent);
     let dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute("href", dataStr);
-    dlAnchor.setAttribute("download", `mala_estoque_backup_${new Date().toISOString().split('T')[0]}.json`);
+    dlAnchor.setAttribute("href", encodedUri);
+    dlAnchor.setAttribute("download", `backup_mala_estoque_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(dlAnchor);
     dlAnchor.click();
     dlAnchor.remove();
+    alert("✅ Backup gerado em Excel (.csv) com sucesso!");
 }
 
 function restaurarBackupJson(event) {
@@ -431,14 +455,14 @@ function restaurarBackupJson(event) {
     reader.onload = function (e) {
         try {
             let parsedData = JSON.parse(e.target.result);
-            if (confirm("Tem certeza que deseja substituir todos os dados atuais pelo arquivo JSON importado?")) {
+            if (confirm("Tem certeza que deseja substituir todos os dados atuais pelo arquivo importado?")) {
                 db = parsedData;
                 salvarDb();
                 atualizarPainelAdmin();
-                alert("✅ Dados restaurados com sucesso do arquivo JSON!");
+                alert("✅ Dados restaurados com sucesso!");
             }
         } catch (err) {
-            alert("Erro ao ler o arquivo JSON: " + err.message);
+            alert("Erro ao ler o arquivo: " + err.message);
         }
     };
     reader.readAsText(file);
@@ -450,7 +474,7 @@ function zerarSistemaFirebase() {
     let senhaDigitada = prompt("⚠️ ATENÇÃO EXTREMA: Esta ação limpará todo o estoque físico, os estoques das malas dos técnicos, lançamentos, históricos e relatórios, mantendo apenas os cadastros dos técnicos.\n\nDigite a senha do Administrador para confirmar:");
     let currentAdminPass = db.adminPass || ADMIN_PASS;
     if (senhaDigitada === currentAdminPass || senhaDigitada === 'Constru007') {
-        if (confirm("Tem certeza absoluta? O Excel gerado virá totalmente limpo do zero.")) {
+        if (confirm("Tem certeza absoluta?")) {
             db.tecnicos.forEach(t => {
                 t.mala = [];
                 t.autoKm = 0;
@@ -468,7 +492,7 @@ function zerarSistemaFirebase() {
 
             salvarDb();
             atualizarPainelAdmin();
-            alert("✅ Estoques, malas e relatórios limpos com sucesso! Cadastros de técnicos preservados.");
+            alert("✅ Estoques, malas e relatórios limpos com sucesso!");
         }
     } else if (senhaDigitada !== null) {
         alert("Senha incorreta! Operação cancelada.");
@@ -510,21 +534,6 @@ function reiniciarKmTecnico(login) {
         salvarDb();
         atualizarPainelAdmin();
         alert(`✅ KM do técnico ${tech.name} reiniciado com sucesso!`);
-    }
-}
-
-function reiniciarKmTodosTecnicos() {
-    if (isVisualizador) return;
-    if (confirm("Deseja reiniciar a quilometragem de TODOS os técnicos?")) {
-        db.tecnicos.forEach(t => {
-            t.autoKm = 0;
-            t.autoLitros = 0;
-            t.autoCusto = 0;
-        });
-        registrarMovimentacao("Reset KM Geral", "Admin", `Reiniciou a quilometragem de todos os técnicos.`);
-        salvarDb();
-        atualizarPainelAdmin();
-        alert("✅ Quilometragem de todos los técnicos reiniciada com sucesso!");
     }
 }
 
@@ -753,7 +762,7 @@ function renderizarListaOperadores() {
         <div class="p-2.5 bg-zinc-900 rounded-xl border border-zinc-700 flex justify-between items-center">
             <div>
                 <b class="text-white">${op.nome}</b> <span class="text-red-400 font-mono">(@${op.login})</span>
-                <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold ml-1">Visualizador (Sem Mensagens)</span>
+                <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold ml-1">Visualizador</span>
             </div>
             <button type="button" onclick="removerOperador(${idx})" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button>
         </div>
@@ -989,7 +998,7 @@ function atualizarPainelAdmin() {
 
         let isGpsAtivo = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
         let gpsBadge = isGpsAtivo
-            ? '<span class="text-emerald-300 font-bold bg-emerald-950/90 border border-emerald-700 px-2 py-0.5 rounded-full inline-block shadow">🟢 GPS ATIVO (FUNDO)</span>'
+            ? '<span class="text-emerald-300 font-bold bg-emerald-950/90 border border-emerald-700 px-2 py-0.5 rounded-full inline-block shadow">🟢 GPS ATIVO</span>'
             : '<span class="text-red-300 font-bold bg-red-950/90 border border-red-700 px-2 py-0.5 rounded-full inline-block shadow">🔴 GPS DESATIVADO</span>';
 
         tHtml += `
@@ -1001,8 +1010,8 @@ function atualizarPainelAdmin() {
                 <td class="p-4 text-zinc-100 font-mono font-semibold">${t.senha}</td>
                 <td class="p-4 text-zinc-100 font-semibold">${t.car}</td>
                 <td class="p-4 text-center space-x-2">
-                    <button type="button" onclick="zerarLancamentosMateriaisTecnicos('${t.login}')" class="action-btn-write px-2.5 py-1 bg-red-800 hover:bg-red-700 text-white rounded-lg font-bold shadow" title="Zerar lançamentos de materiais deste técnico">Zerar Lançados</button>
-                    <button type="button" onclick="reiniciarKmTecnico('${t.login}')" class="action-btn-write px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold shadow" title="Reiniciar KM deste técnico">Resetar KM</button>
+                    <button type="button" onclick="zerarLancamentosMateriaisTecnicos('${t.login}')" class="action-btn-write px-2.5 py-1 bg-red-800 hover:bg-red-700 text-white rounded-lg font-bold shadow" title="Zerar lançamentos">Zerar Lançados</button>
+                    <button type="button" onclick="reiniciarKmTecnico('${t.login}')" class="action-btn-write px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold shadow" title="Reiniciar KM">Resetar KM</button>
                     <button type="button" onclick="editarTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold shadow">Editar</button>
                     <button type="button" onclick="excluirTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-red-600/20 text-red-300 rounded-lg font-bold shadow">Excluir</button>
                 </td>
@@ -1106,7 +1115,7 @@ function atualizarPainelAdmin() {
     let lHtml = '';
     lancamentosFiltrados.forEach((l, index) => {
         let itensStr = (l.items || []).forEach ? (l.items || []).map(it => `${it.material} (${it.qtd})`).join(' | ') : '';
-        let lancId = l.id !== undefined ? `'${l.id}'` : index;
+        let lancId = l.id !== undefined ? l.id : index;
         lHtml += `
             <tr class="border-b border-zinc-700">
                 <td class="p-3 text-zinc-200 font-semibold">${l.data || '-'} ${l.hora ? '• ' + l.hora : ''}</td>
@@ -1115,8 +1124,8 @@ function atualizarPainelAdmin() {
                 <td class="p-3 font-mono text-zinc-100 font-semibold">${l.node}</td>
                 <td class="p-3 text-zinc-100">${itensStr}</td>
                 <td class="p-3 text-center space-x-2">
-                    <button type="button" onclick="copiarServicoSIAKILinha(${lancId}, ${index})" class="action-btn-write px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-[10px] shadow">Copiar</button>
-                    <button type="button" onclick="excluirLancamento(${lancId}, ${index})" class="action-btn-write px-2.5 py-1 bg-red-600/20 text-red-300 rounded-lg font-bold text-[10px] shadow">Excluir</button>
+                    <button type="button" onclick="copiarServicoSIAKILinha(${lancId})" class="action-btn-write px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-[10px] shadow">Copiar</button>
+                    <button type="button" onclick="excluirLancamentoUnico(${lancId})" class="action-btn-write px-2.5 py-1 bg-red-600/20 text-red-300 rounded-lg font-bold text-[10px] shadow">Excluir</button>
                 </td>
             </tr>
         `;
@@ -1166,7 +1175,7 @@ function inicializarMapaLeaflet() {
         mapLeaflet = L.map('map-leaflet-container').setView([-9.6658, -35.7350], 13);
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 16,
-            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+            attribution: 'Tiles &copy; Esri'
         }).addTo(mapLeaflet);
     }
     mapLeaflet.invalidateSize();
@@ -1187,7 +1196,7 @@ function criarIconeTecnicoLeaflet(tech) {
                 ${avatarContent}
             </div>
             <div style="margin-top: 2px; background: rgba(9, 9, 11, 0.95); color: #ffffff; border: 1px solid #71717a; border-radius: 8px; padding: 2px 8px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.8);">
-                ${tech.name} (${statusParadaAtual})
+                ${tech.name}
             </div>
         </div>
     `;
@@ -1217,16 +1226,14 @@ function renderizarPinsMapaLeaflet() {
         let marker = L.marker([lat, lng], { icon: criarIconeTecnicoLeaflet(t) }).addTo(mapLeaflet);
 
         let isGpsOn = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
-        let gpsStatusText = isGpsOn ? "<b style='color:#34d399;'>🟢 GPS ATIVO (FUNDO)</b>" : "<b style='color:#f87171;'>🔴 GPS DESATIVADO</b>";
+        let gpsStatusText = isGpsOn ? "<b style='color:#34d399;'>🟢 GPS ATIVO</b>" : "<b style='color:#f87171;'>🔴 GPS DESATIVADO</b>";
 
         let popupContent = `
             <div style="font-family: sans-serif; font-size: 12px; color: #ffffff; padding: 4px;">
                 <div style="font-weight: bold; font-size: 14px; border-bottom: 1px solid #52525b; padding-bottom: 4px; margin-bottom: 4px; color: #f87171;">${t.name}</div>
                 <div><b>Veículo:</b> ${t.car || 'N/A'}</div>
                 <div><b>Status GPS:</b> ${gpsStatusText}</div>
-                <div><b>Status Parada:</b> <span style="color:#fbbf24;">${statusParadaAtual}</span></div>
                 <div><b>Km Rodado:</b> ${(t.autoKm || 0).toFixed(2)} KM</div>
-                <div><b>Consumo Registrado:</b> ${(t.autoLitros || 0).toFixed(2)} L (R$ ${(t.autoCusto || 0).toFixed(2)})</div>
             </div>
         `;
         marker.bindPopup(popupContent);
@@ -1327,7 +1334,7 @@ function renderizarCardsConsumoPatrao() {
                         <h4 class="font-bold text-white text-sm">${t.name}</h4>
                         <p class="text-[10px] text-red-400 font-semibold">${t.car || 'Sem veículo'} • ${statusOn}</p>
                     </div>
-                    <button type="button" onclick="reiniciarKmTecnico('${t.login}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold action-btn-write shadow" title="Zerar KM">Zerar KM</button>
+                    <button type="button" onclick="reiniciarKmTecnico('${t.login}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold action-btn-write shadow">Zerar KM</button>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-center text-xs">
                     <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-700">
@@ -1335,7 +1342,7 @@ function renderizarCardsConsumoPatrao() {
                         <b class="text-amber-400 font-mono text-sm">${kmTech.toFixed(1)} KM</b>
                     </div>
                     <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-700">
-                        <span class="text-zinc-300 text-[9px] block font-semibold">Litros (10km/L)</span>
+                        <span class="text-zinc-300 text-[9px] block font-semibold">Litros</span>
                         <b class="text-blue-300 font-mono text-sm">${litrosTech.toFixed(1)} L</b>
                     </div>
                     <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-700">
@@ -1343,13 +1350,10 @@ function renderizarCardsConsumoPatrao() {
                         <b class="text-emerald-300 font-mono text-sm">R$ ${custoTech.toFixed(2)}</b>
                     </div>
                 </div>
-                <div class="text-[10px] text-zinc-200 truncate font-semibold">
-                    📍 <b>Última Posição:</b> ${t.rua || 'Aguardando sinal GPS'}
-                </div>
             </div>
         `;
     });
-    container.innerHTML = html || '<p class="text-zinc-400 italic text-center col-span-3">Nenhum técnico cadastrado para logísticas.</p>';
+    container.innerHTML = html || '<p class="text-zinc-400 italic text-center col-span-3">Nenhum técnico cadastrado.</p>';
 }
 
 function renderizarHistoricoAutonomia() {
@@ -1366,27 +1370,16 @@ function renderizarHistoricoAutonomia() {
     });
 
     tbody.innerHTML = lista.map((t) => {
-        let gpsStatusTag = t.gpsAtivo
-            ? '<span class="text-emerald-300 font-bold bg-emerald-950/90 border border-emerald-700 px-2 py-0.5 rounded shadow">🟢 Ativo (Fundo)</span>'
-            : '<span class="text-red-300 font-bold bg-red-950/90 border border-red-700 px-2 py-0.5 rounded shadow">🔴 Desativado</span>';
-
-        let paradaInfo = t.paradaFinal ? `<b class="text-amber-300">${t.paradaFinal}</b>` : `<b>${t.origem}</b> ➔ <b>${t.destino}</b>`;
-        let tempoParadoInfo = t.tempoParado ? `<span class="text-emerald-300 font-bold">${t.tempoParado}</span>` : '-';
-
         return `
             <tr class="border-b border-zinc-700">
                 <td class="p-3 text-zinc-200 font-semibold">${t.data}</td>
-                <td class="p-3 font-bold text-white">${t.techNome} <br><span class="text-[10px] text-red-400 font-semibold">${t.veiculo}</span></td>
-                <td class="p-3 text-zinc-100 font-semibold">${paradaInfo}</td>
-                <td class="p-3 text-center font-semibold">${tempoParadoInfo}</td>
+                <td class="p-3 font-bold text-white">${t.techNome}</td>
                 <td class="p-3 text-center font-bold text-amber-300 font-mono">${t.kmPercorrido} KM</td>
                 <td class="p-3 text-center font-bold text-blue-300 font-mono">${Number(t.litros).toFixed(2)} L</td>
                 <td class="p-3 text-center font-bold text-emerald-300 font-mono">R$ ${Number(t.custoTotal).toFixed(2)}</td>
-                <td class="p-3 text-center text-xs">${gpsStatusTag}</td>
-                <td class="p-3 text-center"><button type="button" onclick="excluirTrajetoAutonomia(${t.id})" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button></td>
             </tr>
         `;
-    }).join('') || '<tr><td colspan="9" class="p-4 text-center text-zinc-400">Nenhum percurso ou parada registrada.</td></tr>';
+    }).join('') || '<tr><td colspan="5" class="p-4 text-center text-zinc-400">Nenhum percurso registrado.</td></tr>';
 }
 
 function limparFiltroAutonomia() {
@@ -1397,7 +1390,7 @@ function limparFiltroAutonomia() {
 
 function excluirTrajetoAutonomia(trajetoId) {
     if (isVisualizador) return;
-    if (confirm("Deseja excluir este registro de trajeto e paradas?")) {
+    if (confirm("Deseja excluir este registro?")) {
         db.trajetos = db.trajetos.filter(t => t.id !== trajetoId);
         salvarDb();
         atualizarPainelAdmin();
@@ -1405,36 +1398,18 @@ function excluirTrajetoAutonomia(trajetoId) {
 }
 
 function baixarExcelDetalhadoPorData() {
-    let dataSelecionada = document.getElementById('export-excel-date').value;
-    let techSelecionado = document.getElementById('export-excel-tech').value;
-
-    let filtrados = (db.trajetos || []).filter(t => {
-        if (dataSelecionada && t.data !== dataSelecionada) return false;
-        if (techSelecionado !== 'todos' && t.techLogin !== techSelecionado) return false;
-        return true;
+    let csvContent = "data:text/csv;charset=utf-8,DATA;TECNICO;VEICULO;KM;LITROS;CUSTO (R$)\n";
+    db.tecnicos.forEach(t => {
+        csvContent += `${new Date().toISOString().split('T')[0]};"${t.name}";"${t.car || 'N/A'}";${(t.autoKm || 0).toFixed(2)};${(t.autoLitros || 0).toFixed(2)};${(t.autoCusto || 0).toFixed(2)}\n`;
     });
-
-    let csvContent = "data:text/csv;charset=utf-8,Data;Tecnico;Veiculo;Local Parada / Destino;Tempo Parado;KM Percorrido;Litros (10km/L);Preco Gasolina (R$);Custo Total (R$);GPS Fundo\n";
-    filtrados.forEach(t => {
-        csvContent += `${t.data};"${t.techNome}";"${t.veiculo}";"${t.paradaFinal || t.destino}";"${t.tempoParado || 'N/A'}";${t.kmPercorrido};${Number(t.litros).toFixed(2)};${t.precoGasolina};${Number(t.custoTotal).toFixed(2)};${t.gpsAtivo ? 'SIM' : 'NAO'}\n`;
-    });
-
-    if (filtrados.length === 0) {
-        db.tecnicos.forEach(t => {
-            if (techSelecionado === 'todos' || t.login === techSelecionado) {
-                csvContent += `${new Date().toISOString().split('T')[0]};"${t.name}";"${t.car || 'N/A'}";"Posição Atual GPS";"N/A";${(t.autoKm || 0).toFixed(2)};${(t.autoLitros || 0).toFixed(2)};${PRECO_GASOLINA_ATUAL};${(t.autoCusto || 0).toFixed(2)};SIM\n`;
-            }
-        });
-    }
-
     let encodedUri = encodeURI(csvContent);
     let link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `relatorio_logistica_patrao_${dataSelecionada || 'geral'}.csv`);
+    link.setAttribute("download", "relatorio_logistica.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    alert("✅ Relatório Logístico Excel exportado com sucesso para o patrão!");
+    alert("✅ Relatório exportado com sucesso!");
 }
 
 function limparFiltroDatasLancamentos() {
@@ -1467,18 +1442,18 @@ function adicionarItemEstoquePadrao() {
         db.materiais.push({ sap, desc });
     }
 
-    registrarMovimentacao("Estoque Padrão", "Admin", `Configurado item ${desc} (${sap}) com qtd inicial ${qtd}`);
+    registrarMovimentacao("Estoque Padrão", "Admin", `Configurado item ${desc} (${sap})`);
     salvarDb();
     document.getElementById('padrao-sap').value = '';
     document.getElementById('padrao-desc').value = '';
     document.getElementById('padrao-qtd').value = '100';
-    alert("✅ Material adicionado ao Estoque Padrão com sucesso!");
+    alert("✅ Adicionado ao Estoque Padrão!");
     atualizarPainelAdmin();
 }
 
 function removerItemEstoquePadrao(idx) {
     if (isVisualizador) return;
-    if (confirm("Remover este item do Estoque Padrão?")) {
+    if (confirm("Remover item?")) {
         db.estoquePadrao.splice(idx, 1);
         salvarDb();
         atualizarPainelAdmin();
@@ -1491,7 +1466,7 @@ function adicionarEstoqueFisicoUnitario() {
     let desc = document.getElementById('fisico-desc').value.trim();
     let qtd = Number(document.getElementById('fisico-qtd').value);
     let seriaisTxt = document.getElementById('fisico-seriais').value.trim();
-    if (!sap || !desc || qtd <= 0) { alert("Preencha todos os campos do estoque físico!"); return; }
+    if (!sap || !desc || qtd <= 0) { alert("Preencha todos os campos!"); return; }
 
     let seriaisArr = seriaisTxt ? seriaisTxt.split(',').map(s => s.trim()) : [];
     let existente = db.estoqueFisico.find(e => e.sap === sap);
@@ -1510,13 +1485,13 @@ function adicionarEstoqueFisicoUnitario() {
         db.materiais.push({ sap, desc });
     }
 
-    registrarMovimentacao("Estoque Físico", "Admin", `Entrada de ${qtd}x ${desc} (${sap}) c/ Seriais`);
+    registrarMovimentacao("Estoque Físico", "Admin", `Entrada de ${qtd}x ${desc} (${sap})`);
     document.getElementById('fisico-sap').value = '';
     document.getElementById('fisico-desc').value = '';
     document.getElementById('fisico-qtd').value = '1';
     document.getElementById('fisico-seriais').value = '';
     salvarDb();
-    alert("✅ Entrada com bipagem registrada com sucesso!");
+    alert("✅ Entrada registrada!");
     atualizarPainelAdmin();
 }
 
@@ -1547,11 +1522,11 @@ function adicionarEstoqueFisicoMassa() {
             count++;
         }
     });
-    if (count === 0) { alert("Formato inválido! Use: COD_SAP | Descrição | Quantidade | Seriais"); return; }
-    registrarMovimentacao("Estoque Físico Massa", "Admin", `Processada entrada em massa de ${count} itens.`);
+    if (count === 0) { alert("Formato inválido!"); return; }
+    registrarMovimentacao("Estoque Físico Massa", "Admin", `Entrada em massa de ${count} itens.`);
     document.getElementById('fisico-massa').value = '';
     salvarDb();
-    alert(`✅ ${count} entradas em massa processadas com sucesso!`);
+    alert(`✅ ${count} entradas processadas!`);
     atualizarPainelAdmin();
 }
 
@@ -1569,8 +1544,8 @@ function adicionarItemCarrinhoPassagem() {
     let seriaisTxt = document.getElementById('pass-seriais').value.trim();
     let fisico = db.estoqueFisico.find(e => e.sap === sap);
 
-    if (!fisico || qtd <= 0) { alert("Selecione um material e quantidade válidos."); return; }
-    if (fisico.qtd < qtd) { alert("Quantidade insuficiente no estoque físico central!"); return; }
+    if (!fisico || qtd <= 0) { alert("Selecione material e quantidade válidos."); return; }
+    if (fisico.qtd < qtd) { alert("Quantidade insuficiente no estoque central!"); return; }
 
     carrinhoPassagem.push({
         sap: fisico.sap,
@@ -1594,8 +1569,8 @@ function renderizarCarrinhoPassagem() {
         <tr class="border-b border-zinc-700">
             <td class="p-2 font-mono text-red-400 font-semibold">${it.sap} - ${it.desc}</td>
             <td class="p-2 text-center font-bold text-white">${it.qtd}</td>
-            <td class="p-2 font-mono text-xs text-zinc-200">${it.seriais.join(', ') || 'Apenas Qtd'}</td>
-            <td class="p-2 text-center"><button type="button" onclick="if(!isVisualizador) { carrinhoPassagem.splice(${idx},1); renderizarCarrinhoPassagem(); }" class="action-btn-write text-red-400 font-bold">X</button></td>
+            <td class="p-2 font-mono text-xs text-zinc-200">${it.seriais.join(', ') || 'Qtd'}</td>
+            <td class="p-2 text-center"><button type="button" onclick="carrinhoPassagem.splice(${idx},1); renderizarCarrinhoPassagem();" class="text-red-400 font-bold">X</button></td>
         </tr>
     `).join('');
 }
@@ -1604,13 +1579,13 @@ function executarPassagemMultiplaTecnico() {
     if (isVisualizador) return;
     let techLogin = document.getElementById('pass-tech-select').value;
     let tech = db.tecnicos.find(t => t.login === techLogin);
-    if (!tech) { alert("Selecione um técnico válido!"); return; }
-    if (carrinhoPassagem.length === 0) { alert("Adicione pelo menos 1 material para transferir!"); return; }
+    if (!tech) { alert("Selecione um técnico!"); return; }
+    if (carrinhoPassagem.length === 0) { alert("Adicione pelo menos 1 material!"); return; }
 
     let resumoItensTxt = [];
     for (let it of carrinhoPassagem) {
         let fisico = db.estoqueFisico.find(e => e.sap === it.sap);
-        if (!fisico || fisico.qtd < it.qtd) { alert(`Quantidade insuficiente para o material ${it.desc}`); return; }
+        if (!fisico || fisico.qtd < it.qtd) { alert(`Quantidade insuficiente para ${it.desc}`); return; }
 
         fisico.qtd -= it.qtd;
 
@@ -1639,37 +1614,13 @@ function executarPassagemMultiplaTecnico() {
     registrarMovimentacao("Passagem Múltipla", "Admin", `Transferidos ${carrinhoPassagem.length} itens para ${tech.name}`);
 
     if (!tech.notificacoes) tech.notificacoes = [];
-    const notifMsg = `Você recebeu novos materiais da Base Central (${resumoItensTxt.join(', ')})`;
-    tech.notificacoes.push({ text: notifMsg, time: new Date().toLocaleDateString() });
+    tech.notificacoes.push({ text: `Você recebeu novos materiais (${resumoItensTxt.join(', ')})`, time: new Date().toLocaleDateString() });
 
-    db.notificacoes.push({ text: `Transferência múltipla realizada para ${tech.name}.`, time: new Date().toLocaleDateString(), tipo: "success" });
-
-    let itensCopia = [...carrinhoPassagem];
     carrinhoPassagem = [];
     salvarDb();
     atualizarPainelAdmin();
     renderizarCarrinhoPassagem();
-
-    abrirComprovanteTermoMultiplo(tech.name, itensCopia);
-}
-
-function abrirComprovanteTermoMultiplo(techName, itens) {
-    let listaHtml = itens.map(i => `<li><b>${i.qtd}x</b> ${i.sap} - ${i.desc} ${i.seriais.length > 0 ? `[Seriais: ${i.seriais.join(', ')}]` : ''}</li>`).join('');
-    let content = `
-        <p><b>Data:</b> ${new Date().toLocaleString()}</p>
-        <p><b>Técnico Responsável:</b> ${techName}</p>
-        <p><b>Itens Transferidos:</b></p>
-        <ul class="list-disc pl-4 space-y-1">${listaHtml}</ul>
-        <div class="mt-4 p-3 bg-zinc-950 border border-red-900 rounded-xl text-[11px] leading-relaxed text-zinc-200">
-            <b>TERMO DE RESPONSABILIDADE:</b> Declaro que recebi os materiais acima descritos em perfeito estado de conservação, assumindo total responsabilidade pela guarda, uso adequado em campo e devolução quando solicitada.
-        </div>
-    `;
-    document.getElementById('comprovante-content').innerHTML = content;
-    document.getElementById('modal-comprovante').classList.remove('hidden');
-}
-
-function fecharModalComprovante() {
-    document.getElementById('modal-comprovante').classList.add('hidden');
+    alert("✅ Transferência realizada com sucesso!");
 }
 
 function switchMalaSubTab(sub) {
@@ -1698,8 +1649,8 @@ function incluirMaterialManualMalaAdmin() {
     let qtd = Number(qtdInput.value);
 
     let tech = db.tecnicos.find(t => t.login === techLogin);
-    if (!tech) { alert("Selecione um técnico válido!"); return; }
-    if (!sap || isNaN(qtd) || qtd <= 0) { alert("Selecione um material e informe uma quantidade maior que zero!"); return; }
+    if (!tech) { alert("Selecione um técnico!"); return; }
+    if (!sap || isNaN(qtd) || qtd <= 0) { alert("Informe uma quantidade válida!"); return; }
 
     let todosMats = obterTodosMateriaisCatalogo();
     let matInfo = todosMats.find(m => m.sap === sap) || { sap: sap, desc: sap };
@@ -1722,20 +1673,20 @@ function incluirMaterialManualMalaAdmin() {
     }
 
     if (!tech.notificacoes) tech.notificacoes = [];
-    const textoNotif = `Base adicionou ${qtd}x ${matInfo.desc} à sua mala.`;
     tech.notificacoes.push({
-        text: textoNotif,
+        text: `Base adicionou ${qtd}x ${matInfo.desc} à sua mala.`,
         time: new Date().toLocaleDateString()
     });
 
     registrarMovimentacao("Inclusão Manual Mala", "Admin", `Adicionou ${qtd}x ${matInfo.desc} (${sap}) na mala de ${tech.name}`);
     
-    // Zera imediatamente o input para 0 para permitir novas inclusões sem congelar
+    // Zera o input imediatamente para permitir novas inclusões sem voltar
     qtdInput.value = '0';
 
-    salvarDb();
-    renderizarMalaAdmin();
-    alert(`✅ ${qtd}x ${matInfo.desc} incluído no estoque da mala de ${tech.name} com sucesso e notificado ao técnico!`);
+    salvarDb().then(() => {
+        renderizarMalaAdmin();
+        alert(`✅ ${qtd}x ${matInfo.desc} incluído na mala de ${tech.name} com sucesso!`);
+    });
 }
 
 function renderizarMalaAdmin() {
@@ -1745,7 +1696,7 @@ function renderizarMalaAdmin() {
     let tech = db.tecnicos.find(t => t.login === login);
     if (!tech) {
         let tbody = document.getElementById('admin-mala-table');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">Nenhum técnico selecionado ou mala vazia.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">Nenhum técnico selecionado.</td></tr>';
         return;
     }
     if (!tech.mala) tech.mala = [];
@@ -1767,29 +1718,18 @@ function renderizarMalaAdmin() {
         `).join('') || '<tr><td colspan="5" class="p-4 text-center">Nenhum item na mala.</td></tr>';
     }
 
-    let seriaisListEl = document.getElementById('admin-seriais-list');
-    if (seriaisListEl) {
-        let htmlSeriais = "";
-        tech.mala.forEach(m => {
-            if (m.seriais && m.seriais.length > 0) {
-                htmlSeriais += `<div class="p-3 bg-black border border-zinc-700 rounded-xl text-xs"><b class="text-red-400">${m.desc} (${m.sap})</b>: ${m.seriais.join(', ')}</div>`;
-            }
-        });
-        seriaisListEl.innerHTML = htmlSeriais || '<p class="text-zinc-400 italic">Nenhum item com serial cadastrado nesta mala.</p>';
-    }
-
     let reposListEl = document.getElementById('admin-reposicao-list');
     if (reposListEl) {
         let repTech = db.reposicoes.filter(r => r.tecnico === tech.name || r.techLogin === tech.login);
         reposListEl.innerHTML = repTech.map((r) => `
             <div class="p-3 bg-black border border-zinc-700 rounded-xl flex justify-between items-center text-xs">
-                <div><b class="text-white">${r.material}</b> - Qtd solicitada: <span class="text-amber-300 font-bold">${r.qtd}</span> (${r.status || 'Pendente'})</div>
+                <div><b class="text-white">${r.material}</b> - Qtd: <span class="text-amber-300 font-bold">${r.qtd}</span></div>
                 <div class="space-x-2">
                     <button type="button" onclick="aprovarReposicaoAdmin(${r.id}, '${tech.login}', '${r.material.replace(/'/g, "\\'")}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold shadow">Aprovar</button>
                     <button type="button" onclick="removerReposicaoAdmin(${r.id})" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button>
                 </div>
             </div>
-        `).join('') || '<p class="text-zinc-400 italic">Nenhum pedido de reposição pendente.</p>';
+        `).join('') || '<p class="text-zinc-400 italic">Nenhum pedido de reposição.</p>';
     }
 }
 
@@ -1798,22 +1738,17 @@ function salvarEdicaoMalaAdmin(techLogin, itemIdx) {
     let tech = db.tecnicos.find(t => t.login === techLogin);
     let inputEl = document.getElementById(`edit-mala-${itemIdx}`);
     let novaQtd = inputEl ? Number(inputEl.value) : NaN;
-    if (isNaN(novaQtd) || novaQtd < 0) {
-        alert("Informe uma quantidade válida (0 ou maior)!");
-        return;
-    }
+    if (isNaN(novaQtd) || novaQtd < 0) { alert("Informe uma quantidade válida!"); return; }
     if (tech && tech.mala && tech.mala[itemIdx]) {
         let nomeMat = tech.mala[itemIdx].desc;
         tech.mala[itemIdx].qtd = novaQtd;
         if (!tech.notificacoes) tech.notificacoes = [];
-        tech.notificacoes.push({
-            text: `Base atualizou o saldo de ${nomeMat} para ${novaQtd} un.`,
-            time: new Date().toLocaleDateString()
+        tech.notificacoes.push({ text: `Base atualizou o saldo de ${nomeMat} para ${novaQtd} un.`, time: new Date().toLocaleDateString() });
+        registrarMovimentacao("Edição Mala", "Admin", `Editada quantidade do item ${nomeMat} para ${novaQtd}`);
+        salvarDb().then(() => {
+            renderizarMalaAdmin();
+            alert("✅ Quantidade atualizada com sucesso!");
         });
-        registrarMovimentacao("Edição Mala", "Admin", `Editada quantidade do item ${nomeMat} para ${novaQtd} na mala de ${tech.name}`);
-        salvarDb();
-        renderizarMalaAdmin();
-        alert("✅ Quantidade da mala atualizada, salva e notificada ao técnico com sucesso!");
     }
 }
 
@@ -1822,12 +1757,13 @@ function excluirMaterialMalaAdmin(techLogin, itemIdx) {
     let tech = db.tecnicos.find(t => t.login === techLogin);
     if (tech && tech.mala && tech.mala[itemIdx]) {
         let itemNome = tech.mala[itemIdx].desc;
-        if (confirm(`Tem certeza que deseja excluir o material "${itemNome}" da mala do técnico ${tech.name}?`)) {
+        if (confirm(`Deseja excluir "${itemNome}" da mala?`)) {
             tech.mala.splice(itemIdx, 1);
-            registrarMovimentacao("Exclusão Material Mala", "Admin", `Removeu ${itemNome} da mala de ${tech.name}`);
-            salvarDb();
-            renderizarMalaAdmin();
-            alert("✅ Material removido da mala sem erros!");
+            registrarMovimentacao("Exclusão Material Mala", "Admin", `Removeu ${itemNome}`);
+            salvarDb().then(() => {
+                renderizarMalaAdmin();
+                alert("✅ Material removido com sucesso!");
+            });
         }
     }
 }
@@ -1840,19 +1776,13 @@ function aprovarReposicaoAdmin(repId, techLogin, materialDesc, qtd) {
         let malaItem = tech.mala.find(m => m.desc === materialDesc);
         if (malaItem) malaItem.qtd = Number(malaItem.qtd || 0) + Number(qtd);
         else tech.mala.push({ sap: "REP-99", desc: materialDesc, qtd: Number(qtd), lancado: 0, abastecido: Number(qtd), seriais: [] });
-        
-        if (!tech.notificacoes) tech.notificacoes = [];
-        tech.notificacoes.push({
-            text: `Reposição de ${qtd}x ${materialDesc} aprovada pela Base!`,
-            time: new Date().toLocaleDateString()
-        });
     }
     let rep = db.reposicoes.find(r => r.id === repId);
     if (rep) rep.status = "Aprovado";
-    registrarMovimentacao("Reposição Aprovada", "Admin", `Aprovada reposição de ${qtd}x ${materialDesc} para ${tech ? tech.name : techLogin}`);
-    salvarDb();
-    alert("✅ Reposição aprovada, adicionada à mala e notificada ao técnico!");
-    renderizarMalaAdmin();
+    salvarDb().then(() => {
+        alert("✅ Reposição aprovada!");
+        renderizarMalaAdmin();
+    });
 }
 
 function removerReposicaoAdmin(repId) {
@@ -1875,28 +1805,27 @@ function renderizarHistoricoGeral() {
             <td class="p-3 text-white font-semibold">${h.responsavel}</td>
             <td class="p-3 text-zinc-100">${h.detalhes}</td>
         </tr>
-    `).join('') || '<tr><td colspan="4" class="p-4 text-center">Nenhum registro no histórico.</td></tr>';
+    `).join('') || '<tr><td colspan="4" class="p-4 text-center">Nenhum registro.</td></tr>';
 }
 
 function limparHistoricoGeral() {
     if (isVisualizador) return;
-    if (confirm("Deseja realmente limpar todo el histórico de movimentações?")) {
+    if (confirm("Limpar histórico?")) {
         db.movimentacoes = [];
         salvarDb();
         renderizarHistoricoGeral();
-        alert("✅ Histórico limpo com sucesso!");
     }
 }
 
 function baixarExcelGeral() {
-    let csv = "data:text/csv;charset=utf-8,Data/Hora;Tipo;Responsavel;Detalhes\n";
+    let csv = "data:text/csv;charset=utf-8,DATA/HORA;TIPO;RESPONSAVEL;DETALHES\n";
     db.movimentacoes.forEach(m => {
         csv += `${m.data};"${m.tipo}";"${m.responsavel}";"${m.detalhes}"\n`;
     });
     let encodedUri = encodeURI(csv);
     let link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "historico_movimentacoes_geral.csv");
+    link.setAttribute("download", "historico_movimentacoes.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1904,10 +1833,7 @@ function baixarExcelGeral() {
 
 function exportarExcelSIAKI() {
     let filtrados = obterLancamentosSIAKIFiltrados();
-    if (filtrados.length === 0) {
-        alert("Nenhum lançamento encontrado no filtro selecionado para exportar!");
-        return;
-    }
+    if (filtrados.length === 0) { alert("Nenhum lançamento encontrado!"); return; }
     let csvContent = "data:text/csv;charset=utf-8,DATA;COD SAP;Material;PROJETOS;CIDADE;LOCAL DE DESCARGA;Node/Site/Cód Imóvel;QTD. CONSUMO;QTD. DESCARTE\n";
     filtrados.forEach(l => {
         (l.items || []).forEach(it => {
@@ -1923,17 +1849,10 @@ function exportarExcelSIAKI() {
     document.body.removeChild(link);
 }
 
-function copiarServicoSIAKILinha(idOuIndex, fallbackIndex) {
-    let idxReal = db.lancamentos.findIndex(l => String(l.id) === String(idOuIndex));
-    if (idxReal === -1 && typeof fallbackIndex === 'number') {
-        idxReal = fallbackIndex;
-    }
-    if (idxReal === -1 || !db.lancamentos[idxReal]) {
-        alert("Lançamento não encontrado!");
-        return;
-    }
+function copiarServicoSIAKILinha(idOuIndex) {
+    let l = db.lancamentos.find(x => String(x.id) === String(idOuIndex)) || db.lancamentos[idOuIndex];
+    if (!l) { alert("Lançamento não encontrado!"); return; }
 
-    let l = db.lancamentos[idxReal];
     let texto = "DATA\tCOD SAP\tMaterial\tPROJETOS\tCIDADE\tLOCAL DE DESCARGA\tNode/Site/Cód Imóvel\tQTD. CONSUMO\tQTD. DESCARTE\n";
     (l.items || []).forEach(it => {
         texto += `${l.data || ''}\t${it.sap}\t${it.material}\t${l.projeto}\tMACEIO\t865323\t${l.node}\t${it.qtd}\t${it.descarte || 0}\n`;
@@ -1941,21 +1860,14 @@ function copiarServicoSIAKILinha(idOuIndex, fallbackIndex) {
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(texto).then(() => {
-            alert(`📋 Serviço do Node ${l.node} copiado com sucesso no padrão SIAKI!`);
-        }).catch(() => {
-            copiarFallbackTextarea(texto, 1);
+            alert(`📋 Serviço copiado no padrão SIAKI!`);
         });
-    } else {
-        copiarFallbackTextarea(texto, 1);
     }
 }
 
 function copiarDadosSIAKI() {
     let filtrados = obterLancamentosSIAKIFiltrados();
-    if (filtrados.length === 0) {
-        alert("Nenhum lançamento encontrado com o filtro/data selecionado para copiar!");
-        return;
-    }
+    if (filtrados.length === 0) { alert("Nenhum lançamento no filtro!"); return; }
 
     let texto = "DATA\tCOD SAP\tMaterial\tPROJETOS\tCIDADE\tLOCAL DE DESCARGA\tNode/Site/Cód Imóvel\tQTD. CONSUMO\tQTD. DESCARTE\n";
     filtrados.forEach(l => {
@@ -1966,46 +1878,49 @@ function copiarDadosSIAKI() {
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(texto).then(() => {
-            alert(`📋 ${filtrados.length} lançamento(s) copiado(s) no padrão SIAKI com sucesso!`);
-        }).catch(() => {
-            copiarFallbackTextarea(texto, filtrados.length);
+            alert(`📋 ${filtrados.length} lançamento(s) copiado(s)!`);
         });
-    } else {
-        copiarFallbackTextarea(texto, filtrados.length);
     }
 }
 
-function copiarFallbackTextarea(texto, totalFiltrados) {
-    let ta = document.createElement("textarea");
-    ta.value = texto;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    try {
-        document.execCommand('copy');
-        alert(`📋 ${totalFiltrados} lançamento(s) copiado(s) no padrão SIAKI com sucesso!`);
-    } catch (e) {
-        alert("Não foi possível copiar automaticamente.");
-    }
-    document.body.removeChild(ta);
-}
-
-function excluirLancamento(idOuIndex, fallbackIndex) {
+function excluirLancamentoUnico(idOuIndex) {
     if (isVisualizador) return;
-    if (confirm("Deseja excluir este lançamento SIAKI de forma sincronizada?")) {
-        let idxReal = db.lancamentos.findIndex(l => String(l.id) === String(idOuIndex));
-        if (idxReal === -1 && typeof fallbackIndex === 'number') {
-            idxReal = fallbackIndex;
+    if (confirm("Deseja excluir este lançamento SIAKI?")) {
+        let idx = db.lancamentos.findIndex(l => String(l.id) === String(idOuIndex));
+        if (idx === -1) idx = idOuIndex;
+        if (idx >= 0 && db.lancamentos[idx]) {
+            db.lancamentos.splice(idx, 1);
+            salvarDb().then(() => {
+                atualizarPainelAdmin();
+                alert("✅ Lançamento excluído com sucesso!");
+            });
         }
-        if (idxReal >= 0 && db.lancamentos[idxReal]) {
-            db.lancamentos.splice(idxReal, 1);
-            registrarMovimentacao("Exclusão Lançamento SIAKI", "Admin", `Excluiu lançamento do histórico SIAKI.`);
-            salvarDb();
+    }
+}
+
+function excluirLancamentosFiltradosAdmin() {
+    if (isVisualizador) return;
+    let filtrados = obterLancamentosSIAKIFiltrados();
+    if (filtrados.length === 0) { alert("Nenhum lançamento encontrado com o filtro atual para excluir."); return; }
+    
+    if (confirm(`Tem certeza que deseja excluir os ${filtrados.length} lançamentos encontrados neste filtro?`)) {
+        let idsParaRemover = new Set(filtrados.map(f => f.id));
+        db.lancamentos = db.lancamentos.filter(l => !idsParaRemover.has(l.id));
+        salvarDb().then(() => {
             atualizarPainelAdmin();
-            alert("✅ Lançamento excluído com sucesso e sincronizado!");
-        }
+            alert(`✅ ${filtrados.length} lançamento(s) filtrado(s) excluído(s) com sucesso!`);
+        });
+    }
+}
+
+function excluirTodosLancamentosAdmin() {
+    if (isVisualizador) return;
+    if (confirm("⚠️ ATENÇÃO: Deseja excluir TODOS os lançamentos SIAKI do sistema?")) {
+        db.lancamentos = [];
+        salvarDb().then(() => {
+            atualizarPainelAdmin();
+            alert("✅ Todos os lançamentos foram limpos!");
+        });
     }
 }
 
@@ -2126,11 +2041,10 @@ function adicionarTecnicoPorLoginRapido() {
     });
     document.getElementById('quick-add-login').value = '';
     salvarDb();
-    alert("✅ Técnico adicionado com sucesso com estoque padrão configurado!");
+    alert("✅ Técnico adicionado com sucesso!");
     atualizarPainelAdmin();
 }
 
-// --- CADASTRAR, EDITAR E REMOVER MATERIAL DO CATÁLOGO ---
 function adicionarMaterialAdmin() {
     if (isVisualizador) return;
     let sap = document.getElementById('mat-sap').value.trim();
@@ -2144,10 +2058,10 @@ function adicionarMaterialAdmin() {
 
     document.getElementById('mat-sap').value = '';
     document.getElementById('mat-desc').value = '';
-    registrarMovimentacao("Catálogo SAP+Desc", "Admin", `Cadastrou material ${desc} (${sap})`);
+    registrarMovimentacao("Catálogo", "Admin", `Cadastrou material ${desc} (${sap})`);
     salvarDb();
     atualizarPainelAdmin();
-    alert("✅ Material cadastrado no Catálogo SAP+Desc e sincronizado sem erros!");
+    alert("✅ Material cadastrado!");
 }
 
 function abrirModalEditarMaterial(i) {
@@ -2170,31 +2084,15 @@ function salvarEdicaoMaterialAdmin() {
     let novoSap = document.getElementById('edit-mat-sap').value.trim();
     let novaDesc = document.getElementById('edit-mat-desc').value.trim();
 
-    if (!novoSap || !novaDesc) { alert("Preencha o Código SAP e a Descrição!"); return; }
+    if (!novoSap || !novaDesc) { alert("Preencha os campos!"); return; }
 
     if (db.materiais && db.materiais[idx]) {
-        let sapAntigo = db.materiais[idx].sap;
-        let descAntiga = db.materiais[idx].desc;
-
         db.materiais[idx].sap = novoSap;
         db.materiais[idx].desc = novaDesc;
-
-        db.tecnicos.forEach(t => {
-            if (t.mala) {
-                t.mala.forEach(m => {
-                    if (m.sap === sapAntigo || m.desc === descAntiga) {
-                        m.sap = novoSap;
-                        m.desc = novaDesc;
-                    }
-                });
-            }
-        });
-
-        registrarMovimentacao("Edição Catálogo", "Admin", `Alterou material (${sapAntigo}) para ${novaDesc} (${novoSap})`);
         salvarDb();
         fecharModalEditarMaterial();
         atualizarPainelAdmin();
-        alert("✅ Material editado e atualizado em todo o sistema ao vivo!");
+        alert("✅ Material atualizado!");
     }
 }
 
@@ -2203,50 +2101,35 @@ function removerMaterialAdmin(i) {
     let mat = db.materiais[i];
     if (!mat) return;
 
-    if (confirm(`Tem certeza que deseja excluir o material "${mat.desc}" (${mat.sap})?\nIsso irá removê-lo do catálogo e das malas dos técnicos ao vivo.`)) {
-        let sapExcluido = mat.sap;
-        let descExcluida = mat.desc;
-
+    if (confirm(`Excluir material "${mat.desc}"?`)) {
         db.materiais.splice(i, 1);
-
-        db.tecnicos.forEach(t => {
-            if (t.mala) {
-                t.mala = t.mala.filter(m => m.sap !== sapExcluido && m.desc !== descExcluida);
-            }
-        });
-
-        registrarMovimentacao("Exclusão Catálogo", "Admin", `Excluiu material ${descExcluida} (${sapExcluido}) do sistema`);
         salvarDb();
         atualizarPainelAdmin();
-        alert("✅ Material removido do catálogo e das malas dos técnicos de forma sincronizada!");
     }
 }
 
 function acionarSOS() {
-    if (confirm("ATENÇÃO: Deseja acionar o alerta SOS de emergência para a Base?")) {
+    if (confirm("Deseja acionar o alerta SOS?")) {
         db.sosAtivo = {
             nome: usuarioLogado.name,
             car: usuarioLogado.car,
             hora: new Date().toLocaleTimeString()
         };
-        registrarMovimentacao("SOS", usuarioLogado.name, `ACIONOU SOS DE EMERGÊNCIA!`);
         db.notificacoes.push({ text: `EMERGÊNCIA: Técnico ${usuarioLogado.name} acionou o SOS!`, time: new Date().toLocaleDateString(), tipo: "danger" });
         salvarDb();
-        alert("🚨 Alerta SOS enviado com sucesso para a Central!");
+        alert("🚨 Alerta SOS enviado!");
     }
 }
 
 function resolverSos() {
     if (isVisualizador) return;
     db.sosAtivo = null;
-    registrarMovimentacao("SOS Resolvido", "Admin", `Alerta SOS foi resolvido.`);
     salvarDb();
     atualizarPainelAdmin();
 }
 
 function toggleNotifDropdown() {
-    let d = document.getElementById('notif-dropdown');
-    d.classList.toggle('hidden');
+    document.getElementById('notif-dropdown').classList.toggle('hidden');
 }
 
 function limparNotificacoes() {
@@ -2305,13 +2188,16 @@ function mudarFotoPerfil(e) {
     if (file) {
         let r = new FileReader();
         r.onload = function (evt) {
-            usuarioLogado.avatar = evt.target.result;
+            let base64Image = evt.target.result;
+            usuarioLogado.avatar = base64Image;
             let t = db.tecnicos.find(x => x.login === usuarioLogado.login);
-            if (t) t.avatar = usuarioLogado.avatar;
-            registrarMovimentacao("Foto de Perfil", usuarioLogado.name, `Atualizou sua foto de perfil.`);
-            salvarDb();
-            inicializarPainelTecnico();
-            renderizarPinsMapaLeaflet();
+            if (t) t.avatar = base64Image;
+            registrarMovimentacao("Foto de Perfil", usuarioLogado.name, `Atualizou foto de perfil.`);
+            salvarDb().then(() => {
+                inicializarPainelTecnico();
+                renderizarPinsMapaLeaflet();
+                alert("✅ Foto de perfil alterada com sucesso!");
+            });
         };
         r.readAsDataURL(file);
     }
@@ -2329,7 +2215,7 @@ function enviarSolicitacaoLigacao() {
     db.notificacoes.push({ text: `Técnico ${usuarioLogado.name} solicitou ligação para ${dest}!`, time: new Date().toLocaleDateString(), tipo: "info" });
     salvarDb();
     document.getElementById('modal-chamada').classList.add('hidden');
-    alert(`📞 Solicitação de ligação enviada para ${dest} com sucesso!`);
+    alert(`📞 Solicitação enviada para ${dest}!`);
 }
 
 function renderizarCardTechAtivo() {
@@ -2361,10 +2247,10 @@ function abrirCardTech(tipo) {
         let totalItensCarrinho = carrinhoAtual.reduce((acc, i) => acc + Number(i.qtd || 0), 0);
         let indicadorResumoHtml = carrinhoAtual.length > 0 
             ? `<div class="p-3 bg-red-950/90 border border-red-700 rounded-xl flex items-center justify-between text-xs text-red-200 shadow">
-                   <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-300">${totalItensCarrinho} unidades no total</b></div>
-                   <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold shadow">Pronto p/ Enviar</span>
+                   <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-300">${totalItensCarrinho} unidades</b></div>
+                   <button type="button" onclick="limparCarrinhoTech()" class="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-[10px] shadow">Excluir Todos</button>
                </div>`
-            : `<div class="p-2.5 bg-zinc-900 border border-zinc-700 rounded-xl text-center text-xs text-zinc-300 italic font-semibold">Nenhum item selecionado no momento. Escolha abaixo.</div>`;
+            : `<div class="p-2.5 bg-zinc-900 border border-zinc-700 rounded-xl text-center text-xs text-zinc-300 italic font-semibold">Nenhum item selecionado. Escolha abaixo.</div>`;
 
         content.innerHTML = `
             <div class="space-y-4">
@@ -2378,8 +2264,7 @@ function abrirCardTech(tipo) {
                     <div>
                         <label class="block text-[11px] font-semibold text-zinc-200 mb-1">Projeto</label>
                         <select id="t-projeto" class="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs outline-none text-white font-semibold">
-                            <option value="MDU GPON F">MDU GPON F</option>
-                            <option value="MDU GPON ON GOING">MDU GPON ON GOING</option>
+                            <option value="MDU GPON GF">MDU GPON GF</option>
                         </select>
                     </div>
                     <div>
@@ -2409,7 +2294,10 @@ function abrirCardTech(tipo) {
                 </div>
 
                 <div class="pt-2 border-t border-zinc-700">
-                    <h5 class="font-bold text-xs text-zinc-200 mb-2">Carrinho de Lançamento</h5>
+                    <div class="flex justify-between items-center mb-2">
+                        <h5 class="font-bold text-xs text-zinc-200">Carrinho de Lançamento</h5>
+                        <button type="button" onclick="limparCarrinhoTech()" class="text-red-400 hover:text-red-300 font-bold text-[10px]">Excluir Todos</button>
+                    </div>
                     <table class="w-full text-xs text-left text-zinc-200">
                         <thead class="bg-black border-b border-zinc-700 text-zinc-300"><tr><th class="p-2">Material</th><th class="p-2 text-center">Qtd</th><th class="p-2 text-center">Remover</th></tr></thead>
                         <tbody id="t-cart-table" class="divide-y divide-zinc-700"><tr><td colspan="3" class="p-3 text-center text-zinc-400">Nenhum item adicionado.</td></tr></tbody>
@@ -2507,16 +2395,22 @@ function abrirCardTech(tipo) {
             <div class="space-y-4 max-w-md mx-auto">
                 <h4 class="font-bold text-red-400 text-xs sm:text-sm">Adicionar Colega de Trabalho</h4>
                 <input type="text" id="colega-busca-login" placeholder="Insira o login (ex: carlos)" class="w-full px-3 py-2.5 bg-black border border-zinc-700 rounded-xl text-xs text-white font-semibold outline-none">
-                <button type="button" onclick="enviarPedidoAmizadeTech()" class="w-full py-2.5 bg-red-600 text-white font-bold rounded-xl text-xs shadow">Enviar Solicitação de Amizade</button>
+                <button type="button" onclick="enviarPedidoAmizadeTech()" class="w-full py-2.5 bg-red-600 text-white font-bold rounded-xl text-xs shadow">Enviar Solicitação</button>
                 
                 <div class="pt-4 border-t border-zinc-700 space-y-2">
                     <h5 class="font-bold text-xs text-zinc-200">Solicitações Pendentes</h5>
-                    <div id="tech-pedidos-list" class="space-y-2">${pendentesHtml || '<p class="text-zinc-400 italic text-xs">Nenhuma solicitação pendente.</p>'}</div>
+                    <div id="tech-pedidos-list" class="space-y-2">${pendentesHtml || '<p class="text-zinc-400 italic text-xs">Nenhuma solicitação.</p>'}</div>
                 </div>
             </div>
         `;
     }
     if (window.lucide) lucide.createIcons();
+}
+
+function limparCarrinhoTech() {
+    carrinhoAtual = [];
+    renderizarCarrinhoTecnico();
+    renderizarSelecaoTecnico(true);
 }
 
 function renderizarHistoricoLancesTecnico() {
@@ -2540,23 +2434,19 @@ function renderizarHistoricoLancesTecnico() {
     });
 
     if (filtrados.length === 0) {
-        container.innerHTML = '<p class="text-zinc-400 text-center py-4 text-xs italic">Nenhum lançamento encontrado para os filtros informados.</p>';
+        container.innerHTML = '<p class="text-zinc-400 text-center py-4 text-xs italic">Nenhum lançamento encontrado.</p>';
         return;
     }
 
     container.innerHTML = filtrados.slice().reverse().map(l => {
         let itemsHtml = l.items.map(i => `<li class="flex justify-between items-center"><span class="truncate pr-2 text-zinc-200"><b>${i.sap}</b> - ${i.material}</span> <b class="text-red-400 font-mono flex-shrink-0">${i.qtd} un</b></li>`).join('');
-        let statusBadge = l.statusServidor === 'erro'
-            ? `<span class="px-2 py-0.5 rounded bg-red-900 text-red-200 font-bold text-[9px] border border-red-700 flex items-center gap-1 shadow">❌ Erro no Envio</span>`
-            : `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold text-[9px] border border-emerald-700 flex items-center gap-1 shadow">✅ Chegou ao Sistema (${l.hora || 'Sincronizado'})</span>`;
-
         return `
             <div class="p-3 bg-black border border-zinc-700 rounded-xl space-y-1.5 text-xs shadow-md">
                 <div class="flex justify-between items-center border-b border-zinc-700 pb-1.5">
                     <span class="text-zinc-300 font-mono text-[10px] font-semibold">📅 ${l.data} ${l.hora ? 'às ' + l.hora : ''}</span>
-                    ${statusBadge}
+                    <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold text-[9px] border border-emerald-700">✅ Sincronizado</span>
                 </div>
-                <div class="text-red-400 font-bold text-xs flex justify-between items-center">
+                <div class="text-red-400 font-bold text-xs">
                     <span>${l.projeto} (Node: ${l.node})</span>
                 </div>
                 <ul class="space-y-1 pl-1 text-[11px] text-zinc-200 border-t border-zinc-800 pt-1">
@@ -2569,7 +2459,7 @@ function renderizarHistoricoLancesTecnico() {
 
 function apagarMensagemChat(msgId) {
     if (isVisualizador) return;
-    if (confirm("Deseja apagar esta mensagem do chat?")) {
+    if (confirm("Apagar mensagem?")) {
         let idx = db.mensagens.findIndex(m => m.id === msgId);
         if (idx !== -1) {
             db.mensagens.splice(idx, 1);
@@ -2600,11 +2490,8 @@ async function toggleGravarAudio(isTech = true) {
                 reader.readAsDataURL(audioBlob);
                 reader.onloadend = () => {
                     const base64Audio = reader.result;
-                    if (isTech) {
-                        enviarAudioTech(base64Audio);
-                    } else {
-                        enviarAudioAdmin(base64Audio);
-                    }
+                    if (isTech) enviarAudioTech(base64Audio);
+                    else enviarAudioAdmin(base64Audio);
                 };
                 stream.getTracks().forEach(track => track.stop());
             };
@@ -2617,8 +2504,7 @@ async function toggleGravarAudio(isTech = true) {
                 if (window.lucide) lucide.createIcons();
             }
         } catch (err) {
-            alert("Não foi possível acessar o microfone para gravar áudio.");
-            console.error(err);
+            alert("Não foi possível acessar o microfone.");
         }
     } else {
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -2646,7 +2532,6 @@ function enviarAudioTech(audioDataUrl) {
     });
     salvarDb();
     atualizarMsgTechBox();
-    renderizarColegasChatTech();
 }
 
 function enviarAudioAdmin(audioDataUrl) {
@@ -2674,7 +2559,6 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
 
     const savedListScrollTop = preservarScroll ? listEl.scrollTop : 0;
     const savedFavScrollTop = (preservarScroll && favEl) ? favEl.scrollTop : 0;
-    const savedWindowScrollY = preservarScroll ? window.scrollY : 0;
 
     let todosMateriais = [];
     let sapsVistos = new Set();
@@ -2693,15 +2577,6 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
         }
     });
 
-    if (usuarioLogado && usuarioLogado.mala) {
-        usuarioLogado.mala.forEach(m => {
-            if (m.sap && !sapsVistos.has(m.sap)) {
-                todosMateriais.push({ sap: m.sap, desc: m.desc });
-                sapsVistos.add(m.sap);
-            }
-        });
-    }
-
     let html = "";
     let filtrados = todosMateriais.filter(m => m.desc.toLowerCase().includes(filtro) || m.sap.toLowerCase().includes(filtro));
 
@@ -2713,7 +2588,6 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
         let qtdMala = itemMala ? itemMala.qtd : 0;
         let descEscaped = m.desc.replace(/'/g, "\\'");
 
-        // Verifica se o item já está no carrinho atual para destacá-lo visualmente
         let isInCart = carrinhoAtual.some(ci => ci.sap === m.sap);
         let cardBgClass = isInCart ? "bg-red-950/70 border-red-600 shadow-md" : "bg-zinc-900 border-zinc-700";
         let statusInclusoBadge = isInCart ? `<span class="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold uppercase ml-1 shadow">Incluso ✓</span>` : '';
@@ -2731,7 +2605,7 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
             </div>
         `;
     });
-    listEl.innerHTML = html || '<p class="text-zinc-400 text-center text-xs py-2">Nenhum material cadastrado no sistema.</p>';
+    listEl.innerHTML = html || '<p class="text-zinc-400 text-center text-xs py-2">Nenhum material.</p>';
 
     let favHtml = "";
     (db.favoritos || []).forEach(f => {
@@ -2750,9 +2624,6 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
     if (preservarScroll) {
         listEl.scrollTop = savedListScrollTop;
         if (favEl) favEl.scrollTop = savedFavScrollTop;
-        if (window.scrollY !== savedWindowScrollY) {
-            window.scrollTo(0, savedWindowScrollY);
-        }
     }
 }
 
@@ -2807,13 +2678,13 @@ function atualizarIndicadorSelecaoCarrinho() {
     if (carrinhoAtual.length > 0) {
         box.innerHTML = `
             <div class="p-3 bg-red-950/90 border border-red-700 rounded-xl flex items-center justify-between text-xs text-red-200 shadow">
-                <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-300">${totalItensCarrinho} unidades no total</b></div>
-                <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold shadow">Pronto p/ Enviar</span>
+                <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-300">${totalItensCarrinho} unidades</b></div>
+                <button type="button" onclick="limparCarrinhoTech()" class="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-[10px] shadow">Excluir Todos</button>
             </div>
         `;
     } else {
         box.innerHTML = `
-            <div class="p-2.5 bg-zinc-900 border border-zinc-700 rounded-xl text-center text-xs text-zinc-300 italic font-semibold">Nenhum item selecionado no momento. Escolha abaixo.</div>
+            <div class="p-2.5 bg-zinc-900 border border-zinc-700 rounded-xl text-center text-xs text-zinc-300 italic font-semibold">Nenhum item selecionado. Escolha abaixo.</div>
         `;
     }
 }
@@ -2830,7 +2701,7 @@ function renderizarCarrinhoTecnico() {
         <tr class="border-b border-zinc-700">
             <td class="p-2 text-white font-semibold"><b>${it.sap}</b> - ${it.material}</td>
             <td class="p-2 text-center">
-                <input type="number" min="1" value="${it.qtd}" oninput="atualizarQtdCarrinhoTech(${idx}, this.value)" onchange="atualizarQtdCarrinhoTech(${idx}, this.value)" class="w-16 px-2 py-1 bg-black border border-zinc-600 rounded text-center text-red-400 font-bold outline-none">
+                <input type="number" min="1" value="${it.qtd}" oninput="atualizarQtdCarrinhoTech(${idx}, this.value)" class="w-16 px-2 py-1 bg-black border border-zinc-600 rounded text-center text-red-400 font-bold outline-none">
             </td>
             <td class="p-2 text-center"><button type="button" onclick="carrinhoAtual.splice(${idx},1); renderizarCarrinhoTecnico(); renderizarSelecaoTecnico(true);" class="text-red-400 font-bold px-2 py-1 hover:underline">X</button></td>
         </tr>
@@ -2875,7 +2746,6 @@ function salvarLoteTecnico() {
     }
 
     usuarioLogado.mala = techNoDb.mala;
-
     const horaAtualStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     if (!db.lancamentos) db.lancamentos = [];
@@ -2892,19 +2762,20 @@ function salvarLoteTecnico() {
         statusServidor: "ok"
     });
 
-    registrarMovimentacao("Lançamento Campo", usuarioLogado.name, `Lançou no Node ${node} (${projeto}) - Estoque descontado.`);
+    registrarMovimentacao("Lançamento Campo", usuarioLogado.name, `Lançou no Node ${node} (${projeto})`);
     db.notificacoes.push({ text: `${usuarioLogado.name} lançou no Node ${node} (${projeto})`, time: new Date().toLocaleDateString(), tipo: "info" });
 
     carrinhoAtual = [];
-    salvarDb();
-    alert("✅ Lançamento realizado e sincronizado perfeitamente sem erros!");
-    abrirCardTech('historico');
+    salvarDb().then(() => {
+        alert("✅ Lançamento realizado com sucesso!");
+        abrirCardTech('historico');
+    });
 }
 
 function solicitarReposicaoTech() {
     let matDesc = document.getElementById('t-rep-mat').value;
     let qtd = Number(document.getElementById('t-rep-qtd').value);
-    if (qtd <= 0) { alert("Informe uma quantidade válida."); return; }
+    if (qtd <= 0) { alert("Informe quantidade válida."); return; }
 
     db.reposicoes.push({
         id: Date.now(),
@@ -2915,25 +2786,20 @@ function solicitarReposicaoTech() {
         status: "Pendente"
     });
     registrarMovimentacao("Reposição Solicitada", usuarioLogado.name, `Solicitou reposição de ${qtd}x ${matDesc}`);
-    db.notificacoes.push({ text: `${usuarioLogado.name} solicitou reposição de ${matDesc} (${qtd} un).`, time: new Date().toLocaleDateString(), tipo: "info" });
     salvarDb();
-    alert("✅ Pedido de reposição enviado para a Base Central!");
+    alert("✅ Pedido de reposição enviado!");
 }
 
 function enviarPedidoAmizadeTech() {
     let loginBusca = document.getElementById('colega-busca-login').value.trim().toLowerCase();
     let amigo = db.tecnicos.find(t => t.login === loginBusca);
     if (!amigo) { alert("Técnico não encontrado!"); return; }
-    if (amigo.login === usuarioLogado.login) { alert("Você não pode adicionar a si mesmo."); return; }
-    if ((usuarioLogado.amigos || []).includes(amigo.login)) { alert("Vocês já são colegas!"); return; }
+    if (amigo.login === usuarioLogado.login) { alert("Não pode adicionar a si mesmo."); return; }
 
     if (!amigo.pedidosAmizade) amigo.pedidosAmizade = [];
-    if (amigo.pedidosAmizade.find(p => (p.login || p) === usuarioLogado.login)) { alert("Pedido já enviado anteriormente!"); return; }
-
     amigo.pedidosAmizade.push({ login: usuarioLogado.login, nome: usuarioLogado.name });
-    registrarMovimentacao("Solicitação Amizade", usuarioLogado.name, `Enviou pedido para ${amigo.name}`);
     salvarDb();
-    alert("✅ Solicitação de amizade enviada com sucesso!");
+    alert("✅ Solicitação enviada!");
     document.getElementById('colega-busca-login').value = '';
 }
 
@@ -2941,14 +2807,8 @@ function aceitarPedidoAmizade(loginColega) {
     if (!usuarioLogado.amigos) usuarioLogado.amigos = [];
     usuarioLogado.amigos.push(loginColega);
     usuarioLogado.pedidosAmizade = usuarioLogado.pedidosAmizade.filter(p => (p.login || p) !== loginColega);
-
-    let colegaObj = db.tecnicos.find(t => t.login === loginColega);
-    if (colegaObj) {
-        if (!colegaObj.amigos) colegaObj.amigos = [];
-        if (!colegaObj.amigos.includes(usuarioLogado.login)) colegaObj.amigos.push(usuarioLogado.login);
-    }
     salvarDb();
-    alert("✅ Pedido de amizade aceito!");
+    alert("✅ Colega aceito!");
     abrirCardTech('colega');
 }
 
@@ -2976,11 +2836,11 @@ function renderizarColegasChatTech() {
             let avatar = amigoObj.avatar ? `<img src="${amigoObj.avatar}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">${amigoObj.name.charAt(0)}</div>`;
             let badgeOn = amigoObj.online ? 'bg-emerald-400' : 'bg-zinc-500';
             let naoLidas = db.mensagens.filter(m => m.remetente === amigoObj.name && m.destinatario === usuarioLogado.name && !m.lido).length;
-            let badgeHtml = naoLidas > 0 ? `<span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow">${naoLidas}</span>` : '';
+            let badgeHtml = naoLidas > 0 ? `<span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">${naoLidas}</span>` : '';
             html += `
                 <div onclick="selecionarChatTech('${amigoObj.name}')" class="flex items-center space-x-2 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-xl cursor-pointer hover:border-red-600 flex-shrink-0 relative shadow">
                     <div class="relative">${avatar}<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${badgeOn} border border-black"></span></div>
-                    <div class="text-left"><span class="text-xs font-bold text-white block">${amigoObj.name}</span><span class="text-[9px] text-zinc-300 font-semibold">Online: ${amigoObj.lastSeen || 'Offline'}</span></div>
+                    <div class="text-left"><span class="text-xs font-bold text-white block">${amigoObj.name}</span></div>
                     ${badgeHtml}
                 </div>
             `;
@@ -2995,15 +2855,8 @@ function atualizarBadgesChatTech() {
     let naoLidasBase = db.mensagens.filter(m => m.remetente === "Base" && (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login) && !m.lido).length;
     let btnBase = document.getElementById('btn-chat-Base');
     if (btnBase) {
-        if (naoLidasBase > 0) btnBase.innerHTML = `Base Central <span class="ml-1 bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[9px] shadow">${naoLidasBase}</span>`;
+        if (naoLidasBase > 0) btnBase.innerHTML = `Base Central <span class="ml-1 bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[9px]">${naoLidasBase}</span>`;
         else btnBase.innerHTML = `Base Central`;
-    }
-
-    let totalNaoLidasGeral = db.mensagens.filter(m => (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login) && !m.lido).length;
-    let badgeTab = document.getElementById('badge-tech-chat-tab');
-    if (badgeTab) {
-        if (totalNaoLidasGeral > 0) { badgeTab.classList.remove('hidden'); badgeTab.innerText = totalNaoLidasGeral; }
-        else badgeTab.classList.add('hidden');
     }
 }
 
@@ -3025,7 +2878,7 @@ function atualizarMsgTechBox() {
             <div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow-md relative group">
                 <div class="flex items-center justify-between border-b border-white/20 pb-1 mb-1">
                     <b class="text-[9px] opacity-90">${m.remetente} • ${m.hora}</b>
-                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-[10px] opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-2">🗑️</button>
+                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar" class="text-[10px] opacity-80 hover:opacity-100 font-bold ml-2">🗑️</button>
                 </div>
                 ${m.texto ? `<p class="font-semibold">${m.texto}</p>` : ''}
                 ${audioMarkup}
@@ -3049,7 +2902,6 @@ function enviarMsgTech() {
     inp.value = '';
     salvarDb();
     atualizarMsgTechBox();
-    renderizarColegasChatTech();
 }
 
 let chatAdminAtual = null;
@@ -3061,12 +2913,12 @@ function atualizarChatAdminLista() {
         let avatar = t.avatar ? `<img src="${t.avatar}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
         let badgeOn = t.online ? 'bg-emerald-400' : 'bg-zinc-500';
         let naoLidas = db.mensagens.filter(m => m.remetente === t.name && m.destinatario === "Base" && !m.lido).length;
-        let badgeNaoLida = naoLidas > 0 ? `<span class="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow">${naoLidas}</span>` : '';
+        let badgeNaoLida = naoLidas > 0 ? `<span class="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">${naoLidas}</span>` : '';
         html += `
             <div onclick="selecionarChatAdmin('${t.name}')" class="p-3 rounded-xl hover:bg-zinc-900 cursor-pointer flex items-center justify-between text-xs border-b border-zinc-700">
                 <div class="flex items-center space-x-2">
                     <div class="relative">${avatar}<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${badgeOn} border border-black"></span></div>
-                    <div><span class="font-bold text-white block">${t.name}</span><span class="text-[9px] text-zinc-300 font-semibold">Online: ${t.lastSeen || 'Offline'}</span></div>
+                    <div><span class="font-bold text-white block">${t.name}</span></div>
                 </div>
                 ${badgeNaoLida}
             </div>
@@ -3106,7 +2958,7 @@ function atualizarMensagensAdminBox() {
             <div class="max-w-[75%] p-3 rounded-2xl ${bg} shadow-md relative group">
                 <div class="flex items-center justify-between border-b border-white/20 pb-1 mb-1">
                     <b class="text-[10px] opacity-90">${m.remetente} • ${m.hora}</b>
-                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-xs opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-3">🗑️</button>
+                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar" class="text-xs opacity-80 hover:opacity-100 font-bold ml-3">🗑️</button>
                 </div>
                 ${m.texto ? `<p class="font-semibold">${m.texto}</p>` : ''}
                 ${audioMarkup}
