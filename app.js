@@ -101,6 +101,7 @@ let cardTechAtivo = "lancamento";
 let isMobileLayout = false;
 let isInitialLoadDone = false;
 let isTouchingMaterialScroll = false;
+let isTouchingHistoryScroll = false;
 
 function normalizarArray(val) {
     if (!val) return [];
@@ -229,10 +230,14 @@ dbRef.on('value', (snapshot) => {
                 if (!isUserInteracting) {
                     renderizarCarrinhoTecnico();
                 }
+            } else if (cardTechAtivo === 'historico') {
+                if (!isTouchingHistoryScroll) {
+                    renderizarHistoricoLancesTecnico();
+                }
             } else if (cardTechAtivo === 'chat') {
                 atualizarMsgTechBox();
                 atualizarBadgesChatTech();
-            } else if (!isUserInteracting) {
+            } else if (!isUserInteracting && cardTechAtivo !== 'lancamento' && cardTechAtivo !== 'historico') {
                 renderizarCardTechAtivo();
             }
         }
@@ -1729,9 +1734,7 @@ function incluirMaterialManualMalaAdmin() {
     });
 
     registrarMovimentacao("Inclusão Manual Mala", "Admin", `Adicionou ${qtd}x ${matInfo.desc} (${sap}) na mala de ${tech.name}`);
-    
-    // Zera imediatamente o input para 0 para permitir novas inclusões sem congelar
-    qtdInput.value = '0';
+    qtdInput.value = '1';
 
     salvarDb();
     renderizarMalaAdmin();
@@ -1785,7 +1788,7 @@ function renderizarMalaAdmin() {
             <div class="p-3 bg-black border border-zinc-700 rounded-xl flex justify-between items-center text-xs">
                 <div><b class="text-white">${r.material}</b> - Qtd solicitada: <span class="text-amber-300 font-bold">${r.qtd}</span> (${r.status || 'Pendente'})</div>
                 <div class="space-x-2">
-                    <button type="button" onclick="aprovarReposicaoAdmin(${r.id}, '${tech.login}', '${r.material.replace(/'/g, "\\'")}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold shadow">Aprovar</button>
+                    <button type="button" onclick="aprovarReposicaoAdmin(${r.id}, '${tech.login}', '${r.material.replace(/'/g, "\'")}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold shadow">Aprovar</button>
                     <button type="button" onclick="removerReposicaoAdmin(${r.id})" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button>
                 </div>
             </div>
@@ -2351,6 +2354,18 @@ function atualizarEstiloAbasTech(tipo) {
     });
 }
 
+function limparCarrinhoTecnico() {
+    if (carrinhoAtual.length === 0) {
+        alert("O carrinho já está vazio.");
+        return;
+    }
+    if (confirm("Deseja excluir rapidamente todos os itens selecionados do carrinho?")) {
+        carrinhoAtual = [];
+        renderizarCarrinhoTecnico();
+        renderizarSelecaoTecnico(true);
+    }
+}
+
 function abrirCardTech(tipo) {
     cardTechAtivo = tipo;
     atualizarEstiloAbasTech(tipo);
@@ -2362,13 +2377,16 @@ function abrirCardTech(tipo) {
         let indicadorResumoHtml = carrinhoAtual.length > 0 
             ? `<div class="p-3 bg-red-950/90 border border-red-700 rounded-xl flex items-center justify-between text-xs text-red-200 shadow">
                    <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-300">${totalItensCarrinho} unidades no total</b></div>
-                   <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold shadow">Pronto p/ Enviar</span>
+                   <button type="button" onclick="limparCarrinhoTecnico()" class="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow">🗑️ Excluir Todos</button>
                </div>`
             : `<div class="p-2.5 bg-zinc-900 border border-zinc-700 rounded-xl text-center text-xs text-zinc-300 italic font-semibold">Nenhum item selecionado no momento. Escolha abaixo.</div>`;
 
         content.innerHTML = `
             <div class="space-y-4">
-                <h4 class="font-bold text-red-400 text-xs sm:text-sm flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Lançamento em Campo</span></h4>
+                <div class="flex justify-between items-center">
+                    <h4 class="font-bold text-red-400 text-xs sm:text-sm flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Lançamento em Campo</span></h4>
+                    ${carrinhoAtual.length > 0 ? `<button type="button" onclick="limparCarrinhoTecnico()" class="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow">🗑️ Excluir Todos</button>` : ''}
+                </div>
                 
                 <div id="tech-selection-indicator-box">
                     ${indicadorResumoHtml}
@@ -2400,6 +2418,7 @@ function abrirCardTech(tipo) {
                              ontouchstart="isTouchingMaterialScroll = true"
                              ontouchend="setTimeout(() => { isTouchingMaterialScroll = false; }, 350)"
                              ontouchcancel="isTouchingMaterialScroll = false"
+                             onscroll="isTouchingMaterialScroll = true; clearTimeout(window._matScrollTimeout); window._matScrollTimeout = setTimeout(() => { isTouchingMaterialScroll = false; }, 400);"
                              class="max-h-48 overflow-y-auto space-y-1 border border-zinc-700 p-2 rounded-xl bg-black"></div>
                     </div>
                     <div>
@@ -2433,7 +2452,12 @@ function abrirCardTech(tipo) {
                     <input type="date" id="tech-hist-date" onchange="renderizarHistoricoLancesTecnico()" class="px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white font-semibold outline-none">
                 </div>
 
-                <div id="tech-hist-list" class="max-h-80 overflow-y-auto space-y-2 pt-1"></div>
+                <div id="tech-hist-list"
+                     ontouchstart="isTouchingHistoryScroll = true"
+                     ontouchend="setTimeout(() => { isTouchingHistoryScroll = false; }, 350)"
+                     ontouchcancel="isTouchingHistoryScroll = false"
+                     onscroll="isTouchingHistoryScroll = true; clearTimeout(window._histScrollTimeout); window._histScrollTimeout = setTimeout(() => { isTouchingHistoryScroll = false; }, 400);"
+                     class="max-h-80 overflow-y-auto space-y-2 pt-1"></div>
             </div>
         `;
         renderizarHistoricoLancesTecnico();
@@ -2523,6 +2547,8 @@ function renderizarHistoricoLancesTecnico() {
     let container = document.getElementById('tech-hist-list');
     if (!container || !usuarioLogado) return;
 
+    const savedScrollTop = container.scrollTop;
+
     let termo = (document.getElementById('tech-hist-search')?.value || '').toLowerCase();
     let dataFiltro = document.getElementById('tech-hist-date')?.value;
 
@@ -2565,6 +2591,10 @@ function renderizarHistoricoLancesTecnico() {
             </div>
         `;
     }).join('');
+
+    if (isTouchingHistoryScroll) {
+        container.scrollTop = savedScrollTop;
+    }
 }
 
 function apagarMensagemChat(msgId) {
@@ -2713,7 +2743,6 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
         let qtdMala = itemMala ? itemMala.qtd : 0;
         let descEscaped = m.desc.replace(/'/g, "\\'");
 
-        // Verifica se o item já está no carrinho atual para destacá-lo visualmente
         let isInCart = carrinhoAtual.some(ci => ci.sap === m.sap);
         let cardBgClass = isInCart ? "bg-red-950/70 border-red-600 shadow-md" : "bg-zinc-900 border-zinc-700";
         let statusInclusoBadge = isInCart ? `<span class="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold uppercase ml-1 shadow">Incluso ✓</span>` : '';
@@ -2808,7 +2837,7 @@ function atualizarIndicadorSelecaoCarrinho() {
         box.innerHTML = `
             <div class="p-3 bg-red-950/90 border border-red-700 rounded-xl flex items-center justify-between text-xs text-red-200 shadow">
                 <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-300">${totalItensCarrinho} unidades no total</b></div>
-                <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold shadow">Pronto p/ Enviar</span>
+                <button type="button" onclick="limparCarrinhoTecnico()" class="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow">🗑️ Excluir Todos</button>
             </div>
         `;
     } else {
