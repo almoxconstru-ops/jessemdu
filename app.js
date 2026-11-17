@@ -222,7 +222,6 @@ dbRef.on('value', (snapshot) => {
                 atualizarTelemetriaTecnicoLive();
             }
 
-            // Atualiza dados ao vivo sem destruir o scroll da aba de lançamento
             if (cardTechAtivo === 'lancamento') {
                 if (!isTouchingMaterialScroll) {
                     renderizarSelecaoTecnico(true);
@@ -525,7 +524,7 @@ function reiniciarKmTodosTecnicos() {
         registrarMovimentacao("Reset KM Geral", "Admin", `Reiniciou a quilometragem de todos os técnicos.`);
         salvarDb();
         atualizarPainelAdmin();
-        alert("✅ Quilometragem de todos os técnicos reiniciada com sucesso!");
+        alert("✅ Quilometragem de todos los técnicos reiniciada com sucesso!");
     }
 }
 
@@ -1079,7 +1078,6 @@ function atualizarPainelAdmin() {
 
     atualizarSelectMalaAdmin();
 
-    // LISTA DO CATÁLOGO DE MATERIAIS
     let matHtml = '';
     (db.materiais || []).forEach((m, i) => {
         matHtml += `
@@ -1628,7 +1626,8 @@ function executarPassagemMultiplaTecnico() {
     registrarMovimentacao("Passagem Múltipla", "Admin", `Transferidos ${carrinhoPassagem.length} itens para ${tech.name}`);
 
     if (!tech.notificacoes) tech.notificacoes = [];
-    tech.notificacoes.push({ text: `Você recebeu novos materiais da Base Central (${resumoItensTxt.join(', ')})`, time: new Date().toLocaleDateString() });
+    const notifMsg = `Você recebeu novos materiais da Base Central (${resumoItensTxt.join(', ')})`;
+    tech.notificacoes.push({ text: notifMsg, time: new Date().toLocaleDateString() });
 
     db.notificacoes.push({ text: `Transferência múltipla realizada para ${tech.name}.`, time: new Date().toLocaleDateString(), tipo: "success" });
 
@@ -1710,16 +1709,20 @@ function incluirMaterialManualMalaAdmin() {
     }
 
     if (!tech.notificacoes) tech.notificacoes = [];
+    const textoNotif = `Base adicionou ${qtd}x ${matInfo.desc} à sua mala.`;
     tech.notificacoes.push({
-        text: `Admin adicionou manualmente ${qtd}x ${matInfo.desc} ao seu estoque.`,
+        text: textoNotif,
         time: new Date().toLocaleDateString()
     });
 
     registrarMovimentacao("Inclusão Manual Mala", "Admin", `Adicionou ${qtd}x ${matInfo.desc} (${sap}) na mala de ${tech.name}`);
+    
+    // Reseta o campo de quantidade para 1 (ou limpa) conforme solicitado, evitando congelamento
     qtdInput.value = '1';
+
     salvarDb();
     renderizarMalaAdmin();
-    alert(`✅ ${qtd}x ${matInfo.desc} incluído e sincronizado na mala de ${tech.name}!`);
+    alert(`✅ ${qtd}x ${matInfo.desc} incluído e sincronizado na mala de ${tech.name} com notificação enviada!`);
 }
 
 function renderizarMalaAdmin() {
@@ -1787,16 +1790,17 @@ function salvarEdicaoMalaAdmin(techLogin, itemIdx) {
         return;
     }
     if (tech && tech.mala && tech.mala[itemIdx]) {
+        let nomeMat = tech.mala[itemIdx].desc;
         tech.mala[itemIdx].qtd = novaQtd;
         if (!tech.notificacoes) tech.notificacoes = [];
         tech.notificacoes.push({
-            text: `Admin ajustou o saldo de ${tech.mala[itemIdx].desc} para ${novaQtd} un.`,
+            text: `Base atualizou o saldo de ${nomeMat} para ${novaQtd} un.`,
             time: new Date().toLocaleDateString()
         });
-        registrarMovimentacao("Edição Mala", "Admin", `Editada quantidade do item ${tech.mala[itemIdx].desc} para ${novaQtd} na mala de ${tech.name}`);
+        registrarMovimentacao("Edição Mala", "Admin", `Editada quantidade do item ${nomeMat} para ${novaQtd} na mala de ${tech.name}`);
         salvarDb();
         renderizarMalaAdmin();
-        alert("✅ Quantidade da mala atualizada e sincronizada com sucesso!");
+        alert("✅ Quantidade da mala atualizada, salva e notificada ao técnico com sucesso!");
     }
 }
 
@@ -1823,12 +1827,18 @@ function aprovarReposicaoAdmin(repId, techLogin, materialDesc, qtd) {
         let malaItem = tech.mala.find(m => m.desc === materialDesc);
         if (malaItem) malaItem.qtd = Number(malaItem.qtd || 0) + Number(qtd);
         else tech.mala.push({ sap: "REP-99", desc: materialDesc, qtd: Number(qtd), lancado: 0, abastecido: Number(qtd), seriais: [] });
+        
+        if (!tech.notificacoes) tech.notificacoes = [];
+        tech.notificacoes.push({
+            text: `Reposição de ${qtd}x ${materialDesc} aprovada pela Base!`,
+            time: new Date().toLocaleDateString()
+        });
     }
     let rep = db.reposicoes.find(r => r.id === repId);
     if (rep) rep.status = "Aprovado";
     registrarMovimentacao("Reposição Aprovada", "Admin", `Aprovada reposição de ${qtd}x ${materialDesc} para ${tech ? tech.name : techLogin}`);
     salvarDb();
-    alert("✅ Reposição aprovada e adicionada à mala!");
+    alert("✅ Reposição aprovada, adicionada à mala e notificada ao técnico!");
     renderizarMalaAdmin();
 }
 
@@ -1903,9 +1913,10 @@ function exportarExcelSIAKI() {
 function copiarDadosSIAKI() {
     let filtrados = obterLancamentosSIAKIFiltrados();
     if (filtrados.length === 0) {
-        alert("Nenhum lançamento encontrado no filtro selecionado para copiar!");
+        alert("Nenhum lançamento encontrado com o filtro/data selecionado para copiar!");
         return;
     }
+
     let texto = "DATA\tCOD SAP\tMaterial\tPROJETOS\tCIDADE\tLOCAL DE DESCARGA\tNode/Site/Cód Imóvel\tQTD. CONSUMO\tQTD. DESCARTE\n";
     filtrados.forEach(l => {
         (l.items || []).forEach(it => {
@@ -1915,7 +1926,7 @@ function copiarDadosSIAKI() {
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(texto).then(() => {
-            alert(`📋 ${filtrados.length} lançamento(s) filtrado(s) copiado(s) no padrão SIAKI com data!`);
+            alert(`📋 ${filtrados.length} lançamento(s) da data selecionada copiado(s) no padrão SIAKI com sucesso!`);
         }).catch(() => {
             copiarFallbackTextarea(texto, filtrados.length);
         });
@@ -1934,7 +1945,7 @@ function copiarFallbackTextarea(texto, totalFiltrados) {
     ta.select();
     try {
         document.execCommand('copy');
-        alert(`📋 ${totalFiltrados} lançamento(s) filtrado(s) copiado(s) no padrão SIAKI com data!`);
+        alert(`📋 ${totalFiltrados} lançamento(s) da data selecionada copiado(s) no padrão SIAKI com sucesso!`);
     } catch (e) {
         alert("Não foi possível copiar automaticamente. Tente novamente.");
     }
@@ -2307,9 +2318,24 @@ function abrirCardTech(tipo) {
     if (!content || !usuarioLogado) return;
 
     if (tipo === 'lancamento') {
+        // Indicador dinâmico de itens selecionados e quantidades acima no topo do card de lançamento
+        let totalItensCarrinho = carrinhoAtual.reduce((acc, i) => acc + Number(i.qtd || 0), 0);
+        let indicadorResumoHtml = carrinhoAtual.length > 0 
+            ? `<div class="p-3 bg-red-950/40 border border-red-800 rounded-xl flex items-center justify-between text-xs text-red-200">
+                   <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-400">${totalItensCarrinho} unidades no total</b></div>
+                   <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Pronto p/ Enviar</span>
+               </div>`
+            : `<div class="p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-center text-xs text-zinc-500 italic">Nenhum item selecionado no momento. Escolha abaixo.</div>`;
+
         content.innerHTML = `
             <div class="space-y-4">
                 <h4 class="font-bold text-red-400 text-xs sm:text-sm flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Lançamento em Campo</span></h4>
+                
+                <!-- Indicador Superior de Seleção -->
+                <div id="tech-selection-indicator-box">
+                    ${indicadorResumoHtml}
+                </div>
+
                 <div class="grid grid-cols-1 gap-2.5">
                     <div>
                         <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Projeto</label>
@@ -2608,7 +2634,6 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
 
     if (!listEl) return;
 
-    // Salva a posição exata do scroll antes de atualizar
     const savedListScrollTop = preservarScroll ? listEl.scrollTop : 0;
     const savedFavScrollTop = (preservarScroll && favEl) ? favEl.scrollTop : 0;
     const savedWindowScrollY = preservarScroll ? window.scrollY : 0;
@@ -2679,7 +2704,6 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
     });
     if (favEl) favEl.innerHTML = favHtml || '<span class="text-zinc-500 text-xs italic">Nenhum favorito.</span>';
 
-    // Restaura a posição exata do scroll sem pular para o topo
     if (preservarScroll) {
         listEl.scrollTop = savedListScrollTop;
         if (favEl) favEl.scrollTop = savedFavScrollTop;
@@ -2728,10 +2752,30 @@ function atualizarQtdCarrinhoTech(idx, valor) {
     if (isNaN(qtd) || qtd < 1) qtd = 1;
     if (carrinhoAtual[idx]) {
         carrinhoAtual[idx].qtd = qtd;
+        atualizarIndicadorSelecaoCarrinho();
+    }
+}
+
+function atualizarIndicadorSelecaoCarrinho() {
+    let box = document.getElementById('tech-selection-indicator-box');
+    if (!box) return;
+    let totalItensCarrinho = carrinhoAtual.reduce((acc, i) => acc + Number(i.qtd || 0), 0);
+    if (carrinhoAtual.length > 0) {
+        box.innerHTML = `
+            <div class="p-3 bg-red-950/40 border border-red-800 rounded-xl flex items-center justify-between text-xs text-red-200">
+                <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-400">${totalItensCarrinho} unidades no total</b></div>
+                <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Pronto p/ Enviar</span>
+            </div>
+        `;
+    } else {
+        box.innerHTML = `
+            <div class="p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-center text-xs text-zinc-500 italic">Nenhum item selecionado no momento. Escolha abaixo.</div>
+        `;
     }
 }
 
 function renderizarCarrinhoTecnico() {
+    atualizarIndicadorSelecaoCarrinho();
     let tbody = document.getElementById('t-cart-table');
     if (!tbody) return;
     if (carrinhoAtual.length === 0) {
