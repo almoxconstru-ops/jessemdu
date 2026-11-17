@@ -1840,13 +1840,17 @@ function aprovarReposicaoAdmin(repId, techLogin, materialDesc, qtd) {
     let tech = db.tecnicos.find(t => t.login === techLogin);
     if (tech) {
         if (!tech.mala) tech.mala = [];
-        let malaItem = tech.mala.find(m => m.desc === materialDesc);
-        if (malaItem) malaItem.qtd = Number(malaItem.qtd || 0) + Number(qtd);
-        else tech.mala.push({ sap: "REP-99", desc: materialDesc, qtd: Number(qtd), lancado: 0, abastecido: Number(qtd), seriais: [] });
+        let malaItem = tech.mala.find(m => m.desc === materialDesc || m.sap === materialDesc);
+        if (malaItem) {
+            malaItem.qtd = Number(malaItem.qtd || 0) + Number(qtd);
+            malaItem.abastecido = Number(malaItem.abastecido || 0) + Number(qtd);
+        } else {
+            tech.mala.push({ sap: "REP-99", desc: materialDesc, qtd: Number(qtd), lancado: 0, abastecido: Number(qtd), seriais: [] });
+        }
         
         if (!tech.notificacoes) tech.notificacoes = [];
         tech.notificacoes.push({
-            text: `Reposição de ${qtd}x ${materialDesc} aprovada pela Base!`,
+            text: `✅ Reposição de ${qtd}x ${materialDesc} aprovada e adicionada à sua mala!`,
             time: new Date().toLocaleDateString()
         });
     }
@@ -1854,8 +1858,9 @@ function aprovarReposicaoAdmin(repId, techLogin, materialDesc, qtd) {
     if (rep) rep.status = "Aprovado";
     registrarMovimentacao("Reposição Aprovada", "Admin", `Aprovada reposição de ${qtd}x ${materialDesc} para ${tech ? tech.name : techLogin}`);
     salvarDb();
-    alert("✅ Reposição aprovada, adicionada à mala e notificada ao técnico!");
+    atualizarPainelAdmin();
     renderizarMalaAdmin();
+    alert("✅ Reposição aprovada, adicionada diretamente ao estoque da mala do técnico e notificada com sucesso!");
 }
 
 function removerReposicaoAdmin(repId) {
@@ -2004,11 +2009,18 @@ function excluirLancamento(idOuIndex, fallbackIndex) {
         }
         if (idxReal >= 0 && db.lancamentos[idxReal]) {
             db.lancamentos.splice(idxReal, 1);
-            registrarMovimentacao("Exclusão Lançamento SIAKI", "Admin", `Excluiu lançamento do histórico SIAKI.`);
-            salvarDb();
-            atualizarPainelAdmin();
-            alert("✅ Lançamento excluído com sucesso e sincronizado!");
+        } else if (typeof idOuIndex === 'number' && idOuIndex >= 0 && idOuIndex < db.lancamentos.length) {
+            db.lancamentos.splice(idOuIndex, 1);
+        } else if (typeof fallbackIndex === 'number' && fallbackIndex >= 0 && fallbackIndex < db.lancamentos.length) {
+            db.lancamentos.splice(fallbackIndex, 1);
+        } else {
+            alert("Erro ao localizar lançamento para exclusão.");
+            return;
         }
+        registrarMovimentacao("Exclusão Lançamento SIAKI", "Admin", `Excluiu lançamento do histórico SIAKI.`);
+        salvarDb();
+        atualizarPainelAdmin();
+        alert("✅ Lançamento excluído com sucesso e sincronizado de forma imediata!");
     }
 }
 
