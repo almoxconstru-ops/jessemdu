@@ -656,10 +656,10 @@ function atualizarBadgeGpsCelularTech(ativo) {
     let badge = document.getElementById('tech-gps-status-badge');
     if (!badge) return;
     if (ativo) {
-        badge.className = "text-[8px] text-emerald-400 font-bold flex items-center bg-emerald-950/80 border border-emerald-800/80 px-1 py-0.5 rounded leading-none truncate";
+        badge.className = "text-[8px] text-emerald-300 font-bold flex items-center bg-emerald-950/90 border border-emerald-700 px-1 py-0.5 rounded leading-none truncate shadow";
         badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-1 animate-pulse flex-shrink-0"></span> GPS`;
     } else {
-        badge.className = "text-[8px] text-red-400 font-bold flex items-center bg-red-950/80 border border-red-800/80 px-1 py-0.5 rounded leading-none truncate";
+        badge.className = "text-[8px] text-red-300 font-bold flex items-center bg-red-950/90 border border-red-700 px-1 py-0.5 rounded leading-none truncate shadow";
         badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block mr-1 flex-shrink-0"></span> Off`;
     }
 }
@@ -746,16 +746,16 @@ function renderizarListaOperadores() {
     let container = document.getElementById('operadores-list-container');
     if (!container) return;
     if (!db.operadores || db.operadores.length === 0) {
-        container.innerHTML = '<p class="text-zinc-500 italic">Nenhum operador visualizador cadastrado.</p>';
+        container.innerHTML = '<p class="text-zinc-400 italic">Nenhum operador visualizador cadastrado.</p>';
         return;
     }
     container.innerHTML = db.operadores.map((op, idx) => `
-        <div class="p-2.5 bg-zinc-900 rounded-xl border border-zinc-800 flex justify-between items-center">
+        <div class="p-2.5 bg-zinc-900 rounded-xl border border-zinc-700 flex justify-between items-center">
             <div>
                 <b class="text-white">${op.nome}</b> <span class="text-red-400 font-mono">(@${op.login})</span>
-                <span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold ml-1">Visualizador (Sem Mensagens)</span>
+                <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold ml-1">Visualizador (Sem Mensagens)</span>
             </div>
-            <button type="button" onclick="removerOperador(${idx})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button>
+            <button type="button" onclick="removerOperador(${idx})" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button>
         </div>
     `).join('');
 }
@@ -773,11 +773,11 @@ function switchAdminTab(tabId) {
     document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('aside nav button').forEach(el => {
         el.classList.remove('bg-red-600', 'text-white');
-        el.classList.add('text-zinc-400');
+        el.classList.add('text-zinc-300');
     });
     document.querySelectorAll('#admin-mobile-nav button').forEach(el => {
         el.classList.remove('bg-red-600', 'text-white', 'shadow');
-        el.classList.add('text-zinc-400');
+        el.classList.add('text-zinc-300');
     });
 
     document.getElementById('acontent-' + tabId).classList.remove('hidden');
@@ -785,13 +785,13 @@ function switchAdminTab(tabId) {
     let btnDesktop = document.getElementById('atab-' + tabId);
     if (btnDesktop) {
         btnDesktop.classList.add('bg-red-600', 'text-white');
-        btnDesktop.classList.remove('text-zinc-400');
+        btnDesktop.classList.remove('text-zinc-300');
     }
 
     let btnMobile = document.getElementById('atab-m-' + tabId);
     if (btnMobile) {
         btnMobile.classList.add('bg-red-600', 'text-white', 'shadow');
-        btnMobile.classList.remove('text-zinc-400');
+        btnMobile.classList.remove('text-zinc-300');
     }
 
     if (tabId === 'mapa') {
@@ -824,8 +824,8 @@ function renderizarGraficosDashboard() {
                 datasets: [{
                     label: 'Itens Consumidos (un)',
                     data: techData.length ? techData : [0],
-                    backgroundColor: 'rgba(220, 38, 38, 0.75)',
-                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(220, 38, 38, 0.85)',
+                    borderColor: '#f87171',
                     borderWidth: 1.5,
                     borderRadius: 8
                 }]
@@ -835,11 +835,11 @@ function renderizarGraficosDashboard() {
                 maintainAspectRatio: false,
                 animation: false,
                 plugins: {
-                    legend: { labels: { color: '#f8fafc', font: { size: 11, weight: 'bold' } } }
+                    legend: { labels: { color: '#ffffff', font: { size: 11, weight: 'bold' } } }
                 },
                 scales: {
-                    x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
-                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                    x: { ticks: { color: '#e4e4e7', font: { weight: 'bold' } }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                    y: { ticks: { color: '#e4e4e7', font: { weight: 'bold' } }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
                 }
             }
         });
@@ -867,7 +867,7 @@ function renderizarGraficosDashboard() {
                     data: matData.length ? matData : [1],
                     backgroundColor: [
                         '#ef4444', '#10b981', '#3b82f6', '#f59e0b',
-                        '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'
+                        '#8b5cf6', '#ec4899', '#06b6d4', '#94a3b8'
                     ],
                     borderWidth: 2,
                     borderColor: '#18181b'
@@ -880,7 +880,7 @@ function renderizarGraficosDashboard() {
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { color: '#f8fafc', font: { size: 10 } }
+                        labels: { color: '#ffffff', font: { size: 11, weight: 'bold' } }
                     }
                 }
             }
@@ -911,6 +911,7 @@ function obterLancamentosSIAKIFiltrados() {
     let dtStart = document.getElementById('admin-filter-date-start')?.value || '';
     let dtEnd = document.getElementById('admin-filter-date-end')?.value || '';
     let techFiltro = document.getElementById('admin-filter-lanc-tech')?.value || 'todos';
+    let buscaServico = (document.getElementById('admin-filter-search-servico')?.value || '').toLowerCase();
 
     return (db.lancamentos || []).filter(l => {
         if (techFiltro !== 'todos') {
@@ -921,6 +922,14 @@ function obterLancamentosSIAKIFiltrados() {
         }
         if (dtStart && (!l.data || l.data < dtStart)) return false;
         if (dtEnd && (!l.data || l.data > dtEnd)) return false;
+
+        if (buscaServico) {
+            let matchNode = l.node && l.node.toLowerCase().includes(buscaServico);
+            let matchProj = l.projeto && l.projeto.toLowerCase().includes(buscaServico);
+            let matchTec = l.tecnico && l.tecnico.toLowerCase().includes(buscaServico);
+            let matchItem = l.items && l.items.some(i => (i.material && i.material.toLowerCase().includes(buscaServico)) || (i.sap && i.sap.toLowerCase().includes(buscaServico)));
+            if (!matchNode && !matchProj && !matchTec && !matchItem) return false;
+        }
         return true;
     });
 }
@@ -958,9 +967,9 @@ function atualizarPainelAdmin() {
 
     let notifHtml = '';
     db.notificacoes.slice().reverse().forEach(n => {
-        notifHtml += `<div class="p-2 bg-black rounded-xl border-l-4 border-red-600"><p class="font-semibold text-white">${n.text}</p><span class="text-[9px] text-zinc-400">${n.time}</span></div>`;
+        notifHtml += `<div class="p-2 bg-black rounded-xl border-l-4 border-red-600"><p class="font-semibold text-white">${n.text}</p><span class="text-[9px] text-zinc-300">${n.time}</span></div>`;
     });
-    document.getElementById('notif-list').innerHTML = notifHtml || '<p class="text-zinc-400 text-center py-4">Nenhuma notificação.</p>';
+    document.getElementById('notif-list').innerHTML = notifHtml || '<p class="text-zinc-300 text-center py-4">Nenhuma notificação.</p>';
 
     let naoLidasAdmin = isVisualizador ? 0 : db.mensagens.filter(m => m.destinatario === "Base" && !m.lido).length;
     let badgeAdminChat = document.getElementById('badge-admin-chat');
@@ -976,26 +985,26 @@ function atualizarPainelAdmin() {
     let tHtml = '';
     db.tecnicos.forEach((t, index) => {
         let avatarImg = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
-        let statusBadge = t.online ? '<span class="text-emerald-400 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block mr-1"></span>Online</span>' : `<span class="text-zinc-500 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-zinc-600 inline-block mr-1"></span>Offline (Visto: ${t.lastSeen || 'N/A'})</span>`;
+        let statusBadge = t.online ? '<span class="text-emerald-300 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block mr-1"></span>Online</span>' : `<span class="text-zinc-400 text-[10px] font-bold flex items-center"><span class="w-2 h-2 rounded-full bg-zinc-500 inline-block mr-1"></span>Offline (Visto: ${t.lastSeen || 'N/A'})</span>`;
 
         let isGpsAtivo = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
         let gpsBadge = isGpsAtivo
-            ? '<span class="text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full inline-block">🟢 GPS ATIVADO (FUNDO)</span>'
-            : '<span class="text-red-400 font-bold bg-red-950/60 border border-red-800/80 px-2 py-0.5 rounded-full inline-block">🔴 GPS DESATIVADO</span>';
+            ? '<span class="text-emerald-300 font-bold bg-emerald-950/90 border border-emerald-700 px-2 py-0.5 rounded-full inline-block shadow">🟢 GPS ATIVO (FUNDO)</span>'
+            : '<span class="text-red-300 font-bold bg-red-950/90 border border-red-700 px-2 py-0.5 rounded-full inline-block shadow">🔴 GPS DESATIVADO</span>';
 
         tHtml += `
-            <tr class="border-b border-zinc-800">
+            <tr class="border-b border-zinc-700">
                 <td class="p-4">${avatarImg}</td>
                 <td class="p-4 font-bold text-white">${t.name} <br>${statusBadge}</td>
                 <td class="p-4">${gpsBadge}</td>
-                <td class="p-4 text-zinc-300 font-mono">@${t.login}</td>
-                <td class="p-4 text-zinc-300 font-mono">${t.senha}</td>
-                <td class="p-4 text-zinc-300">${t.car}</td>
+                <td class="p-4 text-zinc-100 font-mono font-semibold">@${t.login}</td>
+                <td class="p-4 text-zinc-100 font-mono font-semibold">${t.senha}</td>
+                <td class="p-4 text-zinc-100 font-semibold">${t.car}</td>
                 <td class="p-4 text-center space-x-2">
-                    <button type="button" onclick="zerarLancamentosMateriaisTecnicos('${t.login}')" class="action-btn-write px-2.5 py-1 bg-red-800 hover:bg-red-700 text-white rounded-lg font-bold" title="Zerar lançamentos de materiais deste técnico">Zerar Lançados</button>
-                    <button type="button" onclick="reiniciarKmTecnico('${t.login}')" class="action-btn-write px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold" title="Reiniciar KM deste técnico">Resetar KM</button>
-                    <button type="button" onclick="editarTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-bold">Editar</button>
-                    <button type="button" onclick="excluirTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-red-500/20 text-red-400 rounded-lg font-bold">Excluir</button>
+                    <button type="button" onclick="zerarLancamentosMateriaisTecnicos('${t.login}')" class="action-btn-write px-2.5 py-1 bg-red-800 hover:bg-red-700 text-white rounded-lg font-bold shadow" title="Zerar lançamentos de materiais deste técnico">Zerar Lançados</button>
+                    <button type="button" onclick="reiniciarKmTecnico('${t.login}')" class="action-btn-write px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold shadow" title="Reiniciar KM deste técnico">Resetar KM</button>
+                    <button type="button" onclick="editarTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold shadow">Editar</button>
+                    <button type="button" onclick="excluirTecnico(${index})" class="action-btn-write px-2.5 py-1 bg-red-600/20 text-red-300 rounded-lg font-bold shadow">Excluir</button>
                 </td>
             </tr>
         `;
@@ -1005,30 +1014,30 @@ function atualizarPainelAdmin() {
     let padraoHtml = '';
     (db.estoquePadrao || []).forEach((ep, idx) => {
         padraoHtml += `
-            <tr class="border-b border-zinc-800">
+            <tr class="border-b border-zinc-700">
                 <td class="p-3 font-mono text-red-400 font-bold">${ep.sap}</td>
-                <td class="p-3 text-white">${ep.desc}</td>
-                <td class="p-3 text-center font-bold text-emerald-400">${ep.qtdInicial} un</td>
+                <td class="p-3 text-white font-semibold">${ep.desc}</td>
+                <td class="p-3 text-center font-bold text-emerald-300">${ep.qtdInicial} un</td>
                 <td class="p-3 text-center">
-                    <button type="button" onclick="removerItemEstoquePadrao(${idx})" class="action-btn-write text-red-500 font-bold hover:underline">Remover</button>
+                    <button type="button" onclick="removerItemEstoquePadrao(${idx})" class="action-btn-write text-red-400 font-bold hover:underline">Remover</button>
                 </td>
             </tr>
         `;
     });
     let padraoTable = document.getElementById('admin-padrao-table');
-    if (padraoTable) padraoTable.innerHTML = padraoHtml || '<tr><td colspan="4" class="p-4 text-center text-zinc-500">Nenhum material no estoque padrão.</td></tr>';
+    if (padraoTable) padraoTable.innerHTML = padraoHtml || '<tr><td colspan="4" class="p-4 text-center text-zinc-400">Nenhum material no estoque padrão.</td></tr>';
 
     let fisicoHtml = '';
     db.estoqueFisico.forEach((ef, idx) => {
-        let seriaisStr = ef.seriais && ef.seriais.length > 0 ? ef.seriais.join(', ') : '<span class="text-zinc-500">Apenas Miscelânea</span>';
+        let seriaisStr = ef.seriais && ef.seriais.length > 0 ? ef.seriais.join(', ') : '<span class="text-zinc-400">Apenas Miscelânea</span>';
         fisicoHtml += `
-            <tr class="border-b border-zinc-800">
-                <td class="p-3 text-zinc-400">${ef.data}</td>
-                <td class="p-3 font-mono text-emerald-400">${ef.sap}</td>
-                <td class="p-3">${ef.desc}</td>
+            <tr class="border-b border-zinc-700">
+                <td class="p-3 text-zinc-200">${ef.data}</td>
+                <td class="p-3 font-mono text-emerald-300 font-semibold">${ef.sap}</td>
+                <td class="p-3 text-white font-semibold">${ef.desc}</td>
                 <td class="p-3 text-center font-bold text-white">${ef.qtd}</td>
-                <td class="p-3 font-mono text-xs text-red-300">${seriaisStr}</td>
-                <td class="p-3 text-center"><button type="button" onclick="removerEstoqueFisico(${idx})" class="action-btn-write text-red-500 font-bold hover:underline">Remover</button></td>
+                <td class="p-3 font-mono text-xs text-red-300 font-semibold">${seriaisStr}</td>
+                <td class="p-3 text-center"><button type="button" onclick="removerEstoqueFisico(${idx})" class="action-btn-write text-red-400 font-bold hover:underline">Remover</button></td>
             </tr>
         `;
     });
@@ -1081,35 +1090,38 @@ function atualizarPainelAdmin() {
     let matHtml = '';
     (db.materiais || []).forEach((m, i) => {
         matHtml += `
-            <div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs">
-                <div class="truncate mr-2"><b class="text-red-400 font-mono">${m.sap}</b> - <span class="text-white">${m.desc}</span></div>
+            <div class="p-3 bg-black border border-zinc-700 rounded-xl flex justify-between items-center text-xs shadow-sm">
+                <div class="truncate mr-2"><b class="text-red-400 font-mono font-bold">${m.sap}</b> - <span class="text-white font-semibold">${m.desc}</span></div>
                 <div class="flex space-x-2 flex-shrink-0 action-btn-write">
-                    <button type="button" onclick="abrirModalEditarMaterial(${i})" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-[10px]">Editar</button>
-                    <button type="button" onclick="removerMaterialAdmin(${i})" class="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px]">Excluir</button>
+                    <button type="button" onclick="abrirModalEditarMaterial(${i})" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-[10px] shadow">Editar</button>
+                    <button type="button" onclick="removerMaterialAdmin(${i})" class="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-[10px] shadow">Excluir</button>
                 </div>
             </div>`;
     });
     let adminMatList = document.getElementById('admin-materiais-list');
-    if (adminMatList) adminMatList.innerHTML = matHtml || '<p class="text-zinc-500 text-xs italic">Nenhum material cadastrado.</p>';
+    if (adminMatList) adminMatList.innerHTML = matHtml || '<p class="text-zinc-400 text-xs italic">Nenhum material cadastrado.</p>';
 
     let lancamentosFiltrados = obterLancamentosSIAKIFiltrados();
 
     let lHtml = '';
     lancamentosFiltrados.forEach((l, index) => {
-        let itensStr = (l.items || []).map(it => `${it.material} (${it.qtd})`).join(' | ');
+        let itensStr = (l.items || []).forEach ? (l.items || []).map(it => `${it.material} (${it.qtd})`).join(' | ') : '';
         let lancId = l.id !== undefined ? `'${l.id}'` : index;
         lHtml += `
-            <tr class="border-b border-zinc-800">
-                <td class="p-3 text-zinc-400">${l.data || '-'}</td>
-                <td class="p-3 font-semibold text-white">${l.tecnico}</td>
-                <td class="p-3 text-red-400">${l.projeto}</td>
-                <td class="p-3 font-mono">${l.node}</td>
-                <td class="p-3">${itensStr}</td>
-                <td class="p-3 text-center"><button type="button" onclick="excluirLancamento(${lancId}, ${index})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button></td>
+            <tr class="border-b border-zinc-700">
+                <td class="p-3 text-zinc-200 font-semibold">${l.data || '-'} ${l.hora ? '• ' + l.hora : ''}</td>
+                <td class="p-3 font-bold text-white">${l.tecnico}</td>
+                <td class="p-3 text-red-400 font-bold">${l.projeto}</td>
+                <td class="p-3 font-mono text-zinc-100 font-semibold">${l.node}</td>
+                <td class="p-3 text-zinc-100">${itensStr}</td>
+                <td class="p-3 text-center space-x-2">
+                    <button type="button" onclick="copiarServicoSIAKILinha(${lancId}, ${index})" class="action-btn-write px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-[10px] shadow">Copiar</button>
+                    <button type="button" onclick="excluirLancamento(${lancId}, ${index})" class="action-btn-write px-2.5 py-1 bg-red-600/20 text-red-300 rounded-lg font-bold text-[10px] shadow">Excluir</button>
+                </td>
             </tr>
         `;
     });
-    document.getElementById('admin-launch-history').innerHTML = lHtml || '<tr><td colspan="6" class="p-4 text-center text-zinc-500">Nenhum lançamento encontrado no período selecionado.</td></tr>';
+    document.getElementById('admin-launch-history').innerHTML = lHtml || '<tr><td colspan="6" class="p-4 text-center text-zinc-400">Nenhum lançamento encontrado no filtro selecionado.</td></tr>';
 
     renderizarPinsMapaLeaflet();
     renderizarHistoricoGeral();
@@ -1171,10 +1183,10 @@ function criarIconeTecnicoLeaflet(tech) {
 
     let html = `
         <div style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;">
-            <div style="width: 44px; height: 44px; border-radius: 50%; border: 3px solid ${borderCol}; background: #09090b; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
+            <div style="width: 44px; height: 44px; border-radius: 50%; border: 3px solid ${borderCol}; background: #09090b; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.8);">
                 ${avatarContent}
             </div>
-            <div style="margin-top: 2px; background: rgba(9, 9, 11, 0.9); color: #ffffff; border: 1px solid #3f3f46; border-radius: 8px; padding: 1px 6px; font-size: 10px; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
+            <div style="margin-top: 2px; background: rgba(9, 9, 11, 0.95); color: #ffffff; border: 1px solid #71717a; border-radius: 8px; padding: 2px 8px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.8);">
                 ${tech.name} (${statusParadaAtual})
             </div>
         </div>
@@ -1205,14 +1217,14 @@ function renderizarPinsMapaLeaflet() {
         let marker = L.marker([lat, lng], { icon: criarIconeTecnicoLeaflet(t) }).addTo(mapLeaflet);
 
         let isGpsOn = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
-        let gpsStatusText = isGpsOn ? "<b style='color:#10b981;'>🟢 GPS ATIVO (FUNDO)</b>" : "<b style='color:#ef4444;'>🔴 GPS DESATIVADO</b>";
+        let gpsStatusText = isGpsOn ? "<b style='color:#34d399;'>🟢 GPS ATIVO (FUNDO)</b>" : "<b style='color:#f87171;'>🔴 GPS DESATIVADO</b>";
 
         let popupContent = `
             <div style="font-family: sans-serif; font-size: 12px; color: #ffffff; padding: 4px;">
-                <div style="font-weight: bold; font-size: 14px; border-bottom: 1px solid #3f3f46; padding-bottom: 4px; margin-bottom: 4px; color: #ef4444;">${t.name}</div>
+                <div style="font-weight: bold; font-size: 14px; border-bottom: 1px solid #52525b; padding-bottom: 4px; margin-bottom: 4px; color: #f87171;">${t.name}</div>
                 <div><b>Veículo:</b> ${t.car || 'N/A'}</div>
                 <div><b>Status GPS:</b> ${gpsStatusText}</div>
-                <div><b>Status Parada:</b> <span style="color:#f59e0b;">${statusParadaAtual}</span></div>
+                <div><b>Status Parada:</b> <span style="color:#fbbf24;">${statusParadaAtual}</span></div>
                 <div><b>Km Rodado:</b> ${(t.autoKm || 0).toFixed(2)} KM</div>
                 <div><b>Consumo Registrado:</b> ${(t.autoLitros || 0).toFixed(2)} L (R$ ${(t.autoCusto || 0).toFixed(2)})</div>
             </div>
@@ -1234,22 +1246,22 @@ function renderizarPinsMapaLeaflet() {
 function renderizarCardsMapaTecnicosList() {
     let mapTechsHtml = '';
     db.tecnicos.forEach(t => {
-        let badgeOn = t.online ? 'bg-emerald-500' : 'bg-zinc-600';
+        let badgeOn = t.online ? 'bg-emerald-400' : 'bg-zinc-500';
         let avatar = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
 
         let isGpsAtivo = t.gpsStatus === "ativado" || (t.trackingOn && t.gpsStatus !== "desativado");
-        let gpsStatusStr = isGpsAtivo ? '<span class="text-emerald-400 font-bold">🟢 GPS Ativo</span>' : '<span class="text-red-400 font-bold">🔴 GPS Desativado</span>';
+        let gpsStatusStr = isGpsAtivo ? '<span class="text-emerald-300 font-bold">🟢 GPS Ativo</span>' : '<span class="text-red-300 font-bold">🔴 GPS Desativado</span>';
 
         mapTechsHtml += `
-            <div onclick="selecionarEPlugarMapa('${t.login}')" class="bg-black border border-zinc-800 rounded-2xl p-4 flex items-center space-x-3 shadow-sm hover:border-red-600 transition cursor-pointer">
+            <div onclick="selecionarEPlugarMapa('${t.login}')" class="bg-black border border-zinc-700 rounded-2xl p-4 flex items-center space-x-3 shadow-md hover:border-red-600 transition cursor-pointer">
                 ${avatar}
                 <div class="flex-1">
                     <h4 class="font-bold text-white text-sm">${t.name}</h4>
-                    <p class="text-[10px] text-red-400">${t.car}</p>
-                    <p class="text-[10px] text-zinc-400 truncate">📍 ${t.rua || 'Localização em campo'}</p>
+                    <p class="text-[10px] text-red-400 font-semibold">${t.car}</p>
+                    <p class="text-[10px] text-zinc-300 truncate">📍 ${t.rua || 'Localização em campo'}</p>
                     <div class="flex justify-between items-center mt-1">
-                        <span class="text-[10px] font-bold text-zinc-300 flex items-center"><span class="w-2 h-2 rounded-full ${badgeOn} inline-block mr-1"></span>${t.online ? 'Online' : 'Offline'}</span>
-                        <span class="text-[10px]">${gpsStatusStr}</span>
+                        <span class="text-[10px] font-bold text-zinc-200 flex items-center"><span class="w-2 h-2 rounded-full ${badgeOn} inline-block mr-1"></span>${t.online ? 'Online' : 'Offline'}</span>
+                        <span class="text-[10px] font-semibold">${gpsStatusStr}</span>
                     </div>
                 </div>
             </div>
@@ -1305,39 +1317,39 @@ function renderizarCardsConsumoPatrao() {
         let litrosTech = Number(t.autoLitros || 0);
         let custoTech = Number(t.autoCusto || 0);
         let avatar = t.avatar ? `<img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
-        let statusOn = t.online ? '<span class="text-emerald-400 font-bold">Online</span>' : '<span class="text-zinc-500">Offline</span>';
+        let statusOn = t.online ? '<span class="text-emerald-300 font-bold">Online</span>' : '<span class="text-zinc-400">Offline</span>';
 
         html += `
-            <div class="bg-black border border-zinc-800 rounded-2xl p-4 space-y-3 shadow-md">
-                <div class="flex items-center space-x-3 border-b border-zinc-800 pb-2">
+            <div class="bg-black border border-zinc-700 rounded-2xl p-4 space-y-3 shadow-lg">
+                <div class="flex items-center space-x-3 border-b border-zinc-700 pb-2">
                     ${avatar}
                     <div class="flex-1">
                         <h4 class="font-bold text-white text-sm">${t.name}</h4>
-                        <p class="text-[10px] text-red-400">${t.car || 'Sem veículo'} • ${statusOn}</p>
+                        <p class="text-[10px] text-red-400 font-semibold">${t.car || 'Sem veículo'} • ${statusOn}</p>
                     </div>
-                    <button type="button" onclick="reiniciarKmTecnico('${t.login}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold action-btn-write" title="Zerar KM">Zerar KM</button>
+                    <button type="button" onclick="reiniciarKmTecnico('${t.login}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold action-btn-write shadow" title="Zerar KM">Zerar KM</button>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
-                        <span class="text-zinc-400 text-[9px] block">KM Rodados</span>
-                        <b class="text-amber-400 font-mono">${kmTech.toFixed(1)} KM</b>
+                    <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-700">
+                        <span class="text-zinc-300 text-[9px] block font-semibold">KM Rodados</span>
+                        <b class="text-amber-400 font-mono text-sm">${kmTech.toFixed(1)} KM</b>
                     </div>
-                    <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
-                        <span class="text-zinc-400 text-[9px] block">Litros (10km/L)</span>
-                        <b class="text-blue-400 font-mono">${litrosTech.toFixed(1)} L</b>
+                    <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-700">
+                        <span class="text-zinc-300 text-[9px] block font-semibold">Litros (10km/L)</span>
+                        <b class="text-blue-300 font-mono text-sm">${litrosTech.toFixed(1)} L</b>
                     </div>
-                    <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
-                        <span class="text-zinc-400 text-[9px] block">Custo R$</span>
-                        <b class="text-emerald-400 font-mono">R$ ${custoTech.toFixed(2)}</b>
+                    <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-700">
+                        <span class="text-zinc-300 text-[9px] block font-semibold">Custo R$</span>
+                        <b class="text-emerald-300 font-mono text-sm">R$ ${custoTech.toFixed(2)}</b>
                     </div>
                 </div>
-                <div class="text-[10px] text-zinc-400 truncate">
+                <div class="text-[10px] text-zinc-200 truncate font-semibold">
                     📍 <b>Última Posição:</b> ${t.rua || 'Aguardando sinal GPS'}
                 </div>
             </div>
         `;
     });
-    container.innerHTML = html || '<p class="text-zinc-500 italic text-center col-span-3">Nenhum técnico cadastrado para logísticas.</p>';
+    container.innerHTML = html || '<p class="text-zinc-400 italic text-center col-span-3">Nenhum técnico cadastrado para logísticas.</p>';
 }
 
 function renderizarHistoricoAutonomia() {
@@ -1355,26 +1367,26 @@ function renderizarHistoricoAutonomia() {
 
     tbody.innerHTML = lista.map((t) => {
         let gpsStatusTag = t.gpsAtivo
-            ? '<span class="text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded">🟢 Ativo (Fundo)</span>'
-            : '<span class="text-red-400 font-bold bg-red-950/60 px-2 py-0.5 rounded">🔴 Desativado</span>';
+            ? '<span class="text-emerald-300 font-bold bg-emerald-950/90 border border-emerald-700 px-2 py-0.5 rounded shadow">🟢 Ativo (Fundo)</span>'
+            : '<span class="text-red-300 font-bold bg-red-950/90 border border-red-700 px-2 py-0.5 rounded shadow">🔴 Desativado</span>';
 
-        let paradaInfo = t.paradaFinal ? `<b class="text-amber-400">${t.paradaFinal}</b>` : `<b>${t.origem}</b> ➔ <b>${t.destino}</b>`;
-        let tempoParadoInfo = t.tempoParado ? `<span class="text-emerald-400 font-bold">${t.tempoParado}</span>` : '-';
+        let paradaInfo = t.paradaFinal ? `<b class="text-amber-300">${t.paradaFinal}</b>` : `<b>${t.origem}</b> ➔ <b>${t.destino}</b>`;
+        let tempoParadoInfo = t.tempoParado ? `<span class="text-emerald-300 font-bold">${t.tempoParado}</span>` : '-';
 
         return `
-            <tr class="border-b border-zinc-800">
-                <td class="p-3 text-zinc-400">${t.data}</td>
-                <td class="p-3 font-bold text-white">${t.techNome} <br><span class="text-[10px] text-red-400 font-normal">${t.veiculo}</span></td>
-                <td class="p-3 text-zinc-300">${paradaInfo}</td>
-                <td class="p-3 text-center">${tempoParadoInfo}</td>
-                <td class="p-3 text-center font-bold text-amber-400 font-mono">${t.kmPercorrido} KM</td>
-                <td class="p-3 text-center font-bold text-blue-400 font-mono">${Number(t.litros).toFixed(2)} L</td>
-                <td class="p-3 text-center font-bold text-emerald-400 font-mono">R$ ${Number(t.custoTotal).toFixed(2)}</td>
+            <tr class="border-b border-zinc-700">
+                <td class="p-3 text-zinc-200 font-semibold">${t.data}</td>
+                <td class="p-3 font-bold text-white">${t.techNome} <br><span class="text-[10px] text-red-400 font-semibold">${t.veiculo}</span></td>
+                <td class="p-3 text-zinc-100 font-semibold">${paradaInfo}</td>
+                <td class="p-3 text-center font-semibold">${tempoParadoInfo}</td>
+                <td class="p-3 text-center font-bold text-amber-300 font-mono">${t.kmPercorrido} KM</td>
+                <td class="p-3 text-center font-bold text-blue-300 font-mono">${Number(t.litros).toFixed(2)} L</td>
+                <td class="p-3 text-center font-bold text-emerald-300 font-mono">R$ ${Number(t.custoTotal).toFixed(2)}</td>
                 <td class="p-3 text-center text-xs">${gpsStatusTag}</td>
-                <td class="p-3 text-center"><button type="button" onclick="excluirTrajetoAutonomia(${t.id})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button></td>
+                <td class="p-3 text-center"><button type="button" onclick="excluirTrajetoAutonomia(${t.id})" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button></td>
             </tr>
         `;
-    }).join('') || '<tr><td colspan="9" class="p-4 text-center text-zinc-500">Nenhum percurso ou parada registrada.</td></tr>';
+    }).join('') || '<tr><td colspan="9" class="p-4 text-center text-zinc-400">Nenhum percurso ou parada registrada.</td></tr>';
 }
 
 function limparFiltroAutonomia() {
@@ -1429,6 +1441,7 @@ function limparFiltroDatasLancamentos() {
     if (document.getElementById('admin-filter-date-start')) document.getElementById('admin-filter-date-start').value = '';
     if (document.getElementById('admin-filter-date-end')) document.getElementById('admin-filter-date-end').value = '';
     if (document.getElementById('admin-filter-lanc-tech')) document.getElementById('admin-filter-lanc-tech').value = 'todos';
+    if (document.getElementById('admin-filter-search-servico')) document.getElementById('admin-filter-search-servico').value = '';
     atualizarPainelAdmin();
 }
 
@@ -1574,15 +1587,15 @@ function renderizarCarrinhoPassagem() {
     let tbody = document.getElementById('pass-cart-table');
     if (!tbody) return;
     if (carrinhoPassagem.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-zinc-500">Nenhum item adicionado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-zinc-400">Nenhum item adicionado.</td></tr>';
         return;
     }
     tbody.innerHTML = carrinhoPassagem.map((it, idx) => `
-        <tr class="border-b border-zinc-800">
-            <td class="p-2 font-mono text-red-400">${it.sap} - ${it.desc}</td>
-            <td class="p-2 text-center font-bold">${it.qtd}</td>
-            <td class="p-2 font-mono text-xs text-zinc-300">${it.seriais.join(', ') || 'Apenas Qtd'}</td>
-            <td class="p-2 text-center"><button type="button" onclick="if(!isVisualizador) { carrinhoPassagem.splice(${idx},1); renderizarCarrinhoPassagem(); }" class="action-btn-write text-red-500 font-bold">X</button></td>
+        <tr class="border-b border-zinc-700">
+            <td class="p-2 font-mono text-red-400 font-semibold">${it.sap} - ${it.desc}</td>
+            <td class="p-2 text-center font-bold text-white">${it.qtd}</td>
+            <td class="p-2 font-mono text-xs text-zinc-200">${it.seriais.join(', ') || 'Apenas Qtd'}</td>
+            <td class="p-2 text-center"><button type="button" onclick="if(!isVisualizador) { carrinhoPassagem.splice(${idx},1); renderizarCarrinhoPassagem(); }" class="action-btn-write text-red-400 font-bold">X</button></td>
         </tr>
     `).join('');
 }
@@ -1647,7 +1660,7 @@ function abrirComprovanteTermoMultiplo(techName, itens) {
         <p><b>Técnico Responsável:</b> ${techName}</p>
         <p><b>Itens Transferidos:</b></p>
         <ul class="list-disc pl-4 space-y-1">${listaHtml}</ul>
-        <div class="mt-4 p-3 bg-zinc-950 border border-red-900 rounded-xl text-[11px] leading-relaxed">
+        <div class="mt-4 p-3 bg-zinc-950 border border-red-900 rounded-xl text-[11px] leading-relaxed text-zinc-200">
             <b>TERMO DE RESPONSABILIDADE:</b> Declaro que recebi os materiais acima descritos em perfeito estado de conservação, assumindo total responsabilidade pela guarda, uso adequado em campo e devolução quando solicitada.
         </div>
     `;
@@ -1664,11 +1677,11 @@ function switchMalaSubTab(sub) {
     document.querySelectorAll('.mala-subcontent').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('#acontent-malas button[id^="msub-"]').forEach(el => {
         el.classList.remove('bg-red-600', 'text-white');
-        el.classList.add('bg-zinc-800', 'text-zinc-400');
+        el.classList.add('bg-zinc-800', 'text-zinc-300');
     });
     document.getElementById('mala-subcontent-' + sub).classList.remove('hidden');
     document.getElementById('msub-' + sub).classList.add('bg-red-600', 'text-white');
-    document.getElementById('msub-' + sub).classList.remove('bg-zinc-800', 'text-zinc-400');
+    document.getElementById('msub-' + sub).classList.remove('bg-zinc-800', 'text-zinc-300');
     renderizarMalaAdmin();
 }
 
@@ -1717,12 +1730,12 @@ function incluirMaterialManualMalaAdmin() {
 
     registrarMovimentacao("Inclusão Manual Mala", "Admin", `Adicionou ${qtd}x ${matInfo.desc} (${sap}) na mala de ${tech.name}`);
     
-    // Reseta o campo de quantidade para 1 (ou limpa) conforme solicitado, evitando congelamento
-    qtdInput.value = '1';
+    // Zera imediatamente o input para 0 para permitir novas inclusões sem congelar
+    qtdInput.value = '0';
 
     salvarDb();
     renderizarMalaAdmin();
-    alert(`✅ ${qtd}x ${matInfo.desc} incluído e sincronizado na mala de ${tech.name} com notificação enviada!`);
+    alert(`✅ ${qtd}x ${matInfo.desc} incluído no estoque da mala de ${tech.name} com sucesso e notificado ao técnico!`);
 }
 
 function renderizarMalaAdmin() {
@@ -1740,15 +1753,15 @@ function renderizarMalaAdmin() {
     let tbody = document.getElementById('admin-mala-table');
     if (tbody) {
         tbody.innerHTML = tech.mala.map((m, idx) => `
-            <tr class="border-b border-zinc-800">
-                <td class="p-3 font-mono text-red-400">${m.sap}</td>
-                <td class="p-3">${m.desc}</td>
+            <tr class="border-b border-zinc-700">
+                <td class="p-3 font-mono text-red-400 font-semibold">${m.sap}</td>
+                <td class="p-3 text-white font-semibold">${m.desc}</td>
                 <td class="p-3 text-center font-bold text-white">${m.qtd}</td>
-                <td class="p-3 text-center text-amber-400">${m.lancado || 0}</td>
+                <td class="p-3 text-center text-amber-300 font-bold">${m.lancado || 0}</td>
                 <td class="p-3 text-center space-x-2">
-                    <input type="number" id="edit-mala-${idx}" min="0" value="${m.qtd}" class="w-16 px-2 py-1 bg-black border border-zinc-700 rounded text-center text-red-400 font-bold outline-none inline-block">
-                    <button type="button" onclick="salvarEdicaoMalaAdmin('${tech.login}', ${idx})" class="action-btn-write px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold">Salvar</button>
-                    <button type="button" onclick="excluirMaterialMalaAdmin('${tech.login}', ${idx})" class="action-btn-write px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-bold">Excluir</button>
+                    <input type="number" id="edit-mala-${idx}" min="0" value="${m.qtd}" class="w-16 px-2 py-1 bg-black border border-zinc-600 rounded text-center text-red-400 font-bold outline-none inline-block">
+                    <button type="button" onclick="salvarEdicaoMalaAdmin('${tech.login}', ${idx})" class="action-btn-write px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold shadow">Salvar</button>
+                    <button type="button" onclick="excluirMaterialMalaAdmin('${tech.login}', ${idx})" class="action-btn-write px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-bold shadow">Excluir</button>
                 </td>
             </tr>
         `).join('') || '<tr><td colspan="5" class="p-4 text-center">Nenhum item na mala.</td></tr>';
@@ -1759,24 +1772,24 @@ function renderizarMalaAdmin() {
         let htmlSeriais = "";
         tech.mala.forEach(m => {
             if (m.seriais && m.seriais.length > 0) {
-                htmlSeriais += `<div class="p-3 bg-black border border-zinc-800 rounded-xl text-xs"><b class="text-red-400">${m.desc} (${m.sap})</b>: ${m.seriais.join(', ')}</div>`;
+                htmlSeriais += `<div class="p-3 bg-black border border-zinc-700 rounded-xl text-xs"><b class="text-red-400">${m.desc} (${m.sap})</b>: ${m.seriais.join(', ')}</div>`;
             }
         });
-        seriaisListEl.innerHTML = htmlSeriais || '<p class="text-zinc-500 italic">Nenhum item com serial cadastrado nesta mala.</p>';
+        seriaisListEl.innerHTML = htmlSeriais || '<p class="text-zinc-400 italic">Nenhum item com serial cadastrado nesta mala.</p>';
     }
 
     let reposListEl = document.getElementById('admin-reposicao-list');
     if (reposListEl) {
         let repTech = db.reposicoes.filter(r => r.tecnico === tech.name || r.techLogin === tech.login);
         reposListEl.innerHTML = repTech.map((r) => `
-            <div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs">
-                <div><b>${r.material}</b> - Qtd solicitada: <span class="text-amber-400 font-bold">${r.qtd}</span> (${r.status || 'Pendente'})</div>
+            <div class="p-3 bg-black border border-zinc-700 rounded-xl flex justify-between items-center text-xs">
+                <div><b class="text-white">${r.material}</b> - Qtd solicitada: <span class="text-amber-300 font-bold">${r.qtd}</span> (${r.status || 'Pendente'})</div>
                 <div class="space-x-2">
-                    <button type="button" onclick="aprovarReposicaoAdmin(${r.id}, '${tech.login}', '${r.material.replace(/'/g, "\\'")}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold">Aprovar</button>
-                    <button type="button" onclick="removerReposicaoAdmin(${r.id})" class="action-btn-write text-red-500 font-bold hover:underline">Excluir</button>
+                    <button type="button" onclick="aprovarReposicaoAdmin(${r.id}, '${tech.login}', '${r.material.replace(/'/g, "\\'")}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold shadow">Aprovar</button>
+                    <button type="button" onclick="removerReposicaoAdmin(${r.id})" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button>
                 </div>
             </div>
-        `).join('') || '<p class="text-zinc-500 italic">Nenhum pedido de reposição pendente.</p>';
+        `).join('') || '<p class="text-zinc-400 italic">Nenhum pedido de reposição pendente.</p>';
     }
 }
 
@@ -1856,18 +1869,18 @@ function renderizarHistoricoGeral() {
     if (!tbody) return;
 
     tbody.innerHTML = histFiltrado.map(h => `
-        <tr class="border-b border-zinc-800">
-            <td class="p-3 text-zinc-400 font-mono">${h.data}</td>
+        <tr class="border-b border-zinc-700">
+            <td class="p-3 text-zinc-200 font-mono font-semibold">${h.data}</td>
             <td class="p-3 font-bold text-red-400">${h.tipo}</td>
-            <td class="p-3 text-white">${h.responsavel}</td>
-            <td class="p-3 text-zinc-300">${h.detalhes}</td>
+            <td class="p-3 text-white font-semibold">${h.responsavel}</td>
+            <td class="p-3 text-zinc-100">${h.detalhes}</td>
         </tr>
     `).join('') || '<tr><td colspan="4" class="p-4 text-center">Nenhum registro no histórico.</td></tr>';
 }
 
 function limparHistoricoGeral() {
     if (isVisualizador) return;
-    if (confirm("Deseja realmente limpar todo o histórico de movimentações?")) {
+    if (confirm("Deseja realmente limpar todo el histórico de movimentações?")) {
         db.movimentacoes = [];
         salvarDb();
         renderizarHistoricoGeral();
@@ -1910,6 +1923,33 @@ function exportarExcelSIAKI() {
     document.body.removeChild(link);
 }
 
+function copiarServicoSIAKILinha(idOuIndex, fallbackIndex) {
+    let idxReal = db.lancamentos.findIndex(l => String(l.id) === String(idOuIndex));
+    if (idxReal === -1 && typeof fallbackIndex === 'number') {
+        idxReal = fallbackIndex;
+    }
+    if (idxReal === -1 || !db.lancamentos[idxReal]) {
+        alert("Lançamento não encontrado!");
+        return;
+    }
+
+    let l = db.lancamentos[idxReal];
+    let texto = "DATA\tCOD SAP\tMaterial\tPROJETOS\tCIDADE\tLOCAL DE DESCARGA\tNode/Site/Cód Imóvel\tQTD. CONSUMO\tQTD. DESCARTE\n";
+    (l.items || []).forEach(it => {
+        texto += `${l.data || ''}\t${it.sap}\t${it.material}\t${l.projeto}\tMACEIO\t865323\t${l.node}\t${it.qtd}\t${it.descarte || 0}\n`;
+    });
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(() => {
+            alert(`📋 Serviço do Node ${l.node} copiado com sucesso no padrão SIAKI!`);
+        }).catch(() => {
+            copiarFallbackTextarea(texto, 1);
+        });
+    } else {
+        copiarFallbackTextarea(texto, 1);
+    }
+}
+
 function copiarDadosSIAKI() {
     let filtrados = obterLancamentosSIAKIFiltrados();
     if (filtrados.length === 0) {
@@ -1926,7 +1966,7 @@ function copiarDadosSIAKI() {
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(texto).then(() => {
-            alert(`📋 ${filtrados.length} lançamento(s) da data selecionada copiado(s) no padrão SIAKI com sucesso!`);
+            alert(`📋 ${filtrados.length} lançamento(s) copiado(s) no padrão SIAKI com sucesso!`);
         }).catch(() => {
             copiarFallbackTextarea(texto, filtrados.length);
         });
@@ -1945,9 +1985,9 @@ function copiarFallbackTextarea(texto, totalFiltrados) {
     ta.select();
     try {
         document.execCommand('copy');
-        alert(`📋 ${totalFiltrados} lançamento(s) da data selecionada copiado(s) no padrão SIAKI com sucesso!`);
+        alert(`📋 ${totalFiltrados} lançamento(s) copiado(s) no padrão SIAKI com sucesso!`);
     } catch (e) {
-        alert("Não foi possível copiar automaticamente. Tente novamente.");
+        alert("Não foi possível copiar automaticamente.");
     }
     document.body.removeChild(ta);
 }
@@ -2245,9 +2285,9 @@ function atualizarTechNotificacoesBadge() {
     list.innerHTML = usuarioLogado.notificacoes.slice().reverse().map(n => `
         <div class="p-2 bg-black rounded-xl border-l-4 border-red-600">
             <p class="font-semibold text-white">${n.text}</p>
-            <span class="text-[9px] text-zinc-400">${n.time}</span>
+            <span class="text-[9px] text-zinc-300">${n.time}</span>
         </div>
-    `).join('') || '<p class="text-zinc-400 text-center py-2">Nenhuma notificação.</p>';
+    `).join('') || '<p class="text-zinc-300 text-center py-2">Nenhuma notificação.</p>';
 }
 
 function toggleTechNotifDropdown() {
@@ -2305,7 +2345,7 @@ function atualizarEstiloAbasTech(tipo) {
             if (t === tipo) {
                 btn.className = "flex-1 py-2 px-1 rounded-xl bg-red-600 text-white transition text-center flex flex-col items-center justify-center space-y-0.5 font-bold text-[10px] shadow";
             } else {
-                btn.className = "flex-1 py-2 px-1 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px]";
+                btn.className = "flex-1 py-2 px-1 rounded-xl text-zinc-300 hover:bg-zinc-800 hover:text-white transition text-center flex flex-col items-center justify-center space-y-0.5 text-[10px] font-semibold";
             }
         }
     });
@@ -2318,63 +2358,61 @@ function abrirCardTech(tipo) {
     if (!content || !usuarioLogado) return;
 
     if (tipo === 'lancamento') {
-        // Indicador dinâmico de itens selecionados e quantidades acima no topo do card de lançamento
         let totalItensCarrinho = carrinhoAtual.reduce((acc, i) => acc + Number(i.qtd || 0), 0);
         let indicadorResumoHtml = carrinhoAtual.length > 0 
-            ? `<div class="p-3 bg-red-950/40 border border-red-800 rounded-xl flex items-center justify-between text-xs text-red-200">
-                   <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-400">${totalItensCarrinho} unidades no total</b></div>
-                   <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Pronto p/ Enviar</span>
+            ? `<div class="p-3 bg-red-950/90 border border-red-700 rounded-xl flex items-center justify-between text-xs text-red-200 shadow">
+                   <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-300">${totalItensCarrinho} unidades no total</b></div>
+                   <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold shadow">Pronto p/ Enviar</span>
                </div>`
-            : `<div class="p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-center text-xs text-zinc-500 italic">Nenhum item selecionado no momento. Escolha abaixo.</div>`;
+            : `<div class="p-2.5 bg-zinc-900 border border-zinc-700 rounded-xl text-center text-xs text-zinc-300 italic font-semibold">Nenhum item selecionado no momento. Escolha abaixo.</div>`;
 
         content.innerHTML = `
             <div class="space-y-4">
                 <h4 class="font-bold text-red-400 text-xs sm:text-sm flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Lançamento em Campo</span></h4>
                 
-                <!-- Indicador Superior de Seleção -->
                 <div id="tech-selection-indicator-box">
                     ${indicadorResumoHtml}
                 </div>
 
                 <div class="grid grid-cols-1 gap-2.5">
                     <div>
-                        <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Projeto</label>
-                        <select id="t-projeto" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+                        <label class="block text-[11px] font-semibold text-zinc-200 mb-1">Projeto</label>
+                        <select id="t-projeto" class="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs outline-none text-white font-semibold">
                             <option value="MDU GPON F">MDU GPON F</option>
                             <option value="MDU GPON ON GOING">MDU GPON ON GOING</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Node / Imóvel</label>
-                        <input type="text" id="t-node" autocomplete="off" placeholder="Ex: 378556075" class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+                        <label class="block text-[11px] font-semibold text-zinc-200 mb-1">Node / Imóvel</label>
+                        <input type="text" id="t-node" autocomplete="off" placeholder="Ex: 378556075" class="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs outline-none text-white font-semibold">
                     </div>
                     <div>
-                        <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Local de Descarga</label>
-                        <input type="text" id="t-local-desc" value="865323" readonly class="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-red-400 font-bold outline-none">
+                        <label class="block text-[11px] font-semibold text-zinc-200 mb-1">Local de Descarga</label>
+                        <input type="text" id="t-local-desc" value="865323" readonly class="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-xl text-xs text-red-400 font-bold outline-none">
                     </div>
                 </div>
 
                 <div class="space-y-3 pt-1">
                     <div>
-                        <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Buscar Material no Catálogo</label>
-                        <input type="text" id="t-search-mat" autocomplete="off" oninput="renderizarSelecaoTecnico(false)" placeholder="Digite o SAP ou Descrição..." class="w-full px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white mb-2">
+                        <label class="block text-[11px] font-semibold text-zinc-200 mb-1">Buscar Material no Catálogo</label>
+                        <input type="text" id="t-search-mat" autocomplete="off" oninput="renderizarSelecaoTecnico(false)" placeholder="Digite o SAP ou Descrição..." class="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs outline-none text-white font-semibold mb-2">
                         <div id="t-material-list"
                              ontouchstart="isTouchingMaterialScroll = true"
                              ontouchend="setTimeout(() => { isTouchingMaterialScroll = false; }, 350)"
                              ontouchcancel="isTouchingMaterialScroll = false"
-                             class="max-h-48 overflow-y-auto space-y-1 border border-zinc-800 p-2 rounded-xl bg-black"></div>
+                             class="max-h-48 overflow-y-auto space-y-1 border border-zinc-700 p-2 rounded-xl bg-black"></div>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Favoritos Rápido</label>
-                        <div id="t-favorites-list" class="flex flex-wrap gap-1.5 p-2 border border-zinc-800 rounded-xl bg-black max-h-36 overflow-y-auto"></div>
+                        <label class="block text-[11px] font-semibold text-zinc-200 mb-1">Favoritos Rápido</label>
+                        <div id="t-favorites-list" class="flex flex-wrap gap-1.5 p-2 border border-zinc-700 rounded-xl bg-black max-h-36 overflow-y-auto"></div>
                     </div>
                 </div>
 
-                <div class="pt-2 border-t border-zinc-800">
-                    <h5 class="font-bold text-xs text-zinc-300 mb-2">Carrinho de Lançamento</h5>
-                    <table class="w-full text-xs text-left text-zinc-300">
-                        <thead class="bg-black border-b border-zinc-800"><tr><th class="p-2">Material</th><th class="p-2 text-center">Qtd</th><th class="p-2 text-center">Remover</th></tr></thead>
-                        <tbody id="t-cart-table" class="divide-y divide-zinc-800"><tr><td colspan="3" class="p-3 text-center text-zinc-500">Nenhum item adicionado.</td></tr></tbody>
+                <div class="pt-2 border-t border-zinc-700">
+                    <h5 class="font-bold text-xs text-zinc-200 mb-2">Carrinho de Lançamento</h5>
+                    <table class="w-full text-xs text-left text-zinc-200">
+                        <thead class="bg-black border-b border-zinc-700 text-zinc-300"><tr><th class="p-2">Material</th><th class="p-2 text-center">Qtd</th><th class="p-2 text-center">Remover</th></tr></thead>
+                        <tbody id="t-cart-table" class="divide-y divide-zinc-700"><tr><td colspan="3" class="p-3 text-center text-zinc-400">Nenhum item adicionado.</td></tr></tbody>
                     </table>
                 </div>
                 <button type="button" onclick="salvarLoteTecnico()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg transition">Confirmar e Enviar Lançamento</button>
@@ -2391,8 +2429,8 @@ function abrirCardTech(tipo) {
                 </h4>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input type="text" id="tech-hist-search" oninput="renderizarHistoricoLancesTecnico()" placeholder="Pesquisar por material, node ou projeto..." class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
-                    <input type="date" id="tech-hist-date" onchange="renderizarHistoricoLancesTecnico()" class="px-3 py-2 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
+                    <input type="text" id="tech-hist-search" oninput="renderizarHistoricoLancesTecnico()" placeholder="Pesquisar por material, node ou projeto..." class="px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white font-semibold outline-none">
+                    <input type="date" id="tech-hist-date" onchange="renderizarHistoricoLancesTecnico()" class="px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white font-semibold outline-none">
                 </div>
 
                 <div id="tech-hist-list" class="max-h-80 overflow-y-auto space-y-2 pt-1"></div>
@@ -2404,20 +2442,20 @@ function abrirCardTech(tipo) {
             <div class="space-y-4">
                 <h4 class="font-bold text-red-400 text-xs sm:text-sm">Minha Mala (Miscelâneas e Seriais MIS)</h4>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left text-zinc-300">
-                        <thead class="bg-black border-b border-zinc-800 text-zinc-400">
+                    <table class="w-full text-xs text-left text-zinc-200">
+                        <thead class="bg-black border-b border-zinc-700 text-zinc-300">
                             <tr><th class="p-2.5">SAP</th><th class="p-2.5">Descrição</th><th class="p-2.5 text-center">Qtd Atual</th><th class="p-2.5 text-center">Lançado</th><th class="p-2.5">Seriais</th></tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-800">
+                        <tbody class="divide-y divide-zinc-700">
                             ${(usuarioLogado.mala || []).map(m => `
                                 <tr>
-                                    <td class="p-2.5 font-mono text-red-400">${m.sap}</td>
-                                    <td class="p-2.5">${m.desc}</td>
+                                    <td class="p-2.5 font-mono text-red-400 font-semibold">${m.sap}</td>
+                                    <td class="p-2.5 text-white font-semibold">${m.desc}</td>
                                     <td class="p-2.5 text-center font-bold text-white">${m.qtd}</td>
-                                    <td class="p-2.5 text-center text-amber-400">${m.lancado || 0}</td>
-                                    <td class="p-2.5 font-mono text-[10px] text-emerald-300">${m.seriais && m.seriais.length > 0 ? m.seriais.join(', ') : '-'}</td>
+                                    <td class="p-2.5 text-center text-amber-300 font-bold">${m.lancado || 0}</td>
+                                    <td class="p-2.5 font-mono text-[10px] text-emerald-300 font-semibold">${m.seriais && m.seriais.length > 0 ? m.seriais.join(', ') : '-'}</td>
                                 </tr>
-                            `).join('') || '<tr><td colspan="5" class="p-4 text-center text-zinc-500">Nenhum item na mala.</td></tr>'}
+                            `).join('') || '<tr><td colspan="5" class="p-4 text-center text-zinc-400">Nenhum item na mala.</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -2428,16 +2466,16 @@ function abrirCardTech(tipo) {
             <div class="space-y-3 h-[450px] flex flex-col">
                 <h4 class="font-bold text-red-400 text-xs sm:text-sm">Chat Direct</h4>
                 <div class="flex space-x-2 overflow-x-auto pb-1" id="tech-chat-contacts-bar">
-                    <button type="button" onclick="selecionarChatTech('Base')" id="btn-chat-Base" class="px-3 py-1.5 bg-red-600 text-white rounded-xl text-xs font-bold flex-shrink-0 relative">Base Central</button>
+                    <button type="button" onclick="selecionarChatTech('Base')" id="btn-chat-Base" class="px-3 py-1.5 bg-red-600 text-white rounded-xl text-xs font-bold flex-shrink-0 relative shadow">Base Central</button>
                     <div id="tech-colleagues-chat-btns" class="flex space-x-2"></div>
                 </div>
-                <div id="tech-chat-box" class="flex-1 bg-black border border-zinc-800 rounded-xl p-3 overflow-y-auto space-y-2 text-xs"></div>
+                <div id="tech-chat-box" class="flex-1 bg-black border border-zinc-700 rounded-xl p-3 overflow-y-auto space-y-2 text-xs"></div>
                 <div class="flex items-center space-x-1.5 sm:space-x-2">
-                    <input type="text" id="tech-chat-input" autocomplete="off" onkeydown="if(event.key==='Enter') enviarMsgTech()" placeholder="Mensagem..." class="flex-1 px-3.5 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none focus:border-red-600">
-                    <button type="button" id="btn-rec-audio-tech" onclick="toggleGravarAudio(true)" title="Gravar Áudio" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center">
+                    <input type="text" id="tech-chat-input" autocomplete="off" onkeydown="if(event.key==='Enter') enviarMsgTech()" placeholder="Mensagem..." class="flex-1 px-3.5 py-2.5 bg-black border border-zinc-700 rounded-xl text-xs text-white font-semibold outline-none focus:border-red-600">
+                    <button type="button" id="btn-rec-audio-tech" onclick="toggleGravarAudio(true)" title="Gravar Áudio" class="p-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center shadow">
                         <i data-lucide="mic" class="w-4 h-4 text-red-400"></i>
                     </button>
-                    <button type="button" onclick="enviarMsgTech()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition">Enviar</button>
+                    <button type="button" onclick="enviarMsgTech()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow">Enviar</button>
                 </div>
             </div>
         `;
@@ -2447,20 +2485,20 @@ function abrirCardTech(tipo) {
         content.innerHTML = `
             <div class="space-y-4 max-w-md mx-auto">
                 <h4 class="font-bold text-red-400 text-xs sm:text-sm">Solicitar Reposição de Material</h4>
-                <select id="t-rep-mat" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white">
+                <select id="t-rep-mat" class="w-full px-3 py-2.5 bg-black border border-zinc-700 rounded-xl text-xs outline-none text-white font-semibold">
                     ${(db.materiais || []).map(m => `<option value="${m.desc}">${m.sap} - ${m.desc}</option>`).join('')}
                 </select>
-                <input type="number" id="t-rep-qtd" min="1" value="10" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs outline-none text-white" placeholder="Quantidade">
-                <button type="button" onclick="solicitarReposicaoTech()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition">Enviar Pedido de Reposição</button>
+                <input type="number" id="t-rep-qtd" min="1" value="10" class="w-full px-3 py-2.5 bg-black border border-zinc-700 rounded-xl text-xs outline-none text-white font-semibold" placeholder="Quantidade">
+                <button type="button" onclick="solicitarReposicaoTech()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition shadow">Enviar Pedido de Reposição</button>
             </div>
         `;
     } else if (tipo === 'colega') {
         let pendentesHtml = (usuarioLogado.pedidosAmizade || []).map((ped, pIdx) => `
-            <div class="p-3 bg-black border border-zinc-800 rounded-xl flex justify-between items-center text-xs">
-                <span><b>${ped.nome || ped}</b> quer ser seu colega</span>
+            <div class="p-3 bg-black border border-zinc-700 rounded-xl flex justify-between items-center text-xs">
+                <span class="text-white font-semibold"><b>${ped.nome || ped}</b> quer ser seu colega</span>
                 <div class="space-x-2">
-                    <button type="button" onclick="aceitarPedidoAmizade('${ped.login || ped}')" class="px-3 py-1 bg-emerald-600 text-white rounded font-bold">Aceitar</button>
-                    <button type="button" onclick="recusarPedidoAmizade(${pIdx})" class="px-3 py-1 bg-red-600 text-white rounded font-bold">Recusar</button>
+                    <button type="button" onclick="aceitarPedidoAmizade('${ped.login || ped}')" class="px-3 py-1 bg-emerald-600 text-white rounded font-bold shadow">Aceitar</button>
+                    <button type="button" onclick="recusarPedidoAmizade(${pIdx})" class="px-3 py-1 bg-red-600 text-white rounded font-bold shadow">Recusar</button>
                 </div>
             </div>
         `).join('');
@@ -2468,12 +2506,12 @@ function abrirCardTech(tipo) {
         content.innerHTML = `
             <div class="space-y-4 max-w-md mx-auto">
                 <h4 class="font-bold text-red-400 text-xs sm:text-sm">Adicionar Colega de Trabalho</h4>
-                <input type="text" id="colega-busca-login" placeholder="Insira o login (ex: carlos)" class="w-full px-3 py-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-white outline-none">
-                <button type="button" onclick="enviarPedidoAmizadeTech()" class="w-full py-2.5 bg-red-600 text-white font-bold rounded-xl text-xs">Enviar Solicitação de Amizade</button>
+                <input type="text" id="colega-busca-login" placeholder="Insira o login (ex: carlos)" class="w-full px-3 py-2.5 bg-black border border-zinc-700 rounded-xl text-xs text-white font-semibold outline-none">
+                <button type="button" onclick="enviarPedidoAmizadeTech()" class="w-full py-2.5 bg-red-600 text-white font-bold rounded-xl text-xs shadow">Enviar Solicitação de Amizade</button>
                 
-                <div class="pt-4 border-t border-zinc-800 space-y-2">
-                    <h5 class="font-bold text-xs text-zinc-300">Solicitações Pendentes</h5>
-                    <div id="tech-pedidos-list" class="space-y-2">${pendentesHtml || '<p class="text-zinc-500 italic text-xs">Nenhuma solicitação pendente.</p>'}</div>
+                <div class="pt-4 border-t border-zinc-700 space-y-2">
+                    <h5 class="font-bold text-xs text-zinc-200">Solicitações Pendentes</h5>
+                    <div id="tech-pedidos-list" class="space-y-2">${pendentesHtml || '<p class="text-zinc-400 italic text-xs">Nenhuma solicitação pendente.</p>'}</div>
                 </div>
             </div>
         `;
@@ -2502,26 +2540,26 @@ function renderizarHistoricoLancesTecnico() {
     });
 
     if (filtrados.length === 0) {
-        container.innerHTML = '<p class="text-zinc-500 text-center py-4 text-xs italic">Nenhum lançamento encontrado para os filtros informados.</p>';
+        container.innerHTML = '<p class="text-zinc-400 text-center py-4 text-xs italic">Nenhum lançamento encontrado para os filtros informados.</p>';
         return;
     }
 
     container.innerHTML = filtrados.slice().reverse().map(l => {
-        let itemsHtml = l.items.map(i => `<li class="flex justify-between items-center"><span class="truncate pr-2"><b>${i.sap}</b> - ${i.material}</span> <b class="text-red-400 font-mono flex-shrink-0">${i.qtd} un</b></li>`).join('');
+        let itemsHtml = l.items.map(i => `<li class="flex justify-between items-center"><span class="truncate pr-2 text-zinc-200"><b>${i.sap}</b> - ${i.material}</span> <b class="text-red-400 font-mono flex-shrink-0">${i.qtd} un</b></li>`).join('');
         let statusBadge = l.statusServidor === 'erro'
-            ? `<span class="px-2 py-0.5 rounded bg-red-900/80 text-red-300 font-bold text-[9px] border border-red-700 flex items-center gap-1">❌ Erro no Envio</span>`
-            : `<span class="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 font-bold text-[9px] border border-emerald-800 flex items-center gap-1">✅ Chegou ao Sistema (${l.hora || 'Sincronizado'})</span>`;
+            ? `<span class="px-2 py-0.5 rounded bg-red-900 text-red-200 font-bold text-[9px] border border-red-700 flex items-center gap-1 shadow">❌ Erro no Envio</span>`
+            : `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold text-[9px] border border-emerald-700 flex items-center gap-1 shadow">✅ Chegou ao Sistema (${l.hora || 'Sincronizado'})</span>`;
 
         return `
-            <div class="p-3 bg-black border border-zinc-800 rounded-xl space-y-1.5 text-xs shadow-sm">
-                <div class="flex justify-between items-center border-b border-zinc-800 pb-1.5">
-                    <span class="text-zinc-400 font-mono text-[10px]">📅 ${l.data} ${l.hora ? 'às ' + l.hora : ''}</span>
+            <div class="p-3 bg-black border border-zinc-700 rounded-xl space-y-1.5 text-xs shadow-md">
+                <div class="flex justify-between items-center border-b border-zinc-700 pb-1.5">
+                    <span class="text-zinc-300 font-mono text-[10px] font-semibold">📅 ${l.data} ${l.hora ? 'às ' + l.hora : ''}</span>
                     ${statusBadge}
                 </div>
                 <div class="text-red-400 font-bold text-xs flex justify-between items-center">
                     <span>${l.projeto} (Node: ${l.node})</span>
                 </div>
-                <ul class="space-y-1 pl-1 text-[11px] text-zinc-300 border-t border-zinc-900 pt-1">
+                <ul class="space-y-1 pl-1 text-[11px] text-zinc-200 border-t border-zinc-800 pt-1">
                     ${itemsHtml}
                 </ul>
             </div>
@@ -2669,26 +2707,31 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
 
     filtrados.forEach(m => {
         let isFav = (db.favoritos || []).some(f => (typeof f === 'object' ? f.desc === m.desc || f.sap === m.sap : f === m.desc));
-        let starColor = isFav ? "text-amber-400 fill-amber-400" : "text-zinc-600";
+        let starColor = isFav ? "text-amber-400 fill-amber-400" : "text-zinc-500";
 
         let itemMala = (usuarioLogado.mala || []).find(x => x.sap === m.sap);
         let qtdMala = itemMala ? itemMala.qtd : 0;
         let descEscaped = m.desc.replace(/'/g, "\\'");
 
+        // Verifica se o item já está no carrinho atual para destacá-lo visualmente
+        let isInCart = carrinhoAtual.some(ci => ci.sap === m.sap);
+        let cardBgClass = isInCart ? "bg-red-950/70 border-red-600 shadow-md" : "bg-zinc-900 border-zinc-700";
+        let statusInclusoBadge = isInCart ? `<span class="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold uppercase ml-1 shadow">Incluso ✓</span>` : '';
+
         html += `
-            <div class="flex justify-between items-center p-2 bg-zinc-900 rounded-lg border border-zinc-800">
+            <div class="flex justify-between items-center p-2.5 rounded-xl border ${cardBgClass} transition">
                 <div class="truncate mr-2">
-                    <b class="text-red-400">${m.sap}</b> - <span class="text-zinc-300">${m.desc}</span>
-                    <span class="text-[10px] text-zinc-400 block">Em Mala: ${qtdMala} un</span>
+                    <b class="text-red-400 font-semibold">${m.sap}</b> - <span class="text-white font-semibold">${m.desc}</span> ${statusInclusoBadge}
+                    <span class="text-[10px] text-zinc-300 block font-semibold">Em Mala: ${qtdMala} un</span>
                 </div>
                 <div class="space-x-2 flex items-center flex-shrink-0">
-                    <button type="button" onclick="toggleFavTech('${descEscaped}', '${m.sap}')" class="${starColor} p-1">★</button>
-                    <button type="button" onclick="addCarrinhoTech('${m.sap}', '${descEscaped}')" class="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-[10px]">Add</button>
+                    <button type="button" onclick="toggleFavTech('${descEscaped}', '${m.sap}')" class="${starColor} p-1 text-base">★</button>
+                    <button type="button" onclick="addCarrinhoTech('${m.sap}', '${descEscaped}')" class="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-xs shadow">Add</button>
                 </div>
             </div>
         `;
     });
-    listEl.innerHTML = html || '<p class="text-zinc-500 text-center text-xs py-2">Nenhum material cadastrado no sistema.</p>';
+    listEl.innerHTML = html || '<p class="text-zinc-400 text-center text-xs py-2">Nenhum material cadastrado no sistema.</p>';
 
     let favHtml = "";
     (db.favoritos || []).forEach(f => {
@@ -2696,13 +2739,13 @@ function renderizarSelecaoTecnico(preservarScroll = true) {
         let sapStr = typeof f === 'object' ? f.sap : '';
         let descEscaped = descStr.replace(/'/g, "\\'");
         favHtml += `
-            <div class="inline-flex items-center space-x-1 px-2.5 py-1 bg-red-950/40 border border-red-900 text-red-300 rounded-lg text-xs font-bold">
+            <div class="inline-flex items-center space-x-1 px-2.5 py-1 bg-red-950/80 border border-red-700 text-red-200 rounded-lg text-xs font-bold shadow">
                 <span onclick="addCarrinhoTechPorDesc('${descEscaped}', '${sapStr}')" class="cursor-pointer">${descStr}</span>
-                <button type="button" onclick="removerFavTech('${descEscaped}')" class="text-zinc-400 hover:text-white ml-1">×</button>
+                <button type="button" onclick="removerFavTech('${descEscaped}')" class="text-zinc-300 hover:text-white ml-1">×</button>
             </div>
         `;
     });
-    if (favEl) favEl.innerHTML = favHtml || '<span class="text-zinc-500 text-xs italic">Nenhum favorito.</span>';
+    if (favEl) favEl.innerHTML = favHtml || '<span class="text-zinc-400 text-xs italic">Nenhum favorito.</span>';
 
     if (preservarScroll) {
         listEl.scrollTop = savedListScrollTop;
@@ -2735,6 +2778,7 @@ function addCarrinhoTech(sap, desc) {
     if (item) item.qtd += 1;
     else carrinhoAtual.push({ sap, material: desc, qtd: 1, descarte: 0 });
     renderizarCarrinhoTecnico();
+    renderizarSelecaoTecnico(true);
 }
 
 function addCarrinhoTechPorDesc(desc, sap) {
@@ -2762,14 +2806,14 @@ function atualizarIndicadorSelecaoCarrinho() {
     let totalItensCarrinho = carrinhoAtual.reduce((acc, i) => acc + Number(i.qtd || 0), 0);
     if (carrinhoAtual.length > 0) {
         box.innerHTML = `
-            <div class="p-3 bg-red-950/40 border border-red-800 rounded-xl flex items-center justify-between text-xs text-red-200">
-                <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-400">${totalItensCarrinho} unidades no total</b></div>
-                <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Pronto p/ Enviar</span>
+            <div class="p-3 bg-red-950/90 border border-red-700 rounded-xl flex items-center justify-between text-xs text-red-200 shadow">
+                <div>🔥 <b>Itens Selecionados:</b> ${carrinhoAtual.length} tipo(s) | <b class="text-amber-300">${totalItensCarrinho} unidades no total</b></div>
+                <span class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold shadow">Pronto p/ Enviar</span>
             </div>
         `;
     } else {
         box.innerHTML = `
-            <div class="p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-center text-xs text-zinc-500 italic">Nenhum item selecionado no momento. Escolha abaixo.</div>
+            <div class="p-2.5 bg-zinc-900 border border-zinc-700 rounded-xl text-center text-xs text-zinc-300 italic font-semibold">Nenhum item selecionado no momento. Escolha abaixo.</div>
         `;
     }
 }
@@ -2779,16 +2823,16 @@ function renderizarCarrinhoTecnico() {
     let tbody = document.getElementById('t-cart-table');
     if (!tbody) return;
     if (carrinhoAtual.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-zinc-500">Nenhum item adicionado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-zinc-400">Nenhum item adicionado.</td></tr>';
         return;
     }
     tbody.innerHTML = carrinhoAtual.map((it, idx) => `
-        <tr class="border-b border-zinc-800">
-            <td class="p-2"><b>${it.sap}</b> - ${it.material}</td>
+        <tr class="border-b border-zinc-700">
+            <td class="p-2 text-white font-semibold"><b>${it.sap}</b> - ${it.material}</td>
             <td class="p-2 text-center">
-                <input type="number" min="1" value="${it.qtd}" oninput="atualizarQtdCarrinhoTech(${idx}, this.value)" onchange="atualizarQtdCarrinhoTech(${idx}, this.value)" class="w-16 px-2 py-1 bg-black border border-zinc-700 rounded text-center text-red-400 font-bold outline-none">
+                <input type="number" min="1" value="${it.qtd}" oninput="atualizarQtdCarrinhoTech(${idx}, this.value)" onchange="atualizarQtdCarrinhoTech(${idx}, this.value)" class="w-16 px-2 py-1 bg-black border border-zinc-600 rounded text-center text-red-400 font-bold outline-none">
             </td>
-            <td class="p-2 text-center"><button type="button" onclick="carrinhoAtual.splice(${idx},1); renderizarCarrinhoTecnico();" class="text-red-500 font-bold px-2 py-1">X</button></td>
+            <td class="p-2 text-center"><button type="button" onclick="carrinhoAtual.splice(${idx},1); renderizarCarrinhoTecnico(); renderizarSelecaoTecnico(true);" class="text-red-400 font-bold px-2 py-1 hover:underline">X</button></td>
         </tr>
     `).join('');
 }
@@ -2930,13 +2974,13 @@ function renderizarColegasChatTech() {
         let amigoObj = db.tecnicos.find(t => t.login === loginAmigo);
         if (amigoObj) {
             let avatar = amigoObj.avatar ? `<img src="${amigoObj.avatar}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">${amigoObj.name.charAt(0)}</div>`;
-            let badgeOn = amigoObj.online ? 'bg-emerald-500' : 'bg-zinc-600';
+            let badgeOn = amigoObj.online ? 'bg-emerald-400' : 'bg-zinc-500';
             let naoLidas = db.mensagens.filter(m => m.remetente === amigoObj.name && m.destinatario === usuarioLogado.name && !m.lido).length;
-            let badgeHtml = naoLidas > 0 ? `<span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">${naoLidas}</span>` : '';
+            let badgeHtml = naoLidas > 0 ? `<span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow">${naoLidas}</span>` : '';
             html += `
-                <div onclick="selecionarChatTech('${amigoObj.name}')" class="flex items-center space-x-2 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl cursor-pointer hover:border-red-600 flex-shrink-0 relative">
+                <div onclick="selecionarChatTech('${amigoObj.name}')" class="flex items-center space-x-2 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-xl cursor-pointer hover:border-red-600 flex-shrink-0 relative shadow">
                     <div class="relative">${avatar}<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${badgeOn} border border-black"></span></div>
-                    <div class="text-left"><span class="text-xs font-bold text-white block">${amigoObj.name}</span><span class="text-[9px] text-zinc-400">Online: ${amigoObj.lastSeen || 'Offline'}</span></div>
+                    <div class="text-left"><span class="text-xs font-bold text-white block">${amigoObj.name}</span><span class="text-[9px] text-zinc-300 font-semibold">Online: ${amigoObj.lastSeen || 'Offline'}</span></div>
                     ${badgeHtml}
                 </div>
             `;
@@ -2951,7 +2995,7 @@ function atualizarBadgesChatTech() {
     let naoLidasBase = db.mensagens.filter(m => m.remetente === "Base" && (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login) && !m.lido).length;
     let btnBase = document.getElementById('btn-chat-Base');
     if (btnBase) {
-        if (naoLidasBase > 0) btnBase.innerHTML = `Base Central <span class="ml-1 bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[9px]">${naoLidasBase}</span>`;
+        if (naoLidasBase > 0) btnBase.innerHTML = `Base Central <span class="ml-1 bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[9px] shadow">${naoLidasBase}</span>`;
         else btnBase.innerHTML = `Base Central`;
     }
 
@@ -2974,16 +3018,16 @@ function atualizarMsgTechBox() {
     );
     box.innerHTML = filtradas.map(m => {
         let eu = m.remetente === usuarioLogado.name || m.remetente === usuarioLogado.login;
-        let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-200 mr-auto';
+        let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-100 mr-auto';
         let audioMarkup = m.audio ? `<div class="mt-1"><audio controls src="${m.audio}" class="max-w-[210px] w-full h-8 rounded-lg"></audio></div>` : '';
         let msgId = m.id || 0;
         return `
-            <div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow relative group">
-                <div class="flex items-center justify-between border-b border-white/10 pb-1 mb-1">
-                    <b class="text-[9px] opacity-75">${m.remetente} • ${m.hora}</b>
-                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-[10px] opacity-70 hover:opacity-100 hover:text-amber-300 font-bold ml-2">🗑️</button>
+            <div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow-md relative group">
+                <div class="flex items-center justify-between border-b border-white/20 pb-1 mb-1">
+                    <b class="text-[9px] opacity-90">${m.remetente} • ${m.hora}</b>
+                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-[10px] opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-2">🗑️</button>
                 </div>
-                ${m.texto ? `<p>${m.texto}</p>` : ''}
+                ${m.texto ? `<p class="font-semibold">${m.texto}</p>` : ''}
                 ${audioMarkup}
             </div>
         `;
@@ -3015,14 +3059,14 @@ function atualizarChatAdminLista() {
     let html = "";
     db.tecnicos.forEach(t => {
         let avatar = t.avatar ? `<img src="${t.avatar}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
-        let badgeOn = t.online ? 'bg-emerald-500' : 'bg-zinc-600';
+        let badgeOn = t.online ? 'bg-emerald-400' : 'bg-zinc-500';
         let naoLidas = db.mensagens.filter(m => m.remetente === t.name && m.destinatario === "Base" && !m.lido).length;
-        let badgeNaoLida = naoLidas > 0 ? `<span class="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">${naoLidas}</span>` : '';
+        let badgeNaoLida = naoLidas > 0 ? `<span class="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow">${naoLidas}</span>` : '';
         html += `
-            <div onclick="selecionarChatAdmin('${t.name}')" class="p-3 rounded-xl hover:bg-zinc-900 cursor-pointer flex items-center justify-between text-xs border-b border-zinc-800">
+            <div onclick="selecionarChatAdmin('${t.name}')" class="p-3 rounded-xl hover:bg-zinc-900 cursor-pointer flex items-center justify-between text-xs border-b border-zinc-700">
                 <div class="flex items-center space-x-2">
                     <div class="relative">${avatar}<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${badgeOn} border border-black"></span></div>
-                    <div><span class="font-bold text-white block">${t.name}</span><span class="text-[9px] text-zinc-400">Online: ${t.lastSeen || 'Offline'}</span></div>
+                    <div><span class="font-bold text-white block">${t.name}</span><span class="text-[9px] text-zinc-300 font-semibold">Online: ${t.lastSeen || 'Offline'}</span></div>
                 </div>
                 ${badgeNaoLida}
             </div>
@@ -3055,16 +3099,16 @@ function atualizarMensagensAdminBox() {
     );
     box.innerHTML = filtradas.map(m => {
         let eu = m.remetente === "Base";
-        let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-200 mr-auto';
+        let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-100 mr-auto';
         let audioMarkup = m.audio ? `<div class="mt-1"><audio controls src="${m.audio}" class="max-w-[210px] w-full h-8 rounded-lg"></audio></div>` : '';
         let msgId = m.id || 0;
         return `
-            <div class="max-w-[75%] p-3 rounded-2xl ${bg} shadow relative group">
-                <div class="flex items-center justify-between border-b border-white/10 pb-1 mb-1">
-                    <b class="text-[10px] opacity-75">${m.remetente} • ${m.hora}</b>
-                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-xs opacity-70 hover:opacity-100 hover:text-amber-300 font-bold ml-3">🗑️</button>
+            <div class="max-w-[75%] p-3 rounded-2xl ${bg} shadow-md relative group">
+                <div class="flex items-center justify-between border-b border-white/20 pb-1 mb-1">
+                    <b class="text-[10px] opacity-90">${m.remetente} • ${m.hora}</b>
+                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-xs opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-3">🗑️</button>
                 </div>
-                ${m.texto ? `<p>${m.texto}</p>` : ''}
+                ${m.texto ? `<p class="font-semibold">${m.texto}</p>` : ''}
                 ${audioMarkup}
             </div>
         `;
