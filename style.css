@@ -1,0 +1,112 @@
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.bg-red-black-gradient {
+    background: linear-gradient(-45deg, #450a0a, #7f1d1d, #09090b, #18181b);
+    background-size: 400% 400%;
+    animation: gradientMove 12s ease infinite;
+}
+
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(220, 38, 38, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+}
+
+.mobile-frame {
+    max-width: 480px !important;
+    margin: 0 auto;
+    border-left: 2px solid #3f3f46;
+    border-right: 2px solid #3f3f46;
+}
+
+/* MODO MOBILE CONTAINER PARA ADMIN */
+.mobile-admin-active #admin-screen {
+    flex-direction: column !important;
+    min-height: 100vh;
+    padding-bottom: 75px;
+}
+
+.mobile-admin-active aside {
+    display: none !important;
+}
+
+.mobile-admin-active #admin-mobile-nav {
+    display: flex !important;
+}
+
+/* ESTILO MODO VISUALIZADOR (SOMENTE LEITURA & SEM MENSAGENS) */
+.mode-visualizador .action-btn-write {
+    display: none !important;
+}
+
+.mode-visualizador .visualizador-hide-chat {
+    display: none !important;
+}
+
+/* MODO CLARO (BRANCO) OTIMIZADO E AJUSTADO */
+body.theme-light {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .bg-black,
+body.theme-light .bg-zinc-950,
+body.theme-light .bg-zinc-900 {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.theme-light aside {
+    background-color: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.theme-light .text-white {
+    color: #0f172a !important;
+}
+
+body.theme-light .text-zinc-300,
+body.theme-light .text-zinc-400 {
+    color: #334155 !important;
+}
+
+body.theme-light input,
+body.theme-light select,
+body.theme-light textarea {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* ESTILO CUSTOMIZADO DE PINS NO MAPA ESTILO LIFE360 */
+.custom-tech-pin {
+    background: transparent;
+    border: none;
+}
+
+.leaflet-popup-content-wrapper {
+    background: #18181b !important;
+    color: #ffffff !important;
+    border-radius: 1rem !important;
+    border: 1px solid #3f3f46 !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+.leaflet-popup-tip {
+    background: #18181b !important;
+}
+
+/* ESTABILIDADE DE SCROLL NA LISTA DE SELEÇÃO DO TÉCNICO */
+#t-material-list,
+#t-favorites-list {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
