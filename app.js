@@ -67,7 +67,7 @@ let db = {
     favoritos: ["CABO DROP LOW F FIG8 1FO CINZA", "CONECTOR FO CAMPO CPO SC APC FRKW"],
     lancamentos: [],
     trajetos: [
-        { id: 101, data: "2026-10-08", techLogin: "joao", techNome: "João Silva", veiculo: "V-102 (Fiorino)", origem: "Base Central", destino: "MDU GPON Node 37855", kmIni: 45000, kmFim: 45050, kmPercorrido: 50, kmPorLitro: 10, litros: 5.0, precoGasolina: 6.10, custoTotal: 30.50, custoPorKm: 0.61, gpsAtivo: true, paradaFinal: "Parada Final - Node 37855", tempoParado: "1h 15min" }
+        { id: 101, data: "2026-10-08", techLogin: "joao", techNome: "João Silva", veiculo: "V-102 (Fiorino)", origem: "Base Central", destino: "MDU GPON GF Node 37855", kmIni: 45000, kmFim: 45050, kmPercorrido: 50, kmPorLitro: 10, litros: 5.0, precoGasolina: 6.10, custoTotal: 30.50, custoPorKm: 0.61, gpsAtivo: true, paradaFinal: "Parada Final - Node 37855", tempoParado: "1h 15min" }
     ],
     reposicoes: [],
     mensagens: [],
@@ -102,6 +102,7 @@ let isMobileLayout = false;
 let isInitialLoadDone = false;
 let isTouchingMaterialScroll = false;
 let isTouchingHistoryScroll = false;
+let chatAdminAtual = null;
 
 function normalizarArray(val) {
     if (!val) return [];
@@ -191,21 +192,24 @@ function togglePasswordVisibility() {
 dbRef.on('value', (snapshot) => {
     const serverData = snapshot.val();
     if (serverData) {
-        db = serverData;
-        normalizarEstruturaDb();
-        if (db.adminPass) ADMIN_PASS = db.adminPass;
-
-        if (!isInitialLoadDone) {
-            isInitialLoadDone = true;
-            verificarSessaoSalvaInstantanea();
-        }
-
+        // Evita sobrescrever estado local se o usuário estiver digitando ativamente em inputs/textareas
         const activeEl = document.activeElement;
         const isUserInteracting = activeEl && (
             activeEl.tagName === 'INPUT' ||
             activeEl.tagName === 'TEXTAREA' ||
             activeEl.tagName === 'SELECT'
         );
+
+        if (!isUserInteracting) {
+            db = serverData;
+            normalizarEstruturaDb();
+            if (db.adminPass) ADMIN_PASS = db.adminPass;
+        }
+
+        if (!isInitialLoadDone) {
+            isInitialLoadDone = true;
+            verificarSessaoSalvaInstantanea();
+        }
 
         if (!document.getElementById('admin-screen').classList.contains('hidden')) {
             if (!isUserInteracting) {
@@ -309,7 +313,6 @@ function atualizarStatusConexao() {
     }
 }
 
-// --- PERSISTÊNCIA DE SESSÃO ININTERRUPTA ---
 function verificarSessaoSalvaInstantanea() {
     let saved = localStorage.getItem('boxfield_session');
     if (saved) {
@@ -417,7 +420,6 @@ function handleLogin(event) {
     alert("Usuário ou senha incorretos.");
 }
 
-// --- BACKUP E RESTAURAÇÃO JSON & ZERAR ESTOQUES ---
 function baixarBackupGeral() {
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
     let dlAnchor = document.createElement('a');
@@ -455,7 +457,7 @@ function zerarSistemaFirebase() {
     let senhaDigitada = prompt("⚠️ ATENÇÃO EXTREMA: Esta ação limpará todo o estoque físico, os estoques das malas dos técnicos, lançamentos, históricos e relatórios, mantendo apenas os cadastros dos técnicos.\n\nDigite a senha do Administrador para confirmar:");
     let currentAdminPass = db.adminPass || ADMIN_PASS;
     if (senhaDigitada === currentAdminPass || senhaDigitada === 'Constru007') {
-        if (confirm("Tem certeza absoluta? O Excel gerado virá totalmente limpo do zero.")) {
+        if (confirm("Tem certeza absoluta?")) {
             db.tecnicos.forEach(t => {
                 t.mala = [];
                 t.autoKm = 0;
@@ -473,7 +475,7 @@ function zerarSistemaFirebase() {
 
             salvarDb();
             atualizarPainelAdmin();
-            alert("✅ Estoques, malas e relatórios limpos com sucesso! Cadastros de técnicos preservados.");
+            alert("✅ Estoques, malas e relatórios limpos com sucesso!");
         }
     } else if (senhaDigitada !== null) {
         alert("Senha incorreta! Operação cancelada.");
@@ -529,7 +531,7 @@ function reiniciarKmTodosTecnicos() {
         registrarMovimentacao("Reset KM Geral", "Admin", `Reiniciou a quilometragem de todos os técnicos.`);
         salvarDb();
         atualizarPainelAdmin();
-        alert("✅ Quilometragem de todos los técnicos reiniciada com sucesso!");
+        alert("✅ Quilometragem de todos os técnicos reiniciada com sucesso!");
     }
 }
 
@@ -1111,7 +1113,7 @@ function atualizarPainelAdmin() {
     let lHtml = '';
     lancamentosFiltrados.forEach((l, index) => {
         let itensStr = (l.items || []).forEach ? (l.items || []).map(it => `${it.material} (${it.qtd})`).join(' | ') : '';
-        let lancId = l.id !== undefined ? `'${l.id}'` : index;
+        let lancId = l.id !== undefined ? l.id : index;
         lHtml += `
             <tr class="border-b border-zinc-700">
                 <td class="p-3 text-zinc-200 font-semibold">${l.data || '-'} ${l.hora ? '• ' + l.hora : ''}</td>
@@ -1121,7 +1123,7 @@ function atualizarPainelAdmin() {
                 <td class="p-3 text-zinc-100">${itensStr}</td>
                 <td class="p-3 text-center space-x-2">
                     <button type="button" onclick="copiarServicoSIAKILinha(${lancId}, ${index})" class="action-btn-write px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-[10px] shadow">Copiar</button>
-                    <button type="button" onclick="excluirLancamento(${lancId}, ${index})" class="action-btn-write px-2.5 py-1 bg-red-600/20 text-red-300 rounded-lg font-bold text-[10px] shadow">Excluir</button>
+                    <button type="button" onclick="excluirLancamento(${lancId})" class="action-btn-write px-2.5 py-1 bg-red-600/20 text-red-300 rounded-lg font-bold text-[10px] shadow">Excluir</button>
                 </td>
             </tr>
         `;
@@ -1162,7 +1164,6 @@ function obterTodosMateriaisCatalogo() {
     return todosMateriais;
 }
 
-// --- MAPA LEAFLET ---
 function inicializarMapaLeaflet() {
     let container = document.getElementById('map-leaflet-container');
     if (!container || !window.L) return;
@@ -1281,7 +1282,6 @@ function selecionarEPlugarMapa(login) {
     if (sel) { sel.value = login; renderizarPinsMapaLeaflet(); }
 }
 
-// --- AUTONOMIA & LOGÍSTICA ---
 function renderizarResumoAutonomiaEHist() {
     if (!db.trajetos) db.trajetos = [];
 
@@ -1888,7 +1888,7 @@ function renderizarHistoricoGeral() {
 
 function limparHistoricoGeral() {
     if (isVisualizador) return;
-    if (confirm("Deseja realmente limpar todo el histórico de movimentações?")) {
+    if (confirm("Deseja realmente limpar todo o histórico de movimentações?")) {
         db.movimentacoes = [];
         salvarDb();
         renderizarHistoricoGeral();
@@ -1931,12 +1931,9 @@ function exportarExcelSIAKI() {
     document.body.removeChild(link);
 }
 
-function copiarServicoSIAKILinha(idOuIndex, fallbackIndex) {
-    let idxReal = db.lancamentos.findIndex(l => String(l.id) === String(idOuIndex));
-    if (idxReal === -1 && typeof fallbackIndex === 'number') {
-        idxReal = fallbackIndex;
-    }
-    if (idxReal === -1 || !db.lancamentos[idxReal]) {
+function copiarServicoSIAKILinha(lancId) {
+    let idxReal = db.lancamentos.findIndex(l => String(l.id) === String(lancId));
+    if (idxReal === -1) {
         alert("Lançamento não encontrado!");
         return;
     }
@@ -2000,24 +1997,16 @@ function copiarFallbackTextarea(texto, totalFiltrados) {
     document.body.removeChild(ta);
 }
 
-function excluirLancamento(idOuIndex, fallbackIndex) {
+function excluirLancamento(lancId) {
     if (isVisualizador) return;
-    if (confirm("Deseja excluir este lançamento SIAKI de forma sincronizada?")) {
-        let idxReal = db.lancamentos.findIndex(l => String(l.id) === String(idOuIndex));
-        if (idxReal === -1 && typeof fallbackIndex === 'number') {
-            idxReal = fallbackIndex;
-        }
-        if (idxReal >= 0 && db.lancamentos[idxReal]) {
+    if (confirm("Deseja excluir este lançamento SIAKI de forma sincronizada e permanente?")) {
+        let idxReal = db.lancamentos.findIndex(l => String(l.id) === String(lancId));
+        if (idxReal !== -1) {
             db.lancamentos.splice(idxReal, 1);
-        } else if (typeof idOuIndex === 'number' && idOuIndex >= 0 && idOuIndex < db.lancamentos.length) {
-            db.lancamentos.splice(idOuIndex, 1);
-        } else if (typeof fallbackIndex === 'number' && fallbackIndex >= 0 && fallbackIndex < db.lancamentos.length) {
-            db.lancamentos.splice(fallbackIndex, 1);
         } else {
-            alert("Erro ao localizar lançamento para exclusão.");
-            return;
+            db.lancamentos = db.lancamentos.filter(l => String(l.id) !== String(lancId));
         }
-        registrarMovimentacao("Exclusão Lançamento SIAKI", "Admin", `Excluiu lançamento do histórico SIAKI.`);
+        registrarMovimentacao("Exclusão Lançamento SIAKI", "Admin", `Excluiu lançamento ID ${lancId} do histórico SIAKI.`);
         salvarDb();
         atualizarPainelAdmin();
         alert("✅ Lançamento excluído com sucesso e sincronizado de forma imediata!");
@@ -2145,7 +2134,6 @@ function adicionarTecnicoPorLoginRapido() {
     atualizarPainelAdmin();
 }
 
-// --- CADASTRAR, EDITAR E REMOVER MATERIAL DO CATÁLOGO ---
 function adicionarMaterialAdmin() {
     if (isVisualizador) return;
     let sap = document.getElementById('mat-sap').value.trim();
@@ -2218,7 +2206,7 @@ function removerMaterialAdmin(i) {
     let mat = db.materiais[i];
     if (!mat) return;
 
-    if (confirm(`Tem certeza que deseja excluir o material "${mat.desc}" (${mat.sap})?\nIsso irá removê-lo do catálogo e das malas dos técnicos ao vivo.`)) {
+    if (confirm(`Tem certeza que deseja excluir o material "${mat.desc}" (${mat.sap}) permanentemente?\nIsso irá removê-lo do catálogo e das malas dos técnicos ao vivo.`)) {
         let sapExcluido = mat.sap;
         let descExcluida = mat.desc;
 
@@ -2233,7 +2221,7 @@ function removerMaterialAdmin(i) {
         registrarMovimentacao("Exclusão Catálogo", "Admin", `Excluiu material ${descExcluida} (${sapExcluido}) do sistema`);
         salvarDb();
         atualizarPainelAdmin();
-        alert("✅ Material removido do catálogo e das malas dos técnicos de forma sincronizada!");
+        alert("✅ Material removido do catálogo e das malas dos técnicos de forma permanente e sincronizada!");
     }
 }
 
@@ -2408,8 +2396,7 @@ function abrirCardTech(tipo) {
                     <div>
                         <label class="block text-[11px] font-semibold text-zinc-200 mb-1">Projeto</label>
                         <select id="t-projeto" class="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs outline-none text-white font-semibold">
-                            <option value="MDU GPON F">MDU GPON F</option>
-                            <option value="MDU GPON ON GOING">MDU GPON ON GOING</option>
+                            <option value="MDU GPON GF">MDU GPON GF</option>
                         </select>
                     </div>
                     <div>
@@ -2878,7 +2865,6 @@ function renderizarCarrinhoTecnico() {
     `).join('');
 }
 
-// --- LANÇAMENTO DO TÉCNICO ---
 function salvarLoteTecnico() {
     let projetoEl = document.getElementById('t-projeto');
     let nodeEl = document.getElementById('t-node');
@@ -3092,8 +3078,6 @@ function enviarMsgTech() {
     atualizarMsgTechBox();
     renderizarColegasChatTech();
 }
-
-let chatAdminAtual = null;
 
 function atualizarChatAdminLista() {
     if (isVisualizador) return;
