@@ -103,6 +103,7 @@ let isInitialLoadDone = false;
 let isTouchingMaterialScroll = false;
 let isTouchingHistoryScroll = false;
 let chatAdminAtual = null;
+let isLocalSaving = false; // Flag anti-bounce para evitar que itens excluídos retornem
 
 function normalizarArray(val) {
     if (!val) return [];
@@ -140,8 +141,11 @@ function normalizarEstruturaDb() {
 
 function salvarDb() {
     normalizarEstruturaDb();
+    isLocalSaving = true;
+    setTimeout(() => { isLocalSaving = false; }, 1500); // Bloqueia sobrescrita temporária do firebase por 1.5s
     return dbRef.set(db).catch(err => {
         console.error("Erro ao sincronizar com Firebase:", err);
+        isLocalSaving = false;
     });
 }
 
@@ -190,9 +194,9 @@ function togglePasswordVisibility() {
 
 // --- SINCRONIZAÇÃO EM TEMPO REAL FIREBASE ---
 dbRef.on('value', (snapshot) => {
+    if (isLocalSaving) return; // Impede que o Firebase sobrescreva o estado recém-alterado localmente
     const serverData = snapshot.val();
     if (serverData) {
-        // Evita sobrescrever estado local se o usuário estiver digitando ativamente em inputs/textareas
         const activeEl = document.activeElement;
         const isUserInteracting = activeEl && (
             activeEl.tagName === 'INPUT' ||
@@ -1122,7 +1126,7 @@ function atualizarPainelAdmin() {
                 <td class="p-3 font-mono text-zinc-100 font-semibold">${l.node}</td>
                 <td class="p-3 text-zinc-100">${itensStr}</td>
                 <td class="p-3 text-center space-x-2">
-                    <button type="button" onclick="copiarServicoSIAKILinha(${lancId}, ${index})" class="action-btn-write px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-[10px] shadow">Copiar</button>
+                    <button type="button" onclick="copiarServicoSIAKILinha(${lancId})" class="action-btn-write px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-[10px] shadow">Copiar</button>
                     <button type="button" onclick="excluirLancamento(${lancId})" class="action-btn-write px-2.5 py-1 bg-red-600/20 text-red-300 rounded-lg font-bold text-[10px] shadow">Excluir</button>
                 </td>
             </tr>
@@ -2000,12 +2004,7 @@ function copiarFallbackTextarea(texto, totalFiltrados) {
 function excluirLancamento(lancId) {
     if (isVisualizador) return;
     if (confirm("Deseja excluir este lançamento SIAKI de forma sincronizada e permanente?")) {
-        let idxReal = db.lancamentos.findIndex(l => String(l.id) === String(lancId));
-        if (idxReal !== -1) {
-            db.lancamentos.splice(idxReal, 1);
-        } else {
-            db.lancamentos = db.lancamentos.filter(l => String(l.id) !== String(lancId));
-        }
+        db.lancamentos = db.lancamentos.filter(l => String(l.id) !== String(lancId));
         registrarMovimentacao("Exclusão Lançamento SIAKI", "Admin", `Excluiu lançamento ID ${lancId} do histórico SIAKI.`);
         salvarDb();
         atualizarPainelAdmin();
