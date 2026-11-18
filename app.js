@@ -72,7 +72,7 @@ let db = {
     reposicoes: [],
     mensagens: [],
     movimentacoes: [{ data: "12/09/2026 09:00", tipo: "Sistema", responsavel: "Admin", detalhes: "Sistema Red & Black v8 inicializado." }],
-    notificacoes: [],
+    notificacoes: [{ text: "Sistema Red & Black v8 inicializado na nuvem.", time: "12/09/2026", tipo: "info" }],
     sosAtivo: null
 };
 
@@ -102,7 +102,6 @@ let isMobileLayout = false;
 let isInitialLoadDone = false;
 let isTouchingMaterialScroll = false;
 let isTouchingHistoryScroll = false;
-let chatAdminAtual = null;
 
 function normalizarArray(val) {
     if (!val) return [];
@@ -136,9 +135,6 @@ function normalizarEstruturaDb() {
     db.mensagens = normalizarArray(db.mensagens);
     db.movimentacoes = normalizarArray(db.movimentacoes);
     db.notificacoes = normalizarArray(db.notificacoes);
-    if (!db.sosAtivo || typeof db.sosAtivo !== 'object' || !db.sosAtivo.nome) {
-        db.sosAtivo = null;
-    }
 }
 
 function salvarDb() {
@@ -195,13 +191,7 @@ function togglePasswordVisibility() {
 dbRef.on('value', (snapshot) => {
     const serverData = snapshot.val();
     if (serverData) {
-        db = {
-            ...db,
-            ...serverData,
-            notificacoes: serverData.notificacoes ? normalizarArray(serverData.notificacoes) : [],
-            mensagens: serverData.mensagens ? normalizarArray(serverData.mensagens) : [],
-            sosAtivo: (serverData.sosAtivo && serverData.sosAtivo.nome) ? serverData.sosAtivo : null
-        };
+        db = serverData;
         normalizarEstruturaDb();
         if (db.adminPass) ADMIN_PASS = db.adminPass;
 
@@ -218,14 +208,10 @@ dbRef.on('value', (snapshot) => {
         );
 
         if (!document.getElementById('admin-screen').classList.contains('hidden')) {
-            // Atualiza SOS e Notificações SEMPRE mesmo que o admin esteja digitando
-            atualizarBannerSosENotificacoesAdmin();
-            if (chatAdminAtual) {
-                atualizarMensagensAdminBox();
-                atualizarChatAdminLista();
-            }
             if (!isUserInteracting) {
                 atualizarPainelAdmin();
+            } else if (chatAdminAtual) {
+                atualizarMensagensAdminBox();
             }
         }
 
@@ -251,7 +237,6 @@ dbRef.on('value', (snapshot) => {
             } else if (cardTechAtivo === 'chat') {
                 atualizarMsgTechBox();
                 atualizarBadgesChatTech();
-                renderizarColegasChatTech();
             } else if (!isUserInteracting && cardTechAtivo !== 'lancamento' && cardTechAtivo !== 'historico') {
                 renderizarCardTechAtivo();
             }
@@ -432,6 +417,7 @@ function handleLogin(event) {
     alert("Usuário ou senha incorretos.");
 }
 
+// --- BACKUP E RESTAURAÇÃO JSON & ZERAR ESTOQUES ---
 function baixarBackupGeral() {
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
     let dlAnchor = document.createElement('a');
@@ -475,7 +461,6 @@ function zerarSistemaFirebase() {
                 t.autoKm = 0;
                 t.autoLitros = 0;
                 t.autoCusto = 0;
-                t.notificacoes = [];
             });
             db.estoqueFisico = [];
             db.lancamentos = [];
@@ -483,7 +468,7 @@ function zerarSistemaFirebase() {
             db.reposicoes = [];
             db.mensagens = [];
             db.movimentacoes = [{ data: new Date().toLocaleString(), tipo: "Sistema", responsavel: "Admin", detalhes: "Estoques e relatórios limpos do zero, mantendo cadastros de técnicos." }];
-            db.notificacoes = [];
+            db.notificacoes = [{ text: "Estoques e relatórios limpos do zero.", time: new Date().toLocaleDateString(), tipo: "warning" }];
             db.sosAtivo = null;
 
             salvarDb();
@@ -526,17 +511,10 @@ function reiniciarKmTecnico(login) {
         tech.autoKm = 0;
         tech.autoLitros = 0;
         tech.autoCusto = 0;
-        if (usuarioLogado && usuarioLogado.login === login) {
-            usuarioLogado.autoKm = 0;
-            usuarioLogado.autoLitros = 0;
-            usuarioLogado.autoCusto = 0;
-        }
         registrarMovimentacao("Reset KM", "Admin", `Reiniciou a quilometragem do técnico ${tech.name}`);
-        salvarDb().then(() => {
-            atualizarPainelAdmin();
-            atualizarTelemetriaTecnicoLive();
-            alert(`✅ KM do técnico ${tech.name} reiniciado com sucesso!`);
-        });
+        salvarDb();
+        atualizarPainelAdmin();
+        alert(`✅ KM do técnico ${tech.name} reiniciado com sucesso!`);
     }
 }
 
@@ -548,17 +526,10 @@ function reiniciarKmTodosTecnicos() {
             t.autoLitros = 0;
             t.autoCusto = 0;
         });
-        if (usuarioLogado) {
-            usuarioLogado.autoKm = 0;
-            usuarioLogado.autoLitros = 0;
-            usuarioLogado.autoCusto = 0;
-        }
         registrarMovimentacao("Reset KM Geral", "Admin", `Reiniciou a quilometragem de todos os técnicos.`);
-        salvarDb().then(() => {
-            atualizarPainelAdmin();
-            atualizarTelemetriaTecnicoLive();
-            alert("✅ Quilometragem de todos os técnicos reiniciada com sucesso!");
-        });
+        salvarDb();
+        atualizarPainelAdmin();
+        alert("✅ Quilometragem de todos los técnicos reiniciada com sucesso!");
     }
 }
 
@@ -968,55 +939,6 @@ function obterLancamentosSIAKIFiltrados() {
     });
 }
 
-// --- ATUALIZAÇÃO DEDICADA DE SOS E NOTIFICAÇÕES (SEM CONFLITOS) ---
-function atualizarBannerSosENotificacoesAdmin() {
-    let sosBanner = document.getElementById('sos-alert-banner');
-    if (sosBanner) {
-        if (db.sosAtivo && db.sosAtivo.nome) {
-            sosBanner.classList.remove('hidden');
-            let detailEl = document.getElementById('sos-msg-detail');
-            if (detailEl) {
-                detailEl.innerText = `Técnico ${db.sosAtivo.nome} (${db.sosAtivo.car}) acionou o SOS em ${db.sosAtivo.hora}!`;
-            }
-        } else {
-            sosBanner.classList.add('hidden');
-        }
-    }
-
-    let notifCounter = document.getElementById('notif-counter');
-    let notifList = document.getElementById('notif-list');
-    let listaNotifs = normalizarArray(db.notificacoes);
-
-    if (notifCounter) {
-        if (listaNotifs.length > 0) {
-            notifCounter.classList.remove('hidden');
-            notifCounter.innerText = listaNotifs.length;
-        } else {
-            notifCounter.classList.add('hidden');
-            notifCounter.innerText = "0";
-        }
-    }
-
-    if (notifList) {
-        if (listaNotifs.length > 0) {
-            notifList.innerHTML = listaNotifs.slice().reverse().map((n, revIdx) => {
-                let realIdx = listaNotifs.length - 1 - revIdx;
-                return `
-                    <div class="p-2 bg-black rounded-xl border-l-4 border-red-600 flex justify-between items-start gap-2">
-                        <div>
-                            <p class="font-semibold text-white">${n.text}</p>
-                            <span class="text-[9px] text-zinc-300">${n.time || ''}</span>
-                        </div>
-                        <button type="button" onclick="removerNotificacaoIndividualAdmin(${realIdx})" class="text-zinc-400 hover:text-red-400 text-xs font-bold px-1" title="Remover">×</button>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            notifList.innerHTML = '<p class="text-zinc-300 text-center py-4">Nenhuma notificação.</p>';
-        }
-    }
-}
-
 function atualizarPainelAdmin() {
     document.getElementById('stat-techs').innerText = db.tecnicos.length;
     document.getElementById('stat-launches').innerText = db.lancamentos.length;
@@ -1031,7 +953,28 @@ function atualizarPainelAdmin() {
 
     renderizarGraficosDashboard();
     renderizarResumoAutonomiaEHist();
-    atualizarBannerSosENotificacoesAdmin();
+
+    let sosBanner = document.getElementById('sos-alert-banner');
+    if (db.sosAtivo) {
+        sosBanner.classList.remove('hidden');
+        document.getElementById('sos-msg-detail').innerText = `Técnico ${db.sosAtivo.nome} (${db.sosAtivo.car}) acionou o SOS em ${db.sosAtivo.hora}!`;
+    } else {
+        sosBanner.classList.add('hidden');
+    }
+
+    let notifCounter = document.getElementById('notif-counter');
+    if (db.notificacoes.length > 0) {
+        notifCounter.classList.remove('hidden');
+        notifCounter.innerText = db.notificacoes.length;
+    } else {
+        notifCounter.classList.add('hidden');
+    }
+
+    let notifHtml = '';
+    db.notificacoes.slice().reverse().forEach(n => {
+        notifHtml += `<div class="p-2 bg-black rounded-xl border-l-4 border-red-600"><p class="font-semibold text-white">${n.text}</p><span class="text-[9px] text-zinc-300">${n.time}</span></div>`;
+    });
+    document.getElementById('notif-list').innerHTML = notifHtml || '<p class="text-zinc-300 text-center py-4">Nenhuma notificação.</p>';
 
     let naoLidasAdmin = isVisualizador ? 0 : db.mensagens.filter(m => m.destinatario === "Base" && !m.lido).length;
     let badgeAdminChat = document.getElementById('badge-admin-chat');
@@ -1845,8 +1788,8 @@ function renderizarMalaAdmin() {
             <div class="p-3 bg-black border border-zinc-700 rounded-xl flex justify-between items-center text-xs">
                 <div><b class="text-white">${r.material}</b> - Qtd solicitada: <span class="text-amber-300 font-bold">${r.qtd}</span> (${r.status || 'Pendente'})</div>
                 <div class="space-x-2">
-                    <button type="button" onclick="aprovarReposicaoAdmin('${r.id}', '${tech.login}', '${r.material.replace(/'/g, "\\'")}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold shadow">Aprovar</button>
-                    <button type="button" onclick="removerReposicaoAdmin('${r.id}')" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button>
+                    <button type="button" onclick="aprovarReposicaoAdmin(${r.id}, '${tech.login}', '${r.material.replace(/'/g, "\'")}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold shadow">Aprovar</button>
+                    <button type="button" onclick="removerReposicaoAdmin(${r.id})" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button>
                 </div>
             </div>
         `).join('') || '<p class="text-zinc-400 italic">Nenhum pedido de reposição pendente.</p>';
@@ -1911,23 +1854,18 @@ function aprovarReposicaoAdmin(repId, techLogin, materialDesc, qtd) {
             time: new Date().toLocaleDateString()
         });
     }
-    let rep = db.reposicoes.find(r => String(r.id) === String(repId));
-    if (rep) {
-        rep.status = "Aprovado";
-    } else {
-        db.reposicoes = db.reposicoes.filter(r => !(String(r.techLogin) === String(techLogin) && String(r.material) === String(materialDesc) && String(r.qtd) === String(qtd) && r.status === "Pendente"));
-    }
+    let rep = db.reposicoes.find(r => r.id === repId);
+    if (rep) rep.status = "Aprovado";
     registrarMovimentacao("Reposição Aprovada", "Admin", `Aprovada reposição de ${qtd}x ${materialDesc} para ${tech ? tech.name : techLogin}`);
-    salvarDb().then(() => {
-        atualizarPainelAdmin();
-        renderizarMalaAdmin();
-        alert("✅ Reposição aprovada, adicionada diretamente ao estoque da mala do técnico e notificada com sucesso!");
-    });
+    salvarDb();
+    atualizarPainelAdmin();
+    renderizarMalaAdmin();
+    alert("✅ Reposição aprovada, adicionada diretamente ao estoque da mala do técnico e notificada com sucesso!");
 }
 
 function removerReposicaoAdmin(repId) {
     if (isVisualizador) return;
-    db.reposicoes = db.reposicoes.filter(r => String(r.id) !== String(repId));
+    db.reposicoes = db.reposicoes.filter(r => r.id !== repId);
     salvarDb();
     renderizarMalaAdmin();
 }
@@ -1950,7 +1888,7 @@ function renderizarHistoricoGeral() {
 
 function limparHistoricoGeral() {
     if (isVisualizador) return;
-    if (confirm("Deseja realmente limpar todo o histórico de movimentações?")) {
+    if (confirm("Deseja realmente limpar todo el histórico de movimentações?")) {
         db.movimentacoes = [];
         salvarDb();
         renderizarHistoricoGeral();
@@ -2207,6 +2145,7 @@ function adicionarTecnicoPorLoginRapido() {
     atualizarPainelAdmin();
 }
 
+// --- CADASTRAR, EDITAR E REMOVER MATERIAL DO CATÁLOGO ---
 function adicionarMaterialAdmin() {
     if (isVisualizador) return;
     let sap = document.getElementById('mat-sap').value.trim();
@@ -2300,12 +2239,11 @@ function removerMaterialAdmin(i) {
 
 function acionarSOS() {
     if (confirm("ATENÇÃO: Deseja acionar o alerta SOS de emergência para a Base?")) {
-        let sosPayload = {
+        db.sosAtivo = {
             nome: usuarioLogado.name,
             car: usuarioLogado.car,
             hora: new Date().toLocaleTimeString()
         };
-        db.sosAtivo = sosPayload;
         registrarMovimentacao("SOS", usuarioLogado.name, `ACIONOU SOS DE EMERGÊNCIA!`);
         db.notificacoes.push({ text: `EMERGÊNCIA: Técnico ${usuarioLogado.name} acionou o SOS!`, time: new Date().toLocaleDateString(), tipo: "danger" });
         salvarDb();
@@ -2313,48 +2251,24 @@ function acionarSOS() {
     }
 }
 
-// --- RESOLVER SOS DE FORMA IMEDIATA E DEFINITIVA ---
 function resolverSos() {
     if (isVisualizador) return;
     db.sosAtivo = null;
-    let sosBanner = document.getElementById('sos-alert-banner');
-    if (sosBanner) sosBanner.classList.add('hidden');
     registrarMovimentacao("SOS Resolvido", "Admin", `Alerta SOS foi resolvido.`);
-    
-    // Remove diretamente do nó no Firebase e salva o banco
-    dbRef.child('sosAtivo').remove().then(() => {
-        salvarDb();
-        atualizarBannerSosENotificacoesAdmin();
-    }).catch(() => {
-        salvarDb();
-        atualizarBannerSosENotificacoesAdmin();
-    });
+    salvarDb();
+    atualizarPainelAdmin();
 }
 
 function toggleNotifDropdown() {
     let d = document.getElementById('notif-dropdown');
-    if (d) d.classList.toggle('hidden');
-}
-
-function removerNotificacaoIndividualAdmin(idx) {
-    if (isVisualizador) return;
-    if (Array.isArray(db.notificacoes)) {
-        db.notificacoes.splice(idx, 1);
-        dbRef.child('notificacoes').set(db.notificacoes).then(() => {
-            atualizarBannerSosENotificacoesAdmin();
-        });
-    }
+    d.classList.toggle('hidden');
 }
 
 function limparNotificacoes() {
     if (isVisualizador) return;
     db.notificacoes = [];
-    dbRef.child('notificacoes').set([]).then(() => {
-        atualizarBannerSosENotificacoesAdmin();
-    }).catch(() => {
-        salvarDb();
-        atualizarBannerSosENotificacoesAdmin();
-    });
+    salvarDb();
+    atualizarPainelAdmin();
 }
 
 function inicializarPainelTecnico() {
@@ -2374,71 +2288,31 @@ function inicializarPainelTecnico() {
 function atualizarTechNotificacoesBadge() {
     let counter = document.getElementById('tech-notif-counter');
     let list = document.getElementById('tech-notif-list');
-    if (!usuarioLogado) return;
-    let notifs = normalizarArray(usuarioLogado.notificacoes);
-    usuarioLogado.notificacoes = notifs;
+    if (!usuarioLogado.notificacoes) usuarioLogado.notificacoes = [];
 
-    if (counter) {
-        if (notifs.length > 0) {
-            counter.classList.remove('hidden');
-            counter.innerText = notifs.length;
-        } else {
-            counter.classList.add('hidden');
-            counter.innerText = "0";
-        }
+    if (usuarioLogado.notificacoes.length > 0) {
+        counter.classList.remove('hidden');
+        counter.innerText = usuarioLogado.notificacoes.length;
+    } else {
+        counter.classList.add('hidden');
     }
 
-    if (list) {
-        if (notifs.length > 0) {
-            list.innerHTML = notifs.slice().reverse().map((n, revIdx) => {
-                let realIdx = notifs.length - 1 - revIdx;
-                return `
-                    <div class="p-2 bg-black rounded-xl border-l-4 border-red-600 flex justify-between items-start gap-2">
-                        <div>
-                            <p class="font-semibold text-white">${n.text}</p>
-                            <span class="text-[9px] text-zinc-300">${n.time || ''}</span>
-                        </div>
-                        <button type="button" onclick="removerNotificacaoIndividualTech(${realIdx})" class="text-zinc-400 hover:text-red-400 text-xs font-bold px-1" title="Remover">×</button>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            list.innerHTML = '<p class="text-zinc-300 text-center py-2">Nenhuma notificação.</p>';
-        }
-    }
+    list.innerHTML = usuarioLogado.notificacoes.slice().reverse().map(n => `
+        <div class="p-2 bg-black rounded-xl border-l-4 border-red-600">
+            <p class="font-semibold text-white">${n.text}</p>
+            <span class="text-[9px] text-zinc-300">${n.time}</span>
+        </div>
+    `).join('') || '<p class="text-zinc-300 text-center py-2">Nenhuma notificação.</p>';
 }
 
 function toggleTechNotifDropdown() {
-    let d = document.getElementById('tech-notif-dropdown');
-    if (d) d.classList.toggle('hidden');
-}
-
-function removerNotificacaoIndividualTech(idx) {
-    if (!usuarioLogado) return;
-    let techIdx = db.tecnicos.findIndex(t => t.login === usuarioLogado.login);
-    if (Array.isArray(usuarioLogado.notificacoes)) {
-        usuarioLogado.notificacoes.splice(idx, 1);
-        if (techIdx !== -1) {
-            db.tecnicos[techIdx].notificacoes = [...usuarioLogado.notificacoes];
-            dbRef.child(`tecnicos/${techIdx}/notificacoes`).set(usuarioLogado.notificacoes);
-        }
-        atualizarTechNotificacoesBadge();
-    }
+    document.getElementById('tech-notif-dropdown').classList.toggle('hidden');
 }
 
 function limparTechNotificacoes() {
-    if (!usuarioLogado) return;
     usuarioLogado.notificacoes = [];
-    let techIdx = db.tecnicos.findIndex(t => t.login === usuarioLogado.login);
-    if (techIdx !== -1) {
-        db.tecnicos[techIdx].notificacoes = [];
-        dbRef.child(`tecnicos/${techIdx}/notificacoes`).set([]).then(() => {
-            atualizarTechNotificacoesBadge();
-        });
-    } else {
-        salvarDb();
-        atualizarTechNotificacoesBadge();
-    }
+    salvarDb();
+    atualizarTechNotificacoesBadge();
 }
 
 function mudarFotoPerfil(e) {
@@ -2534,7 +2408,8 @@ function abrirCardTech(tipo) {
                     <div>
                         <label class="block text-[11px] font-semibold text-zinc-200 mb-1">Projeto</label>
                         <select id="t-projeto" class="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs outline-none text-white font-semibold">
-                            <option value="MDU GPON GF">MDU GPON GF</option>
+                            <option value="MDU GPON F">MDU GPON F</option>
+                            <option value="MDU GPON ON GOING">MDU GPON ON GOING</option>
                         </select>
                     </div>
                     <div>
@@ -2737,10 +2612,13 @@ function renderizarHistoricoLancesTecnico() {
 function apagarMensagemChat(msgId) {
     if (isVisualizador) return;
     if (confirm("Deseja apagar esta mensagem do chat?")) {
-        db.mensagens = db.mensagens.filter(m => String(m.id) !== String(msgId));
-        salvarDb();
-        if (usuarioLogado) atualizarMsgTechBox();
-        else atualizarMensagensAdminBox();
+        let idx = db.mensagens.findIndex(m => m.id === msgId);
+        if (idx !== -1) {
+            db.mensagens.splice(idx, 1);
+            salvarDb();
+            if (usuarioLogado) atualizarMsgTechBox();
+            else atualizarMensagensAdminBox();
+        }
     }
 }
 
@@ -2799,13 +2677,10 @@ async function toggleGravarAudio(isTech = true) {
 
 function enviarAudioTech(audioDataUrl) {
     if (!audioDataUrl || !usuarioLogado) return;
-    let destTech = db.tecnicos.find(t => t.name === chatDestinatarioAtual || t.login === chatDestinatarioAtual);
     db.mensagens.push({
-        id: Date.now() + Math.floor(Math.random() * 1000),
+        id: Date.now() + Math.random(),
         remetente: usuarioLogado.name,
-        remetenteLogin: usuarioLogado.login,
         destinatario: chatDestinatarioAtual,
-        destinatarioLogin: destTech ? destTech.login : chatDestinatarioAtual,
         texto: "🎤 Mensagem de áudio",
         audio: audioDataUrl,
         hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -2818,13 +2693,10 @@ function enviarAudioTech(audioDataUrl) {
 
 function enviarAudioAdmin(audioDataUrl) {
     if (isVisualizador || !chatAdminAtual) return;
-    let destTech = db.tecnicos.find(t => t.name === chatAdminAtual || t.login === chatAdminAtual);
     db.mensagens.push({
-        id: Date.now() + Math.floor(Math.random() * 1000),
+        id: Date.now() + Math.random(),
         remetente: "Base",
-        remetenteLogin: "admin",
-        destinatario: destTech ? destTech.name : chatAdminAtual,
-        destinatarioLogin: destTech ? destTech.login : chatAdminAtual,
+        destinatario: chatAdminAtual,
         texto: "🎤 Mensagem de áudio",
         audio: audioDataUrl,
         hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -3006,6 +2878,7 @@ function renderizarCarrinhoTecnico() {
     `).join('');
 }
 
+// --- LANÇAMENTO DO TÉCNICO ---
 function salvarLoteTecnico() {
     let projetoEl = document.getElementById('t-projeto');
     let nodeEl = document.getElementById('t-node');
@@ -3128,16 +3001,10 @@ function recusarPedidoAmizade(pIdx) {
 
 function selecionarChatTech(dest) {
     chatDestinatarioAtual = dest;
-    let mudou = false;
     db.mensagens.forEach(m => {
-        let ehParaMim = (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login || m.destinatarioLogin === usuarioLogado.login);
-        let ehDoDest = (m.remetente === dest || m.remetenteLogin === dest);
-        if (ehParaMim && ehDoDest && !m.lido) {
-            m.lido = true;
-            mudou = true;
-        }
+        if (m.destinatario === usuarioLogado.name && m.remetente === dest) m.lido = true;
     });
-    if (mudou) salvarDb();
+    salvarDb();
     atualizarMsgTechBox();
     atualizarBadgesChatTech();
 }
@@ -3149,11 +3016,7 @@ function renderizarColegasChatTech() {
         if (amigoObj) {
             let avatar = amigoObj.avatar ? `<img src="${amigoObj.avatar}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">${amigoObj.name.charAt(0)}</div>`;
             let badgeOn = amigoObj.online ? 'bg-emerald-400' : 'bg-zinc-500';
-            let naoLidas = db.mensagens.filter(m =>
-                (m.remetente === amigoObj.name || m.remetenteLogin === amigoObj.login) &&
-                (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login || m.destinatarioLogin === usuarioLogado.login) &&
-                !m.lido
-            ).length;
+            let naoLidas = db.mensagens.filter(m => m.remetente === amigoObj.name && m.destinatario === usuarioLogado.name && !m.lido).length;
             let badgeHtml = naoLidas > 0 ? `<span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow">${naoLidas}</span>` : '';
             html += `
                 <div onclick="selecionarChatTech('${amigoObj.name}')" class="flex items-center space-x-2 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-xl cursor-pointer hover:border-red-600 flex-shrink-0 relative shadow">
@@ -3170,21 +3033,14 @@ function renderizarColegasChatTech() {
 }
 
 function atualizarBadgesChatTech() {
-    let naoLidasBase = db.mensagens.filter(m =>
-        m.remetente === "Base" &&
-        (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login || m.destinatarioLogin === usuarioLogado.login) &&
-        !m.lido
-    ).length;
+    let naoLidasBase = db.mensagens.filter(m => m.remetente === "Base" && (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login) && !m.lido).length;
     let btnBase = document.getElementById('btn-chat-Base');
     if (btnBase) {
         if (naoLidasBase > 0) btnBase.innerHTML = `Base Central <span class="ml-1 bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[9px] shadow">${naoLidasBase}</span>`;
         else btnBase.innerHTML = `Base Central`;
     }
 
-    let totalNaoLidasGeral = db.mensagens.filter(m =>
-        (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login || m.destinatarioLogin === usuarioLogado.login) &&
-        !m.lido
-    ).length;
+    let totalNaoLidasGeral = db.mensagens.filter(m => (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login) && !m.lido).length;
     let badgeTab = document.getElementById('badge-tech-chat-tab');
     if (badgeTab) {
         if (totalNaoLidasGeral > 0) { badgeTab.classList.remove('hidden'); badgeTab.innerText = totalNaoLidasGeral; }
@@ -3194,24 +3050,15 @@ function atualizarBadgesChatTech() {
 
 function atualizarMsgTechBox() {
     let box = document.getElementById('tech-chat-box');
-    if (!box || !usuarioLogado) return;
-
-    let destObj = db.tecnicos.find(t => t.name === chatDestinatarioAtual || t.login === chatDestinatarioAtual);
-    let destName = destObj ? destObj.name : chatDestinatarioAtual;
-    let destLogin = destObj ? destObj.login : chatDestinatarioAtual;
-
-    let filtradas = db.mensagens.filter(m => {
-        let souRemetente = (m.remetente === usuarioLogado.name || m.remetente === usuarioLogado.login || m.remetenteLogin === usuarioLogado.login);
-        let souDestinatario = (m.destinatario === usuarioLogado.name || m.destinatario === usuarioLogado.login || m.destinatarioLogin === usuarioLogado.login);
-
-        let outroEhDest = (m.destinatario === destName || m.destinatario === destLogin || m.destinatarioLogin === destLogin);
-        let outroEhRem = (m.remetente === destName || m.remetente === destLogin || m.remetenteLogin === destLogin);
-
-        return (souRemetente && outroEhDest) || (outroEhRem && souDestinatario);
-    });
-
+    if (!box) return;
+    let filtradas = db.mensagens.filter(m =>
+        (m.remetente === usuarioLogado.name && m.destinatario === chatDestinatarioAtual) ||
+        (m.remetente === chatDestinatarioAtual && m.destinatario === usuarioLogado.name) ||
+        (m.remetente === usuarioLogado.login && m.destinatario === chatDestinatarioAtual) ||
+        (m.remetente === chatDestinatarioAtual && m.destinatario === usuarioLogado.login)
+    );
     box.innerHTML = filtradas.map(m => {
-        let eu = (m.remetente === usuarioLogado.name || m.remetente === usuarioLogado.login || m.remetenteLogin === usuarioLogado.login);
+        let eu = m.remetente === usuarioLogado.name || m.remetente === usuarioLogado.login;
         let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-100 mr-auto';
         let audioMarkup = m.audio ? `<div class="mt-1"><audio controls src="${m.audio}" class="max-w-[210px] w-full h-8 rounded-lg"></audio></div>` : '';
         let msgId = m.id || 0;
@@ -3219,7 +3066,7 @@ function atualizarMsgTechBox() {
             <div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow-md relative group">
                 <div class="flex items-center justify-between border-b border-white/20 pb-1 mb-1">
                     <b class="text-[9px] opacity-90">${m.remetente} • ${m.hora}</b>
-                    <button type="button" onclick="apagarMensagemChat('${msgId}')" title="Apagar Mensagem" class="text-[10px] opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-2">🗑️</button>
+                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-[10px] opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-2">🗑️</button>
                 </div>
                 ${m.texto ? `<p class="font-semibold">${m.texto}</p>` : ''}
                 ${audioMarkup}
@@ -3232,24 +3079,21 @@ function atualizarMsgTechBox() {
 function enviarMsgTech() {
     let inp = document.getElementById('tech-chat-input');
     if (!inp || !inp.value.trim()) return;
-    let textoMsg = inp.value.trim();
-    inp.value = '';
-
-    let destObj = db.tecnicos.find(t => t.name === chatDestinatarioAtual || t.login === chatDestinatarioAtual);
     db.mensagens.push({
-        id: Date.now() + Math.floor(Math.random() * 1000),
+        id: Date.now() + Math.random(),
         remetente: usuarioLogado.name,
-        remetenteLogin: usuarioLogado.login,
-        destinatario: destObj ? destObj.name : chatDestinatarioAtual,
-        destinatarioLogin: destObj ? destObj.login : chatDestinatarioAtual,
-        texto: textoMsg,
+        destinatario: chatDestinatarioAtual,
+        texto: inp.value,
         hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         lido: false
     });
+    inp.value = '';
     salvarDb();
     atualizarMsgTechBox();
     renderizarColegasChatTech();
 }
+
+let chatAdminAtual = null;
 
 function atualizarChatAdminLista() {
     if (isVisualizador) return;
@@ -3257,15 +3101,10 @@ function atualizarChatAdminLista() {
     db.tecnicos.forEach(t => {
         let avatar = t.avatar ? `<img src="${t.avatar}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">${t.name.charAt(0)}</div>`;
         let badgeOn = t.online ? 'bg-emerald-400' : 'bg-zinc-500';
-        let naoLidas = db.mensagens.filter(m =>
-            (m.remetente === t.name || m.remetenteLogin === t.login) &&
-            m.destinatario === "Base" &&
-            !m.lido
-        ).length;
+        let naoLidas = db.mensagens.filter(m => m.remetente === t.name && m.destinatario === "Base" && !m.lido).length;
         let badgeNaoLida = naoLidas > 0 ? `<span class="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow">${naoLidas}</span>` : '';
-        let activeClass = (chatAdminAtual === t.name) ? 'bg-zinc-900 border-l-4 border-red-600' : '';
         html += `
-            <div onclick="selecionarChatAdmin('${t.name}')" class="p-3 rounded-xl hover:bg-zinc-900 cursor-pointer flex items-center justify-between text-xs border-b border-zinc-700 ${activeClass}">
+            <div onclick="selecionarChatAdmin('${t.name}')" class="p-3 rounded-xl hover:bg-zinc-900 cursor-pointer flex items-center justify-between text-xs border-b border-zinc-700">
                 <div class="flex items-center space-x-2">
                     <div class="relative">${avatar}<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${badgeOn} border border-black"></span></div>
                     <div><span class="font-bold text-white block">${t.name}</span><span class="text-[9px] text-zinc-300 font-semibold">Online: ${t.lastSeen || 'Offline'}</span></div>
@@ -3281,37 +3120,24 @@ function atualizarChatAdminLista() {
 function selecionarChatAdmin(nomeTech) {
     if (isVisualizador) return;
     chatAdminAtual = nomeTech;
-    let techObj = db.tecnicos.find(t => t.name === nomeTech || t.login === nomeTech);
     let headerEl = document.getElementById('admin-chat-header');
     if (headerEl) headerEl.innerText = "Conversando com: " + nomeTech;
-    let mudou = false;
     db.mensagens.forEach(m => {
-        let ehDoTech = (m.remetente === nomeTech || (techObj && m.remetenteLogin === techObj.login));
-        if (ehDoTech && m.destinatario === "Base" && !m.lido) {
-            m.lido = true;
-            mudou = true;
-        }
+        if (m.remetente === nomeTech && m.destinatario === "Base") m.lido = true;
     });
-    if (mudou) salvarDb();
+    salvarDb();
     atualizarMensagensAdminBox();
-    atualizarChatAdminLista();
+    atualizarPainelAdmin();
 }
 
 function atualizarMensagensAdminBox() {
     if (isVisualizador) return;
     let box = document.getElementById('admin-chat-messages');
     if (!box || !chatAdminAtual) return;
-
-    let techObj = db.tecnicos.find(t => t.name === chatAdminAtual || t.login === chatAdminAtual);
-    let techName = techObj ? techObj.name : chatAdminAtual;
-    let techLogin = techObj ? techObj.login : chatAdminAtual;
-
-    let filtradas = db.mensagens.filter(m => {
-        let daBaseParaTech = (m.remetente === "Base" && (m.destinatario === techName || m.destinatario === techLogin || m.destinatarioLogin === techLogin));
-        let doTechParaBase = ((m.remetente === techName || m.remetente === techLogin || m.remetenteLogin === techLogin) && m.destinatario === "Base");
-        return daBaseParaTech || doTechParaBase;
-    });
-
+    let filtradas = db.mensagens.filter(m =>
+        (m.remetente === "Base" && m.destinatario === chatAdminAtual) ||
+        (m.remetente === chatAdminAtual && m.destinatario === "Base")
+    );
     box.innerHTML = filtradas.map(m => {
         let eu = m.remetente === "Base";
         let bg = eu ? 'bg-red-600 text-white ml-auto' : 'bg-zinc-800 text-zinc-100 mr-auto';
@@ -3321,7 +3147,7 @@ function atualizarMensagensAdminBox() {
             <div class="max-w-[75%] p-3 rounded-2xl ${bg} shadow-md relative group">
                 <div class="flex items-center justify-between border-b border-white/20 pb-1 mb-1">
                     <b class="text-[10px] opacity-90">${m.remetente} • ${m.hora}</b>
-                    <button type="button" onclick="apagarMensagemChat('${msgId}')" title="Apagar Mensagem" class="text-xs opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-3">🗑️</button>
+                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-xs opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-3">🗑️</button>
                 </div>
                 ${m.texto ? `<p class="font-semibold">${m.texto}</p>` : ''}
                 ${audioMarkup}
@@ -3332,31 +3158,20 @@ function atualizarMensagensAdminBox() {
 }
 
 function enviarMensagemAdmin() {
-    if (isVisualizador) return;
-    if (!chatAdminAtual) {
-        alert("Selecione um técnico na lista à esquerda antes de enviar uma mensagem!");
-        return;
-    }
+    if (isVisualizador || !chatAdminAtual) return;
     let inp = document.getElementById('admin-chat-input');
     if (!inp || !inp.value.trim()) return;
-    let textoMsg = inp.value.trim();
-    inp.value = '';
-
-    let techObj = db.tecnicos.find(t => t.name === chatAdminAtual || t.login === chatAdminAtual);
-
     db.mensagens.push({
-        id: Date.now() + Math.floor(Math.random() * 1000),
+        id: Date.now() + Math.random(),
         remetente: "Base",
-        remetenteLogin: "admin",
-        destinatario: techObj ? techObj.name : chatAdminAtual,
-        destinatarioLogin: techObj ? techObj.login : chatAdminAtual,
-        texto: textoMsg,
+        destinatario: chatAdminAtual,
+        texto: inp.value,
         hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         lido: false
     });
+    inp.value = '';
     salvarDb();
     atualizarMensagensAdminBox();
-    atualizarChatAdminLista();
 }
 
 // INICIALIZAÇÃO PWA & SESSÃO
