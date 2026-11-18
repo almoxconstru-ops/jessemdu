@@ -102,7 +102,6 @@ let isMobileLayout = false;
 let isInitialLoadDone = false;
 let isTouchingMaterialScroll = false;
 let isTouchingHistoryScroll = false;
-let chatAdminAtual = null;
 
 function normalizarArray(val) {
     if (!val) return [];
@@ -418,6 +417,7 @@ function handleLogin(event) {
     alert("Usuário ou senha incorretos.");
 }
 
+// --- BACKUP E RESTAURAÇÃO JSON & ZERAR ESTOQUES ---
 function baixarBackupGeral() {
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
     let dlAnchor = document.createElement('a');
@@ -504,7 +504,6 @@ function zerarLancamentosMateriaisTecnicos(loginTech = null) {
     }
 }
 
-// --- AJUSTE: RESETAR KM DE FORMA INSTANTÂNEA E SEM ERROS ---
 function reiniciarKmTecnico(login) {
     if (isVisualizador) return;
     let tech = db.tecnicos.find(t => t.login === login);
@@ -512,17 +511,10 @@ function reiniciarKmTecnico(login) {
         tech.autoKm = 0;
         tech.autoLitros = 0;
         tech.autoCusto = 0;
-        if (usuarioLogado && usuarioLogado.login === login) {
-            usuarioLogado.autoKm = 0;
-            usuarioLogado.autoLitros = 0;
-            usuarioLogado.autoCusto = 0;
-        }
         registrarMovimentacao("Reset KM", "Admin", `Reiniciou a quilometragem do técnico ${tech.name}`);
-        salvarDb().then(() => {
-            atualizarPainelAdmin();
-            atualizarTelemetriaTecnicoLive();
-            alert(`✅ KM do técnico ${tech.name} reiniciado com sucesso!`);
-        });
+        salvarDb();
+        atualizarPainelAdmin();
+        alert(`✅ KM do técnico ${tech.name} reiniciado com sucesso!`);
     }
 }
 
@@ -534,17 +526,10 @@ function reiniciarKmTodosTecnicos() {
             t.autoLitros = 0;
             t.autoCusto = 0;
         });
-        if (usuarioLogado) {
-            usuarioLogado.autoKm = 0;
-            usuarioLogado.autoLitros = 0;
-            usuarioLogado.autoCusto = 0;
-        }
         registrarMovimentacao("Reset KM Geral", "Admin", `Reiniciou a quilometragem de todos os técnicos.`);
-        salvarDb().then(() => {
-            atualizarPainelAdmin();
-            atualizarTelemetriaTecnicoLive();
-            alert("✅ Quilometragem de todos os técnicos reiniciada com sucesso!");
-        });
+        salvarDb();
+        atualizarPainelAdmin();
+        alert("✅ Quilometragem de todos los técnicos reiniciada com sucesso!");
     }
 }
 
@@ -1803,8 +1788,8 @@ function renderizarMalaAdmin() {
             <div class="p-3 bg-black border border-zinc-700 rounded-xl flex justify-between items-center text-xs">
                 <div><b class="text-white">${r.material}</b> - Qtd solicitada: <span class="text-amber-300 font-bold">${r.qtd}</span> (${r.status || 'Pendente'})</div>
                 <div class="space-x-2">
-                    <button type="button" onclick="aprovarReposicaoAdmin('${r.id}', '${tech.login}', '${r.material.replace(/'/g, "\\'")}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold shadow">Aprovar</button>
-                    <button type="button" onclick="removerReposicaoAdmin('${r.id}')" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button>
+                    <button type="button" onclick="aprovarReposicaoAdmin(${r.id}, '${tech.login}', '${r.material.replace(/'/g, "\'")}', ${r.qtd})" class="action-btn-write px-3 py-1 bg-emerald-600 text-white rounded font-bold shadow">Aprovar</button>
+                    <button type="button" onclick="removerReposicaoAdmin(${r.id})" class="action-btn-write text-red-400 font-bold hover:underline">Excluir</button>
                 </div>
             </div>
         `).join('') || '<p class="text-zinc-400 italic">Nenhum pedido de reposição pendente.</p>';
@@ -1850,7 +1835,6 @@ function excluirMaterialMalaAdmin(techLogin, itemIdx) {
     }
 }
 
-// --- AJUSTE: APROVAÇÃO DE REPOSIÇÃO CORRETA E SEM BUGS ---
 function aprovarReposicaoAdmin(repId, techLogin, materialDesc, qtd) {
     if (isVisualizador) return;
     let tech = db.tecnicos.find(t => t.login === techLogin);
@@ -1870,24 +1854,18 @@ function aprovarReposicaoAdmin(repId, techLogin, materialDesc, qtd) {
             time: new Date().toLocaleDateString()
         });
     }
-    let rep = db.reposicoes.find(r => String(r.id) === String(repId));
-    if (rep) {
-        rep.status = "Aprovado";
-    } else {
-        // Se por ventura o id vier desalinhado, removemos/atualizamos por correspondência
-        db.reposicoes = db.reposicoes.filter(r => !(String(r.techLogin) === String(techLogin) && String(r.material) === String(materialDesc) && String(r.qtd) === String(qtd) && r.status === "Pendente"));
-    }
+    let rep = db.reposicoes.find(r => r.id === repId);
+    if (rep) rep.status = "Aprovado";
     registrarMovimentacao("Reposição Aprovada", "Admin", `Aprovada reposição de ${qtd}x ${materialDesc} para ${tech ? tech.name : techLogin}`);
-    salvarDb().then(() => {
-        atualizarPainelAdmin();
-        renderizarMalaAdmin();
-        alert("✅ Reposição aprovada, adicionada diretamente ao estoque da mala do técnico e notificada com sucesso!");
-    });
+    salvarDb();
+    atualizarPainelAdmin();
+    renderizarMalaAdmin();
+    alert("✅ Reposição aprovada, adicionada diretamente ao estoque da mala do técnico e notificada com sucesso!");
 }
 
 function removerReposicaoAdmin(repId) {
     if (isVisualizador) return;
-    db.reposicoes = db.reposicoes.filter(r => String(r.id) !== String(repId));
+    db.reposicoes = db.reposicoes.filter(r => r.id !== repId);
     salvarDb();
     renderizarMalaAdmin();
 }
@@ -2167,6 +2145,7 @@ function adicionarTecnicoPorLoginRapido() {
     atualizarPainelAdmin();
 }
 
+// --- CADASTRAR, EDITAR E REMOVER MATERIAL DO CATÁLOGO ---
 function adicionarMaterialAdmin() {
     if (isVisualizador) return;
     let sap = document.getElementById('mat-sap').value.trim();
@@ -2272,16 +2251,12 @@ function acionarSOS() {
     }
 }
 
-// --- AJUSTE: RESOLVER SOS DE PRIMEIRA E SEM BUGS ---
 function resolverSos() {
     if (isVisualizador) return;
     db.sosAtivo = null;
     registrarMovimentacao("SOS Resolvido", "Admin", `Alerta SOS foi resolvido.`);
-    salvarDb().then(() => {
-        atualizarPainelAdmin();
-        let sosBanner = document.getElementById('sos-alert-banner');
-        if (sosBanner) sosBanner.classList.add('hidden');
-    });
+    salvarDb();
+    atualizarPainelAdmin();
 }
 
 function toggleNotifDropdown() {
@@ -2289,13 +2264,11 @@ function toggleNotifDropdown() {
     d.classList.toggle('hidden');
 }
 
-// --- AJUSTE: LIMPAR NOTIFICAÇÕES (ADMIN E TÉCNICO) CORRETAMENTE E MANTER ZERADO ---
 function limparNotificacoes() {
     if (isVisualizador) return;
     db.notificacoes = [];
-    salvarDb().then(() => {
-        atualizarPainelAdmin();
-    });
+    salvarDb();
+    atualizarPainelAdmin();
 }
 
 function inicializarPainelTecnico() {
@@ -2337,15 +2310,9 @@ function toggleTechNotifDropdown() {
 }
 
 function limparTechNotificacoes() {
-    if (!usuarioLogado) return;
     usuarioLogado.notificacoes = [];
-    let techInDb = db.tecnicos.find(t => t.login === usuarioLogado.login);
-    if (techInDb) {
-        techInDb.notificacoes = [];
-    }
-    salvarDb().then(() => {
-        atualizarTechNotificacoesBadge();
-    });
+    salvarDb();
+    atualizarTechNotificacoesBadge();
 }
 
 function mudarFotoPerfil(e) {
@@ -2645,7 +2612,7 @@ function renderizarHistoricoLancesTecnico() {
 function apagarMensagemChat(msgId) {
     if (isVisualizador) return;
     if (confirm("Deseja apagar esta mensagem do chat?")) {
-        let idx = db.mensagens.findIndex(m => String(m.id) === String(msgId));
+        let idx = db.mensagens.findIndex(m => m.id === msgId);
         if (idx !== -1) {
             db.mensagens.splice(idx, 1);
             salvarDb();
@@ -2911,6 +2878,7 @@ function renderizarCarrinhoTecnico() {
     `).join('');
 }
 
+// --- LANÇAMENTO DO TÉCNICO ---
 function salvarLoteTecnico() {
     let projetoEl = document.getElementById('t-projeto');
     let nodeEl = document.getElementById('t-node');
@@ -3098,7 +3066,7 @@ function atualizarMsgTechBox() {
             <div class="max-w-[85%] sm:max-w-[75%] p-2.5 rounded-2xl ${bg} text-xs shadow-md relative group">
                 <div class="flex items-center justify-between border-b border-white/20 pb-1 mb-1">
                     <b class="text-[9px] opacity-90">${m.remetente} • ${m.hora}</b>
-                    <button type="button" onclick="apagarMensagemChat('${msgId}')" title="Apagar Mensagem" class="text-[10px] opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-2">🗑️</button>
+                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-[10px] opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-2">🗑️</button>
                 </div>
                 ${m.texto ? `<p class="font-semibold">${m.texto}</p>` : ''}
                 ${audioMarkup}
@@ -3124,6 +3092,8 @@ function enviarMsgTech() {
     atualizarMsgTechBox();
     renderizarColegasChatTech();
 }
+
+let chatAdminAtual = null;
 
 function atualizarChatAdminLista() {
     if (isVisualizador) return;
@@ -3177,7 +3147,7 @@ function atualizarMensagensAdminBox() {
             <div class="max-w-[75%] p-3 rounded-2xl ${bg} shadow-md relative group">
                 <div class="flex items-center justify-between border-b border-white/20 pb-1 mb-1">
                     <b class="text-[10px] opacity-90">${m.remetente} • ${m.hora}</b>
-                    <button type="button" onclick="apagarMensagemChat('${msgId}')" title="Apagar Mensagem" class="text-xs opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-3">🗑️</button>
+                    <button type="button" onclick="apagarMensagemChat(${msgId})" title="Apagar Mensagem" class="text-xs opacity-80 hover:opacity-100 hover:text-amber-300 font-bold ml-3">🗑️</button>
                 </div>
                 ${m.texto ? `<p class="font-semibold">${m.texto}</p>` : ''}
                 ${audioMarkup}
